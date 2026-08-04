@@ -10,6 +10,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   measures accumulated running time instead of using a state trigger, and what is still
   needed to get the alert onto a phone.
 
+- [homeii-music-flow.md](homeii-music-flow.md)
+
+  Replacing the Sound dashboard's cards with the HOMEii Flow Music Assistant card. Why the
+  wall clock moved to its own dashboard instead of Overview, why the view had to be `panel`
+  instead of `sections`, and why Sendspin and library artwork are blocked in Chrome by Local
+  Network Access.
+
 - [mac-mini-migration.md](mac-mini-migration.md)
 
   Moving Home Assistant off the Raspberry Pi and onto a headless Late 2014 Mac mini.
