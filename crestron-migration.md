@@ -30,6 +30,22 @@ The touch panels are known to talk to the AADS rather than directly to the MC2E.
 Windows, VTPro-e, or Crestron Toolbox license or access available, and none is assumed anywhere in this
 plan except where explicitly called out as a one-time paid task.
 
+**Physical locations, per the homeowner (this is not one rack):**
+
+- The garage rack holds only the CLX-* lighting modules and their CLT-* terminal blocks. Nothing else
+  physically lives there, despite all of it also being logically grouped under "106 - Garage" in the
+  MC2E's program.
+- The AADS sits in an audio cabinet in the living room.
+- The MC2E and the ST-IO share a different AV cabinet, also in the living room, next to the audio
+  cabinet. Note that this splits physical co-location from logical bus membership: the ST-IO sits right
+  next to the MC2E but is wired onto the AADS's separate Cresnet leg (confirmed via `REPORTCRESNET`
+  above), meaning there is a physical Cresnet cable running between the two adjacent living room
+  cabinets to reach it, not just within one.
+- The alarm panel is a wall panel in the kitchen pantry, not rack-mounted anywhere. Wire runs between
+  the living room AV cabinet and the pantry are inside walls and not something the homeowner can trace
+  by hand; any confirmation of an alarm tie-in has to come from both ends independently (labels,
+  visible characteristics, or the panel's own documentation), not a continuous wire trace.
+
 ## Evaluating the three prior notes
 
 Three uncommitted markdown files were found in this repo, written by a different LLM in an earlier
@@ -315,7 +331,8 @@ was tied to hardware being removed anyway, not to Crestron control specifically)
 
 The right choice depends on how many zones are actually landed on the AADS today and how source
 routing is actually used. This is not answerable remotely; see the verification checklist below for
-the practical method (read the zone/source list off a TSW-752, then check the rack's rear terminals).
+the practical method (read the zone/source list off a TSW-752, then check the AADS's own rear terminals
+in its living room cabinet).
 
 ### Rejected: keeping the AADS as a dumb amp only
 
@@ -364,7 +381,9 @@ hardware per room.
 ## Alarm system: status unknown
 
 Not yet known whether the alarm system is wired into Crestron at all. Two plausible tie-in points exist
-in the current hardware and both need to be physically checked before any part of the rack is touched:
+in the current hardware. The alarm panel itself is a wall panel in the kitchen pantry, not rack-mounted,
+and the wire runs between it and the living room AV cabinet are inside walls and not traceable by hand.
+Confirming a tie-in means checking both ends independently, not following one continuous wire:
 
 - The ST-IO's 8 relay outputs and 4 analog/digital inputs, which are exactly the kind of dry-contact
   interface an alarm panel would use for a Crestron tie-in (arm/disarm relay, zone status contacts).
@@ -372,16 +391,41 @@ in the current hardware and both need to be physically checked before any part o
   configured in contact-closure mode, which is consistent with this hypothesis but does not confirm it.
   What is still unknown is which physical contacts land on which of the four inputs, and what the eight
   relay outputs actually drive.
+
+  **Field notes from the AV cabinet (2026-08-04):** front-panel LED baseline at time of inspection was
+  PWR green, NET yellow (confirms healthy Cresnet comms, consistent with the telnet findings above),
+  and Input 1 red (that input is reading a closure right now; worth remembering as a baseline when the
+  zone-trigger test happens later). The wiring behind the ST-IO is dense and unlabeled with tags,
+  though there may be sharpie markings on individual cable jackets not yet found. The integrator
+  appears to have run Cat5e for signal wiring generally rather than single-purpose cable: roughly two
+  Cat5e cables land on the ST-IO itself (plausibly one carrying the 4 digital inputs plus common, one
+  carrying some or all of the 8 relay pairs, riding spare pairs of the same cable rather than one wire
+  per signal, but this is a guess to verify once untangled, not confirmed). There is also a passive
+  RS-485 distribution strip nearby, no electronics, with five or six additional cables landing on it.
+  This is most likely a star-wiring consolidation point for Cresnet home runs (Cresnet is electrically a
+  shared bus, but installers commonly wire it as a star into one punch-down block for exactly this kind
+  of central cabinet). Two things worth checking once it's untangled: whether five or six is the full
+  count or just what's visible so far (MC2E's leg alone has 9 keypads across 7 rooms plus the garage
+  lighting modules, so the true home-run count landing somewhere is likely higher unless several of
+  those are daisy-chained locally before reaching a cabinet), and whether every cable on that strip is
+  genuinely tied to the same electrical bus or whether the strip has more than one isolated group side
+  by side. **Do not bridge or rewire anything on that strip without knowing what's already tied
+  together** - MC2E's Cresnet leg and whatever feeds the ST-IO from the AADS's leg are two separate
+  buses that happen to run through the same cabinet, and joining them could cause real problems.
 - The AADS's RS-232 and IR ports, which Crestron's own documentation calls out as intended for
   "non-Crestron devices ranging from CD changers to security systems." The AADS's currently loaded
   program includes an `.ird` IR driver database file, so this port is plausibly in active use for
   something, not just present unused.
 
-Until the panel make and model are known and its wiring is traced, no integration recommendation can be
-made here. Common panels (Honeywell/Resideo, DSC, Qolsys, Interlogix/GE) each have different Home
-Assistant integration stories, ranging from a native cloud integration to nothing usable without an
-add-on bridge. This is the top verification item below because it blocks a decision, not because it is
-hard.
+**Brand confirmed: DSC.** Visible on the faceplate of the pantry wall panel. The exact model is still
+unknown; the faceplate doesn't come off easily and identifying it further is deferred for now. DSC
+covers a wide range of panels (PowerSeries, Neo, and older lines) with different Home Assistant
+integration stories, so the recommendation below still waits on the model.
+
+Until the exact model is known and the ST-IO's wiring is worked out, no integration recommendation can
+be made here. Other common panel families (Honeywell/Resideo, Qolsys, Interlogix/GE) are ruled out now
+that the brand is confirmed. This is the top verification item below because it blocks a decision, not
+because it is hard.
 
 ## HVAC: independent of Crestron
 
@@ -429,16 +473,20 @@ or a dry-contact relay approach through a device like the ST-IO, if it turns out
 - [x] Get a keypad model number. Confirmed **CNX-B8**, 9 units, via `REPORTCRESNET`, no wall box opened.
 - [x] Get a room map for the keypads and lighting modules. Confirmed via each program's `.dsc`
       descriptor file: 9 keypads across 7 rooms, all 7 lighting modules centralized in the garage.
-- [ ] Identify the alarm panel make and model, and physically trace what lands on each of the ST-IO's
-      4 inputs (confirmed all in contact-closure mode) and 8 relay outputs, and on the AADS's RS-232/IR
-      ports. The AADS's `.ird` IR driver file is not a usable shortcut for this: it is a compiled binary
-      format, unreadable from the console without SIMPL Windows.
+- [ ] Identify the alarm panel make and model (wall panel in the kitchen pantry), and identify what
+      lands on each of the ST-IO's 4 inputs (confirmed all in contact-closure mode) and 8 relay outputs,
+      in its living room AV cabinet. A continuous wire trace between the two isn't possible, the run is
+      inside walls, so this means checking both ends independently: labels, wire characteristics, and
+      the ST-IO's own front-panel LEDs correlated against triggering known alarm zones one at a time,
+      rather than following one physical cable. The AADS's `.ird` IR driver file is not a usable
+      shortcut either: it is a compiled binary format, unreadable from the console without SIMPL
+      Windows.
 - [ ] Identify the exact Lennox thermostat model installed.
 - [ ] Count how many audio zones and line inputs are actually in active use on the AADS today. Not
       answerable via telnet: the `.fp2` front-panel data file turned out to be generic firmware menu
       strings, not project-specific zone names. The practical path is to read the zone/source list
       directly off a TSW-752's audio page (fastest, shows what the live program has configured), then
-      check the AADS's rear terminal blocks in the garage rack for which zone and line-input terminals
+      check the AADS's rear terminal blocks, in its living room audio cabinet, for which zone and line-input terminals
       actually have wire landed on them (configured vs. physically wired can differ), and ideally test
       each zone end to end for actual sound before finalizing a replacement BOM.
 - [ ] Decide how the ST-IO keeps functioning once the AADS, its current Cresnet bus master, is
