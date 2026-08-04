@@ -22,10 +22,13 @@ follows from those constraints.
 - A Lennox HVAC system, confirmed to run on its own thermostat and not wired into Crestron at all.
 - An alarm system of unknown make, with an unknown tie-in to Crestron (or lack of one).
 
-The touch panels are known to talk to the AADS rather than directly to the MC2E. Whether an XSIG
-bridge exists between the AADS and the MC2E is unknown. There is no SIMPL Windows, VTPro-e, or
-Crestron Toolbox license or access available, and none is assumed anywhere in this plan except where
-explicitly called out as a one-time paid task.
+This is the inventory as originally described, from memory, before any device was queried directly.
+"Direct verification" below corrects several of these counts against what the bus itself reports: the
+wall plate count and model, and the CLX-4HSW4 count.
+
+The touch panels are known to talk to the AADS rather than directly to the MC2E. There is no SIMPL
+Windows, VTPro-e, or Crestron Toolbox license or access available, and none is assumed anywhere in this
+plan except where explicitly called out as a one-time paid task.
 
 ## Evaluating the three prior notes
 
@@ -80,6 +83,74 @@ Despite the alarm system and HVAC both being explicit goals, none of the three p
 either one. This document treats both as open tracks that need their own investigation rather than
 extensions of the audio/lighting work.
 
+## Direct verification: what's actually on the wire (2026-08-04)
+
+Telnet access to both the MC2E and the AADS confirmed several things the
+evaluation above could only flag as unverified. Both consoles are reachable on port 23 with no password
+prompt at all, despite `INFO` reporting password support as enabled on both units. Anyone with LAN
+access can currently reach either console unauthenticated. That is worth fixing independently of
+everything else in this plan.
+
+### MC2E
+
+- A real, named, actively running program is loaded: `Gale Favela 11-14-08`, present on flash since
+  8-23-11, using 21,280 of 131,072 bytes of NVRAM. This settles the open question from the evaluation
+  above: the MC2E is not a blank box waiting for logic, it holds live lighting logic today, and has been
+  running continuously for 22+ days as of this check.
+- MC2E reports itself as the IP master (`IP Masters: 1`), with a live, `ONLINE` CIP connection to the
+  AADS over port 41794. The intersystem link between the two boxes exists and is active right now, not
+  merely plausible.
+- `REPORTCRESNET` enumerates MC2E's Cresnet leg directly, no sniffing hardware required:
+
+  | Cresnet ID | Model | Count | Notes |
+  | :--- | :--- | :--- | :--- |
+  | 62, 63, 64, 65, 66, 67, 6A, 6D, 6F | CNX-B8 | 9 | The wall plates. Model identified: **CNX-B8**. |
+  | 70, 71, 72 | CLX-1DIM8 | 3 | Matches original inventory. |
+  | 73, 75, 76 | CLX-1DIM4 | 3 | Not in the original inventory; discovered here. |
+  | 74 | CLX-4HSW4 | 1 | Only one confirmed on this leg. |
+
+  This bus-reported inventory supersedes the memory-based counts used earlier in this document. No
+  ST-IO and no second CLX-4HSW4 appear on this leg; see below for where the ST-IO actually lives.
+
+### AADS
+
+- A separate, newer program is loaded: `Favela v4`, dated 11-16-19, eight years after the MC2E's load.
+  Same integrator name, later job. The `.ird` (IR driver database) and `.fp2` (front-panel data) files
+  loaded alongside it match Crestron's own documentation of the AADS using its IR/RS-232 ports and LCD
+  front panel.
+- AADS reports `IP Masters: 0`. It is not the master of the intersystem IP relationship; that role
+  belongs to the MC2E, per the MC2E's own report above. AADS runs its own local program on its own
+  separate Cresnet leg, but the earlier notes' framing of the AADS as the "primary" logic location does
+  not hold up on its own: it is a peer with local logic, not the master of the pair.
+- AADS's IP table has 8 entries. One is the live MC2E link (mirrored from the MC2E side, same CIP_ID 5).
+  The other seven are `Gway` (gateway) entries, all pointing at loopback (127.0.0.1), three reported
+  online and four offline. These look like Adagio Composer's internal per-room/system slots rather than
+  external devices, but that reading is not confirmed; it is flagged here as an observation, not a fact.
+- `REPORTCRESNET` on the AADS's leg returns exactly one device:
+
+  ```
+  0A: ST-IO [v5.2], INPUT MODE: IN1=C, IN2=C, IN3=C, IN4=C
+  ```
+
+  The ST-IO's Cresnet leg is driven by the AADS, not the MC2E. All four of its inputs are configured in
+  contact-closure mode, consistent with the alarm/dry-contact hypothesis in the evaluation above, though
+  which physical contacts are wired to which input, and what the eight relay outputs drive, is still
+  unknown and still requires physical tracing.
+
+Between the two legs, only one CLX-4HSW4 has turned up, against an originally remembered count of two.
+It is not on the MC2E's leg or the AADS's leg. It may not exist, it may be powered off, or it may be
+somewhere neither of these two processors can see. Treat the count as one confirmed, one unresolved,
+not two, until it turns up somewhere.
+
+### What this changes in the plan
+
+The Cresnet lighting bus and the ST-IO turn out to be on two physically separate legs with two separate
+bus masters. Decommissioning the AADS does not just remove audio functionality: it removes the ST-IO's
+bus master, and whatever the ST-IO is wired to (most likely alarm-related, still unconfirmed) goes dark
+with it, unless the ST-IO is rewired onto the MC2E's Cresnet leg before the AADS is pulled, or given some
+other replacement I/O path. This is now a hard dependency of the AADS replacement work below, not an
+optional follow-up.
+
 ## Lighting: what to do about the Cresnet bus
 
 The CLX-1DIM8 and CLX-4HSW4 modules are staying, and they only speak Cresnet. That means something
@@ -117,7 +188,10 @@ Tap the Cresnet bus Y/Z lines with a USB-to-RS-485 adapter, use CresnetMon (the 
 fabricated one) to observe traffic, and reverse engineer enough of the frame format to build a
 from-scratch bridge that can both read keypad/module status and write dimmer/switch commands to the
 CLX modules. This removes the MC2E and the AADS entirely and gives Home Assistant sole authority over
-the bus, with no ongoing Crestron software dependency of any kind.
+the bus, with no ongoing Crestron software dependency of any kind. The device inventory itself, which
+Cresnet ID maps to which model, no longer needs to be discovered by sniffing; it is already known from
+`REPORTCRESNET` above. What is still unknown, and still requires real sniffing, is the command frame
+format: what bytes actually tell a CLX-1DIM8 to set a channel to a given level.
 
 The risk profile is real, not theoretical. Cresnet is not publicly documented at the frame level, only
 at the physical layer (RS-485, baud rate, wiring). CresnetMon confirms the traffic is observable but
@@ -143,11 +217,11 @@ already being disturbed and the CLX modules are the only thing left on the bus w
 the bus bypass at that point also means the reverse engineering effort only has to cover CLX command
 frames, not the full keypad event vocabulary that would otherwise become dead weight.
 
-Before spending money on Path A, verify via Telnet (not Toolbox) whether the MC2E currently holds any
-keypad logic at all, or whether it is entirely on the AADS as the prior notes speculated. If all the
-lighting logic actually lives on the AADS, replacing the AADS without capturing that logic first could
-sever lighting control before the XSIG bridge is in place. This is listed in the verification checklist
-below.
+Verified: the MC2E does hold live lighting logic today (see "Direct verification" above), so replacing
+the AADS will not sever lighting control. The `REPORTCRESNET` output also already provides the full
+device inventory for MC2E's leg (model and Cresnet ID for every keypad and CLX module), which is the
+same bus-mapping step the prior notes' sniffing walkthrough proposed doing with a USB-to-RS-485 adapter.
+That step is done; what remains for Path A is scoping and hiring the join-mapping program itself.
 
 ### Rejected: replacing the CLX modules too
 
@@ -165,6 +239,13 @@ into 8 ohms, a matrix switcher accepting up to 10 stereo line inputs, a base cap
 zones (expandable via AAE units), dual AM/FM tuners, and IR/RS-232 ports used to interface non-Crestron
 gear including security equipment. Removing it without replacement means dead speakers: no
 amplification and no input routing.
+
+Confirmed via direct verification above: the ST-IO's Cresnet leg is driven by the AADS, not the MC2E.
+Pulling the AADS without a plan for the ST-IO takes down whatever the ST-IO's 8 relays and 4 inputs are
+wired to, alarm-related or not. The options are to physically move the ST-IO onto the MC2E's Cresnet
+leg before the AADS comes out, or to replace the ST-IO's function with something HA-native (a relay/
+contact board on GPIO or ESPHome, for instance) at the same time. Either way, this has to be resolved
+before, not after, the AADS is decommissioned.
 
 | Option | Hardware | Zone model | Fit |
 | :--- | :--- | :--- | :--- |
@@ -214,12 +295,11 @@ proceed on its own schedule.
 
 ## Wall keypads: deferred
 
-The seven unknown-model keypads stay for now. When the replacement phase happens, it should be
-combined with the Path B Cresnet bypass discussed above, since both involve disturbing the same
-low-voltage wiring at the same locations. Before that phase starts, get the actual model number off
-one keypad (there is normally a sticker on the back plate, visible after removing the cover from the
-wall box) so the replacement hardware and any interim Cresnet decode work is scoped to the real device,
-not the "ancient wall plate" placeholder used in this document.
+Confirmed via direct verification above: there are 9 keypads on the bus, not 7, and the model is
+**CNX-B8**. Both facts came from `REPORTCRESNET` with no need to open a wall box. The keypads stay for
+now. When the replacement phase happens, it should be combined with the Path B Cresnet bypass discussed
+above, since both involve disturbing the same low-voltage wiring at the same locations, and by that
+point the model and count are already known well enough to scope replacement hardware.
 
 ## Alarm system: status unknown
 
@@ -228,8 +308,14 @@ in the current hardware and both need to be physically checked before any part o
 
 - The ST-IO's 8 relay outputs and 4 analog/digital inputs, which are exactly the kind of dry-contact
   interface an alarm panel would use for a Crestron tie-in (arm/disarm relay, zone status contacts).
+  Confirmed present, powered, and on the AADS's Cresnet leg (not the MC2E's); all four inputs are
+  configured in contact-closure mode, which is consistent with this hypothesis but does not confirm it.
+  What is still unknown is which physical contacts land on which of the four inputs, and what the eight
+  relay outputs actually drive.
 - The AADS's RS-232 and IR ports, which Crestron's own documentation calls out as intended for
-  "non-Crestron devices ranging from CD changers to security systems."
+  "non-Crestron devices ranging from CD changers to security systems." The AADS's currently loaded
+  program includes an `.ird` IR driver database file, so this port is plausibly in active use for
+  something, not just present unused.
 
 Until the panel make and model are known and its wiring is traced, no integration recommendation can be
 made here. Common panels (Honeywell/Resideo, DSC, Qolsys, Interlogix/GE) each have different Home
@@ -252,9 +338,11 @@ or a dry-contact relay approach through a device like the ST-IO, if it turns out
 
 ## Plan of attack
 
-1. **Verify before spending anything.** Telnet into the MC2E and AADS to check where lighting logic
-   actually lives; identify the alarm panel make/model and trace its wiring; identify the actual Lennox
-   thermostat model; get the keypad model number; count the AADS's actively used audio zones and inputs.
+1. **Finish verifying before spending anything.** MC2E/AADS telnet access and the keypad model are done
+   (see "Direct verification" above). Still open: identify the alarm panel make/model and trace its
+   wiring, including the ST-IO; identify the actual Lennox thermostat model; count the AADS's actively
+   used audio zones and inputs; decide how the ST-IO survives the AADS's removal; put a password on both
+   consoles.
 2. **Start the HVAC integration immediately.** It is fully decoupled and low-risk; install and
    configure `lennoxs30` (or the appropriate alternative once the thermostat model is confirmed).
 3. **Commission the Path A XSIG bridge.** Scope and hire a one-time programming job for the MC2E,
@@ -271,12 +359,19 @@ or a dry-contact relay approach through a device like the ST-IO, if it turns out
 
 ## Open verification checklist
 
-- [ ] Telnet into the MC2E and the AADS; capture `ver` and `iptable` (or equivalent) output to confirm
-      where lighting logic currently resides.
-- [ ] Identify the alarm panel make and model, and trace whatever is landed on the ST-IO's relays and
-      inputs and on the AADS's RS-232/IR ports.
+- [x] Telnet into the MC2E and the AADS to confirm where lighting logic resides. Done 2026-08-04; see
+      "Direct verification" above. Both hold live, independent programs; MC2E is the IP master and owns
+      the lighting Cresnet leg, AADS is a peer and owns the ST-IO's Cresnet leg.
+- [x] Get a keypad model number. Confirmed **CNX-B8**, 9 units, via `REPORTCRESNET`, no wall box opened.
+- [ ] Identify the alarm panel make and model, and physically trace what lands on each of the ST-IO's
+      4 inputs (confirmed all in contact-closure mode) and 8 relay outputs, and on the AADS's RS-232/IR
+      ports.
 - [ ] Identify the exact Lennox thermostat model installed.
-- [ ] Get a keypad model number from the sticker behind one of the seven wall plates.
 - [ ] Count how many audio zones and line inputs are actually in active use on the AADS today.
+- [ ] Decide how the ST-IO keeps functioning once the AADS, its current Cresnet bus master, is
+      decommissioned: rewire it onto the MC2E's leg, or replace it with something else entirely.
 - [ ] Get quotes from at least one independent Crestron programmer for the scoped Path A join-mapping
       job, to confirm the one-time cost assumption in this plan.
+- [ ] Set a console password on both the MC2E and the AADS, or otherwise restrict access to port 23;
+      both are currently reachable with no authentication at all despite password support being
+      available.
