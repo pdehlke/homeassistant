@@ -1,0 +1,12 @@
+[DSC0003]
+Slot : 5.ID : 0A;17;;ST-IO;;ST-IO;-9
+Slot : 5.ID : E1;18;;CHV-TSTATA,CHV-THSTATA,;;CHV-TSTAT/CHV-THSTAT (v2.0);-12
+Slot : 5.ID : E2;25;;CHV-TSTATA,CHV-THSTATA,;;CHV-TSTAT/CHV-THSTAT (v2.0);-12
+Slot : 6.IP-ID : 05;33;;;;Ethernet Intersystem Communications;-12
+Slot : 6.IP-ID : 11;34;Touchpanels(Enet);TSW-752;;TSW-752;-250
+Slot : 6.IP-ID : 12;38;Touchpanels(Enet);TSW-752;;TSW-752;-250
+Slot : 6.IP-ID : 13;42;Touchpanels(Enet);TSW-752;;TSW-752;-250
+Slot : 6.IP-ID : 14;46;Touchpanels(Enet);TSW-752;;TSW-752;-250
+Slot : 6.IP-ID : 15;50;Touchpanels(Enet);Crestron_App;;Crestron App;-250
+Slot : 6.IP-ID : 16;53;Touchpanels(Enet);Crestron_App;;Crestron App;-250
+Slot : 6.IP-ID : 51;56;;CEN-IPOD,CEN-IDOC;;CEN-IDOC;-11

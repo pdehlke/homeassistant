@@ -157,6 +157,9 @@ prompt at all, despite `INFO` reporting password support as enabled on both unit
 access can currently reach either console unauthenticated. That is worth fixing independently of
 everything else in this plan.
 
+The raw `.dsc`/`.dip`/manifest text pulled from both consoles via `TYPE` is saved as-is in
+[`crestron-dumps/`](crestron-dumps/), for reference beyond the excerpts and tables below.
+
 ### MC2E
 
 - A real, named, actively running program is loaded: `Gale Favela 11-14-08`, present on flash since
