@@ -156,14 +156,28 @@ everything else in this plan.
   identify the other seven entries, which are real devices, not internal placeholders as first guessed
   from the loopback addresses in the static IP table:
 
-  | IP-ID | Device type | Notes |
-  | :--- | :--- | :--- |
-  | 11, 12, 13, 14 | TSW-752 | The four physical touch panels, confirmed live via `WHO` at real LAN addresses with ~1 day 20 hour uptimes. |
-  | 15, 16 | Crestron App | Virtual touch panel slots for the Crestron mobile/tablet app, defined but not confirmed still in use. |
-  | 51 | CEN-IDOC | A Crestron iPod dock, an audio source not previously known about. |
+  | IP-ID | Device type | Room | Notes |
+  | :--- | :--- | :--- | :--- |
+  | 11 | TSW-752 | Primary Bedroom | Confirmed live via `WHO`. Room per homeowner; not recorded in the AADS's own `.dsc`, which only labels these four generically as `TSW-752` with no location field. |
+  | 12 | TSW-752 | Kitchen | See "SD card restore" note below. |
+  | 13 | TSW-752 | Office | Confirmed live via `WHO`. |
+  | 14 | TSW-752 | Guest Room | Confirmed live via `WHO`. |
+  | 15, 16 | Crestron App | - | Virtual touch panel slots for the Crestron mobile/tablet app, defined but not confirmed still in use. |
+  | 51 | CEN-IDOC | - | A Crestron iPod dock, an audio source not previously known about. |
 
   This directly confirms, from the program's own device table rather than architectural inference, that
-  the four TSW-752 panels register with the AADS over Ethernet, not with the MC2E.
+  the four TSW-752 panels register with the AADS over Ethernet, not with the MC2E. The room labels
+  above are not part of that confirmation; they came from the homeowner, since the AADS's program does
+  not record them the way the MC2E's keypad entries record room names.
+
+  **SD card restore incident:** two of the four TSW-752s had failed SD cards, restored by `dd`-cloning
+  one of the two surviving working panels' card onto the dead ones. That cloned the source panel's CID
+  (IP-ID) setting along with it: for over a day after the restore, `WHO` showed two distinct physical
+  panels both registered live as IP-ID 14 simultaneously (192.168.4.83 and 192.168.4.100), while IP-ID
+  12 never showed a live connection at all. Moving the intruding panel's CID to 12, the empty slot,
+  resolved it; all four IDs now show distinct live addresses with no collision. Worth remembering for
+  any future SD card recovery on these panels: the network identity travels with the card image, and
+  restoring from a clone will need a manual CID fix afterward, not just a card swap.
 - `REPORTCRESNET` on the AADS's leg returns exactly one live device:
 
   ```
