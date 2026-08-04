@@ -6,8 +6,9 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 - [fridge-failure-alert.md](fridge-failure-alert.md)
 
-  The automation that alerts when the fridge stops drawing power. How it works, why the
-  threshold is three hours, and a defect that stops it firing most of the time.
+  The automation that alerts when the fridge stops drawing power. How it works, why it
+  measures accumulated running time instead of using a state trigger, and what is still
+  needed to get the alert onto a phone.
 
 - [mac-mini-migration.md](mac-mini-migration.md)
 
