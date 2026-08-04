@@ -18,7 +18,7 @@ follows from those constraints.
 - Four TSW-752 touch panels.
 - Seven wall plates with eight labeled switches each, model unknown.
 - Three CLX-1DIM8 dimmer modules.
-- Two CLX-4HSW4 switch modules.
+- One CLX-4HSW4 switch module (originally remembered as two; corrected below).
 - A Lennox HVAC system, confirmed to run on its own thermostat and not wired into Crestron at all.
 - An alarm system of unknown make, with an unknown tie-in to Crestron (or lack of one).
 
@@ -111,10 +111,10 @@ everything else in this plan.
   | 62, 63, 64, 65, 66, 67, 6A, 6D, 6F | CNX-B8 | 9 | The wall plates. Model identified: **CNX-B8**. |
   | 70, 71, 72 | CLX-1DIM8 | 3 | Matches original inventory. |
   | 73, 75, 76 | CLX-1DIM4 | 3 | Not in the original inventory; discovered here. |
-  | 74 | CLX-4HSW4 | 1 | Only one confirmed on this leg. |
+  | 74 | CLX-4HSW4 | 1 | The correct count; two was a misremembering of the rack layout. |
 
   This bus-reported inventory supersedes the memory-based counts used earlier in this document. No
-  ST-IO and no second CLX-4HSW4 appear on this leg; see below for where the ST-IO actually lives.
+  ST-IO appears on this leg; see below for where the ST-IO actually lives.
 - The program's descriptor file (`TYPE <program>.dsc` at the console) goes further and names a room for
   every device, resolving the keypad count discrepancy in the process:
 
@@ -182,10 +182,8 @@ everything else in this plan.
   but the stale device definitions are still sitting in the compiled program and could be removed
   whenever the program is next touched, purely for cleanliness.
 
-Between the two legs, only one CLX-4HSW4 has turned up, against an originally remembered count of two.
-It is not on the MC2E's leg or the AADS's leg. It may not exist, it may be powered off, or it may be
-somewhere neither of these two processors can see. Treat the count as one confirmed, one unresolved,
-not two, until it turns up somewhere.
+Only one CLX-4HSW4 exists. The originally remembered count of two was a misremembering of the garage
+rack layout, confirmed with the house's owner. One CLX-4HSW4 is the correct, closed count.
 
 ### What this changes in the plan
 
@@ -302,7 +300,8 @@ Either option lets Home Assistant own per-zone volume, mute, source routing, and
 was tied to hardware being removed anyway, not to Crestron control specifically).
 
 The right choice depends on how many zones are actually landed on the AADS today and how source
-routing is actually used, which is one of the open verification items below.
+routing is actually used. This is not answerable remotely; see the verification checklist below for
+the practical method (read the zone/source list off a TSW-752, then check the rack's rear terminals).
 
 ### Rejected: keeping the AADS as a dumb amp only
 
@@ -421,7 +420,13 @@ or a dry-contact relay approach through a device like the ST-IO, if it turns out
       ports. The AADS's `.ird` IR driver file is not a usable shortcut for this: it is a compiled binary
       format, unreadable from the console without SIMPL Windows.
 - [ ] Identify the exact Lennox thermostat model installed.
-- [ ] Count how many audio zones and line inputs are actually in active use on the AADS today.
+- [ ] Count how many audio zones and line inputs are actually in active use on the AADS today. Not
+      answerable via telnet: the `.fp2` front-panel data file turned out to be generic firmware menu
+      strings, not project-specific zone names. The practical path is to read the zone/source list
+      directly off a TSW-752's audio page (fastest, shows what the live program has configured), then
+      check the AADS's rear terminal blocks in the garage rack for which zone and line-input terminals
+      actually have wire landed on them (configured vs. physically wired can differ), and ideally test
+      each zone end to end for actual sound before finalizing a replacement BOM.
 - [ ] Decide how the ST-IO keeps functioning once the AADS, its current Cresnet bus master, is
       decommissioned: rewire it onto the MC2E's leg, or replace it with something else entirely.
 - [ ] Get quotes from at least one independent Crestron programmer for the scoped Path A join-mapping
