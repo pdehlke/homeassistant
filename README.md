@@ -4,12 +4,18 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 ## Contents
 
+- [crestron-strategy.md](crestron-strategy.md)
+
+  The migration plan for lighting, audio, the alarm system, and HVAC from the existing Crestron
+  system (MC2E, AADS, CLX-* lighting modules, TSW-752 panels) to Home Assistant. Options
+  considered per subsystem, what was rejected and why, and the phased plan of attack.
+
 - [crestron-migration.md](crestron-migration.md)
 
-  Migrating lighting, audio, the alarm system, and HVAC from the existing Crestron system (MC2E,
-  AADS, CLX-* lighting modules, TSW-752 panels) to Home Assistant. Evaluates a prior AI-generated
-  set of notes against Crestron's own documentation, separates confirmed claims from a fabricated
-  tool reference, and lays out a phased plan.
+  The investigation behind the strategy above: hardware inventory, evaluation of a prior
+  AI-generated set of notes against Crestron's own documentation (separating confirmed claims
+  from a fabricated tool reference), and direct verification done over telnet and by physical
+  inspection.
 
 - [fridge-failure-alert.md](fridge-failure-alert.md)
 
