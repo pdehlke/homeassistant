@@ -55,11 +55,15 @@ appears to be fabricated outright.
 
 The claim that touch panel commands are IP-targeted at the AADS and cross to the MC2E via XSIG/ISC is
 architecturally plausible and consistent with how Adagio-plus-lighting systems were commonly built,
-but it has not been confirmed against this specific installation. The same goes for the claim that the
-AADS holds the primary SIMPL logic rather than the MC2E. Both are testable without any Crestron
+but it had not been confirmed against this specific installation. The same went for the claim that the
+AADS holds the primary SIMPL logic rather than the MC2E. Both were testable without any Crestron
 software: 2-Series processors expose a Telnet console (standard commands like `ver` and `iptable`)
-that needs only network access, not a Toolbox license. This is listed as a verification step below
-rather than treated as settled.
+that needs only network access, not a Toolbox license.
+
+**Update:** both were checked directly. See "Direct verification" below. The touch panel/XSIG claim
+turned out to be correct in substance, though the specifics (which box holds "primary" logic) turned
+out more nuanced: both processors hold real, independent, live logic, and the IP link between them is
+confirmed by name in both programs' own device tables, not just plausible.
 
 ### Fabricated
 
@@ -111,6 +115,29 @@ everything else in this plan.
 
   This bus-reported inventory supersedes the memory-based counts used earlier in this document. No
   ST-IO and no second CLX-4HSW4 appear on this leg; see below for where the ST-IO actually lives.
+- The program's descriptor file (`TYPE <program>.dsc` at the console) goes further and names a room for
+  every device, resolving the keypad count discrepancy in the process:
+
+  | Cresnet ID | Room |
+  | :--- | :--- |
+  | 62, 66 | 201 - Master Bed (2 keypads) |
+  | 63 | 104 - Outdoor Kitchen |
+  | 64, 6F | 101 - Kitchen (2 keypads) |
+  | 65 | 202 - Master Bathroom |
+  | 67 | 103 - Foyer |
+  | 6A | 105 - Great Room |
+  | 6D | 203 - Studio |
+
+  Seven rooms, two of them with two keypads each, which is exactly where the original "seven wall
+  plates" came from: that was a room count, not a unit count, and both turn out to be correct.
+
+  Every one of the seven lighting modules (all three CLX-1DIM8s, all three CLX-1DIM4s, and the one
+  confirmed CLX-4HSW4) is labeled **106 - Garage**. All lighting control hardware is centralized in one
+  physical location, which matters directly for Path B: there is one place to go to tap the bus, not a
+  run through the whole house.
+- The same descriptor also defines an XPanel (Crestron's software/virtual touch panel) assigned to
+  IP-ID 3 and the Kitchen, currently `OFFLINE` per the live IP table. It exists as a defined option, not
+  a live one.
 
 ### AADS
 
@@ -122,11 +149,22 @@ everything else in this plan.
   belongs to the MC2E, per the MC2E's own report above. AADS runs its own local program on its own
   separate Cresnet leg, but the earlier notes' framing of the AADS as the "primary" logic location does
   not hold up on its own: it is a peer with local logic, not the master of the pair.
-- AADS's IP table has 8 entries. One is the live MC2E link (mirrored from the MC2E side, same CIP_ID 5).
-  The other seven are `Gway` (gateway) entries, all pointing at loopback (127.0.0.1), three reported
-  online and four offline. These look like Adagio Composer's internal per-room/system slots rather than
-  external devices, but that reading is not confirmed; it is flagged here as an observation, not a fact.
-- `REPORTCRESNET` on the AADS's leg returns exactly one device:
+- AADS's IP table has 8 entries. One is the live MC2E link (mirrored from the MC2E side, same CIP_ID 5),
+  labeled `Ethernet Intersystem Communications` in both programs' own descriptor files. That label,
+  present on both ends and both `ONLINE`, is the confirmation that the earlier notes' XSIG/ISC
+  hypothesis was correct in substance. The `WHO` console command and the program descriptor together
+  identify the other seven entries, which are real devices, not internal placeholders as first guessed
+  from the loopback addresses in the static IP table:
+
+  | IP-ID | Device type | Notes |
+  | :--- | :--- | :--- |
+  | 11, 12, 13, 14 | TSW-752 | The four physical touch panels, confirmed live via `WHO` at real LAN addresses with ~1 day 20 hour uptimes. |
+  | 15, 16 | Crestron App | Virtual touch panel slots for the Crestron mobile/tablet app, defined but not confirmed still in use. |
+  | 51 | CEN-IDOC | A Crestron iPod dock, an audio source not previously known about. |
+
+  This directly confirms, from the program's own device table rather than architectural inference, that
+  the four TSW-752 panels register with the AADS over Ethernet, not with the MC2E.
+- `REPORTCRESNET` on the AADS's leg returns exactly one live device:
 
   ```
   0A: ST-IO [v5.2], INPUT MODE: IN1=C, IN2=C, IN3=C, IN4=C
@@ -135,7 +173,14 @@ everything else in this plan.
   The ST-IO's Cresnet leg is driven by the AADS, not the MC2E. All four of its inputs are configured in
   contact-closure mode, consistent with the alarm/dry-contact hypothesis in the evaluation above, though
   which physical contacts are wired to which input, and what the eight relay outputs drive, is still
-  unknown and still requires physical tracing.
+  unknown and still requires physical tracing. Pulling the AADS's IR driver file for a named alarm-panel
+  driver string was a dead end; it is a compiled binary format, not readable as text from the console.
+- The AADS's program also defines two Crestron thermostats, `CHV-TSTAT`/`CHV-THSTAT`, at Cresnet IDs E1
+  and E2, on the same leg as the ST-IO. Neither showed up in `REPORTCRESNET`, so neither is live right
+  now. Confirmed with the house's owner: these are leftovers from Crestron-native thermostats that
+  predated the current Lennox iComfort setup and were since replaced. They are not a live dependency,
+  but the stale device definitions are still sitting in the compiled program and could be removed
+  whenever the program is next touched, purely for cleanliness.
 
 Between the two legs, only one CLX-4HSW4 has turned up, against an originally remembered count of two.
 It is not on the MC2E's leg or the AADS's leg. It may not exist, it may be powered off, or it may be
@@ -295,11 +340,13 @@ proceed on its own schedule.
 
 ## Wall keypads: deferred
 
-Confirmed via direct verification above: there are 9 keypads on the bus, not 7, and the model is
-**CNX-B8**. Both facts came from `REPORTCRESNET` with no need to open a wall box. The keypads stay for
-now. When the replacement phase happens, it should be combined with the Path B Cresnet bypass discussed
-above, since both involve disturbing the same low-voltage wiring at the same locations, and by that
-point the model and count are already known well enough to scope replacement hardware.
+Confirmed via direct verification above: there are 9 keypads (model **CNX-B8**) across 7 rooms, two
+rooms with two keypads each, which is exactly where the original "seven" came from. The room map for
+each keypad is in "Direct verification" above; nothing here required opening a wall box. The keypads
+stay for now. When the replacement phase happens, it should be combined with the Path B Cresnet bypass
+discussed above, since both involve disturbing the same low-voltage wiring at the same locations, and by
+that point the model, count, and room assignments are already known well enough to scope replacement
+hardware per room.
 
 ## Alarm system: status unknown
 
@@ -328,6 +375,10 @@ hard.
 Confirmed the Lennox HVAC system runs on its own thermostat, with no Crestron tie-in. This makes it the
 most decoupled item in this whole plan: it can be worked on immediately, in parallel with everything
 else, since removing the AADS or touching the Cresnet bus has no bearing on it.
+
+The AADS's program does still define two Crestron-native thermostats (see "Direct verification" above)
+from before the Lennox system was installed. They are confirmed stale, not live, and not a dependency
+of anything in this section.
 
 If the installed thermostat is a Lennox iComfort S30, S40, E30, or M30, the
 [lennoxs30](https://github.com/PeteRager/lennoxs30) custom integration (installable via HACS) supports
@@ -363,9 +414,12 @@ or a dry-contact relay approach through a device like the ST-IO, if it turns out
       "Direct verification" above. Both hold live, independent programs; MC2E is the IP master and owns
       the lighting Cresnet leg, AADS is a peer and owns the ST-IO's Cresnet leg.
 - [x] Get a keypad model number. Confirmed **CNX-B8**, 9 units, via `REPORTCRESNET`, no wall box opened.
+- [x] Get a room map for the keypads and lighting modules. Confirmed via each program's `.dsc`
+      descriptor file: 9 keypads across 7 rooms, all 7 lighting modules centralized in the garage.
 - [ ] Identify the alarm panel make and model, and physically trace what lands on each of the ST-IO's
       4 inputs (confirmed all in contact-closure mode) and 8 relay outputs, and on the AADS's RS-232/IR
-      ports.
+      ports. The AADS's `.ird` IR driver file is not a usable shortcut for this: it is a compiled binary
+      format, unreadable from the console without SIMPL Windows.
 - [ ] Identify the exact Lennox thermostat model installed.
 - [ ] Count how many audio zones and line inputs are actually in active use on the AADS today.
 - [ ] Decide how the ST-IO keeps functioning once the AADS, its current Cresnet bus master, is
