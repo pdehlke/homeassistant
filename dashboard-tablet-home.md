@@ -183,6 +183,45 @@ regeneration keeps the home icon automatically.
 Confirmed live: tapping the home icon from the Lights dashboard, logged in as Tablet, returned to
 `/tablet-home/home`.
 
+## `hide_header` hides more than the header: two more gaps found by actually using it
+
+Pete tested this logged in as Tablet before a physical tablet existed to mount, using a resized
+desktop browser (see "Testing without the physical tablet" below), and found two things the
+home-icon fix didn't cover. Both come from the same root cause: `hide_header` in kiosk-mode hides
+HA's entire native top app bar, and that bar was quietly carrying two jobs beyond the sidebar
+toggle.
+
+**No way to tell domain dashboards apart.** The view's title (`Lights`, `A/V`, ...) only ever
+rendered in that native bar. With it gone, every domain dashboard's content starts with a floor
+heading ("Main Floor", "Garage") that says nothing about which domain you're in. Fixed with a
+title-only heading section at the top of every level 2 page; full detail in
+[dashboard-navigation-model.md](dashboard-navigation-model.md#level-2-the-area-grid).
+
+**No way back from a leaf.** A subview's back arrow (level 3 to level 2, e.g. "Office Lights" back
+to "Lights") is also native-bar-only, and `rebuild-domain-dashboard.py` never gave leaves a header
+of their own to carry a replacement. Fixed with an explicit full-width back button as the first
+thing on every leaf; full detail in
+[dashboard-navigation-model.md](dashboard-navigation-model.md#level-3-the-leaf).
+
+Both fixes live in `rebuild-domain-dashboard.py` itself, not hand-patched into the live Lights and
+A/V configs, for the same reason the header is preserved rather than recreated: a hand patch would
+have been silently overwritten by the next regeneration. Lennox Home and Alarm System have no
+generator, so their equivalent title headings were added by hand directly, the same drift caveat as
+the rest of their hand-authored content.
+
+### The regeneration that followed dropped `kiosk_mode` itself
+
+Running the newly-fixed `rebuild-domain-dashboard.py` against `lights` and `av` to pick up the two
+fixes above had a side effect: both dashboards lost their `kiosk_mode` block entirely, and Tablet's
+session went back to showing full HA chrome. The generator built its save payload as a bare
+`{"views": [...]}`, which is correct right up until something else starts living at the config
+root, which `kiosk_mode` had, added by hand after the generator was originally written. Nothing in
+the generator knew that key existed, so it vanished on the next whole-config save. Caught by
+re-testing as Tablet immediately after regenerating, not by reading the saved config back, which
+would have looked complete. Fixed in the generator by spreading the live config before overwriting
+`views`, and `kiosk_mode` was restored by hand once. Full account in
+[dashboard-navigation-model.md](dashboard-navigation-model.md#generation).
+
 ## An undocumented HA quirk found while minting the Tablet session
 
 The two-step login flow (`POST /auth/login_flow` then `POST /auth/login_flow/<id>`) failed
@@ -199,18 +238,44 @@ the failure disappear immediately and consistently, in both a raw `curl` reprodu
 actual browser login. Worth knowing for any future script or automation that authenticates in more
 than one request against `homeassistant.local`: use the LAN IP for that specific exchange.
 
+## Testing without the physical tablet
+
+The wall-mount hardware itself (see
+[crestron-strategy.md](crestron-strategy.md#touch-panels-replacing-the-tsw-752s)) is still
+unresolved; testing so far has used an Amazon Fire HD 10 (13th generation, 2023: 1920x1200
+physical, 224ppi, 10.1", on order as of 2026-08-05) as the intended device and a resized desktop
+browser as a stand-in until it arrives.
+
+No official CSS-viewport figure was found for that specific generation. The estimate used, 1280x800
+landscape, comes from a device pixel ratio of about 1.5, which matches community reports for older
+Fire HD 10 generations at similar ppi; it has not been confirmed against the real device's Silk
+browser. Once the tablet is in hand, checking `window.innerWidth` / `window.innerHeight` (or any
+viewport-size page) against this number is worth doing before trusting the 2x2 grid's fit on the
+real hardware.
+
+Logging in as Tablet from a browser has to go through the literal LAN IP,
+`http://192.168.4.125:8123`, not `homeassistant.local`, or the login form 403s; see "An
+undocumented HA quirk" below. Worth checking whether Fire OS's Silk browser resolves the hostname
+the same flaky way; if the real device hits the same wall, it needs pointing at the IP too, or
+DNS/mDNS resolution on this network needs a more durable fix than working around it per script.
+
 ## What was verified
 
 Confirmed by driving the real dashboard on 2026-08-05, logged in as Tablet, not by reading config
 back:
 
 - Logging in as `tablet` lands directly on `/tablet-home/home`, no navigation needed.
-- No sidebar and no top app bar render anywhere in the Tablet session, on Tablet Home or on the
-  Lights dashboard.
+- No sidebar and no top app bar render anywhere in the Tablet session, on any of Tablet Home,
+  Lights, A/V, Lennox Home or Alarm System.
 - Tapping Lights navigates to `/dashboard-lights/lights`; tapping the header's home icon from
   there returns to `/tablet-home/home`.
 - Tapping Alarm does not navigate anywhere; the URL stays on `/tablet-home/home`.
 - The 2x2 grid renders with no scrolling at 1280x800.
+- Each domain dashboard shows its own title ("Lights", "Climate", ...) as in-page content.
+- From Office Lights (a level 3 leaf), the back button reads "Lights" and returns to
+  `/dashboard-lights/lights`.
+- All five dashboards (Tablet Home plus the four domain dashboards) carry a `kiosk_mode` block,
+  re-confirmed after the regeneration that briefly dropped it from Lights and A/V.
 
 Not verified: kiosk-mode's behavior for any other non-admin account, since Tablet is the only one
 that exists. A stray Tablet session from this verification pass was revoked, but the browser-based

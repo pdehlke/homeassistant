@@ -22,14 +22,22 @@ The Home Assistant dashboards therefore mirror the Crestron hierarchy:
 
 | Level | Screen | Contents | Status |
 | :--- | :--- | :--- | :--- |
-| 1 | Root | One card per domain | Not built. The sidebar stands in for it |
+| 1 | Root | One card per domain | Built, see [dashboard-tablet-home.md](dashboard-tablet-home.md) |
 | 2 | Domain | One card per area | Built for lights and A/V |
 | 3 | Leaf | One domain in one area | Built for lights and A/V |
 
-Level 1 is deliberately deferred. The sidebar already lists the domain dashboards, so it does the
-same job with no work, and building the real thing is trivial whenever it is wanted.
+Level 1 was deferred at first. The sidebar already listed the domain dashboards, so it did the same
+job with no work, until [Tablet Home](dashboard-tablet-home.md) needed a real one to put a kiosk
+device's default dashboard on, at which point the sidebar was no longer available to stand in for
+it at all.
 
 ## Level 2, the area grid
+
+The page opens with a title-only heading, the domain name and its icon, no cards under it. This
+exists for the same reason the leaf grew its own back button: kiosk-mode hides HA's native top app
+bar for the [Tablet Home](dashboard-tablet-home.md) user, which is the only other place the view's
+title (`Lights`, `A/V`, ...) would ever render, and without it every domain dashboard's floor
+sections look identical.
 
 Every area gets a card, including areas that contain nothing of that domain. This is on purpose.
 Most rooms have no lights in Home Assistant yet because the Crestron channel mapping is unknown, so
@@ -50,13 +58,20 @@ exactly the information that is most useful during a migration.
 ## Level 3, the leaf
 
 Each populated area gets a subview at `/<dashboard>/area-<area_id>`. Marking it `subview: true`
-keeps it out of the tab bar and gives a back button that returns to level 2.
+keeps it out of the tab bar and gives a back button that returns to level 2, in HA's own top app
+bar. That native back button is invisible to anyone using [Tablet
+Home](dashboard-tablet-home.md), whose kiosk-mode setup hides that whole bar, so the leaf also
+carries its own explicit back button as in-page content, first thing on the page.
 
-The leaf holds three things in order:
+The leaf holds four things in order:
 
-1. Room-wide preset buttons.
-2. Any real scene entities assigned to that area, omitted entirely when there are none.
-3. One tile per entity, each with the appropriate inline control. For lights that is a brightness
+1. A full-width button back to level 2, labelled with the domain title, `m3rf:arrow-back` icon.
+   Its own section, not mixed into the presets, so it reads as navigation rather than a device
+   action. Redundant with the native subview back button for anyone who can see it, but the only
+   way back for anyone who can't.
+2. Room-wide preset buttons.
+3. Any real scene entities assigned to that area, omitted entirely when there are none.
+4. One tile per entity, each with the appropriate inline control. For lights that is a brightness
    slider, so a fixture can be dimmed without leaving the screen.
 
 ### Presets target the area, not the entities
@@ -100,10 +115,22 @@ entities.
 Run it after adding, removing, renaming or re-flooring an area, and after adding entities that
 change whether an area counts as populated.
 
-Two safety behaviours are worth knowing. It copies the level 2 header card verbatim and refuses to
-save if the live config has none, so the hand-authored date, time and weather banner cannot be lost
-by a regeneration. And it writes a timestamped backup of the existing config before every save,
-because a Lovelace save replaces the whole dashboard rather than merging.
+Three safety behaviours are worth knowing. It copies the level 2 header card verbatim and refuses
+to save if the live config has none, so the hand-authored date, time and weather banner cannot be
+lost by a regeneration. It writes a timestamped backup of the existing config before every save,
+because a Lovelace save replaces the whole dashboard rather than merging. And the config it saves
+is the live config spread first, `{**config, "views": [...]}`, not a bare `{"views": [...]}`, so
+any other hand-authored key at the config root survives too.
+
+That last one was a real bug, not a precaution taken in advance. The first version of this script
+built `updated = {"views": [...]}` directly, which is fine as long as `views` is the only thing
+that has ever lived at the config root. It stopped being fine on 2026-08-05, the day
+[dashboard-tablet-home.md](dashboard-tablet-home.md) added a root-level `kiosk_mode` key to the
+Lights and A/V dashboards by hand. The next regeneration of either domain silently dropped it,
+because the header-preservation logic only ever looked inside `views[0]`, never at the config root
+itself. Caught by re-testing the Tablet kiosk user right after the regeneration, not by reading the
+saved config back, which would have shown a config that looked complete. `kiosk_mode` had to be
+restored by hand afterward.
 
 ### Adding a domain
 
@@ -181,6 +208,8 @@ Confirmed by driving the real dashboard on 2026-08-04 rather than by reading the
 
 ## Related
 
+- [dashboard-tablet-home.md](dashboard-tablet-home.md) for level 1, and for why kiosk-mode hiding
+  HA's native chrome is what forced level 2 to grow its own title and level 3 its own back button.
 - [dashboard-header-card.md](dashboard-header-card.md) for the date, time and weather banner the
   level 2 view carries, and the view-type constraint on reusing it elsewhere.
 - [light-entity-strategy.md](light-entity-strategy.md) for how the light entities themselves are
