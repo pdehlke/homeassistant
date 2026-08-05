@@ -187,23 +187,50 @@ Crestron-native thermostat definitions are stale leftovers, not a live dependenc
 most decoupled item in this whole plan: it can be worked on immediately, in parallel with everything
 else, since removing the AADS or touching the Cresnet bus has no bearing on it.
 
-If the installed thermostat is a Lennox iComfort S30, S40, E30, or M30, the
-[lennoxs30](https://github.com/PeteRager/lennoxs30) custom integration (installable via HACS) supports
-both local LAN and Lennox cloud connections and is the direct path into Home Assistant. If the
-installed equipment is an older, non-connected Lennox thermostat instead, this integration does not
-apply and the fallback is a smart thermostat swap (e.g., an Ecobee or similar with native HA support)
-or a dry-contact relay approach through a device like the ST-IO, if it turns out to be free.
+Confirmed: two Lennox iComfort S30 units, named North and South, each its own independent system
+(see [crestron-migration.md](crestron-migration.md#status-as-of-2026-08-04-for-picking-this-back-up)).
+The [lennoxs30](https://github.com/PeteRager/lennoxs30) custom integration is the direct path into
+Home Assistant and, as of October 2023, ships in HACS's default repository list, so no custom repo
+add is needed, just search HACS for "Lennox S30/E30" and install.
+
+The integration supports two connection types per thermostat, configured independently. Local mode is
+confirmed viable for both units: each answers on HTTPS port 443 with a TLS certificate issued to
+Lennox International Inc., a genuine local API endpoint, not just an inference from the router's
+client list (see [crestron-migration.md](crestron-migration.md#status-as-of-2026-08-04-for-picking-this-back-up)).
+
+| Mode | Needs | Trade-off |
+| :--- | :--- | :--- |
+| Local (recommended) | A reserved/static LAN IP for each S30, HTTPS on port 443 (confirmed open on both) | No dependency on Lennox's cloud; the project's own docs note cloud-connected S30s have seen stability problems with power-inverter/diagnostic sensors |
+| Cloud | The Lennox iComfort account email and password | Simpler to set up (no IP reservation), but depends on Lennox's cloud uptime |
+
+Since there are two independent S30 units, this means two separate config-flow instances, one per
+thermostat (North, South), each addressable individually in Home Assistant afterward as separate
+climate entities. The integration's own docs are explicit that **each simultaneous instance, local or
+cloud, needs a distinct `app_id`**; reusing the default across both would cause the two connections to
+collide. If local mode is chosen, each S30 needs a DHCP reservation before setup so its address does
+not move later. If the installed local firmware is old enough to misbehave, a software update on the
+thermostat itself may be needed first; the project's troubleshooting notes call this out for the
+related S40 but do not name a minimum version for the S30 specifically.
+
+**Done (2026-08-04):** `lennoxs30` is installed and live, local mode, one config entry per thermostat.
+Both loaded successfully on the first try and immediately surfaced real, live entities, not
+placeholders. This is the first Crestron-adjacent subsystem actually running through Home Assistant
+rather than just planned. Full detail, including the exact config used and the recovery steps for
+South's still-unreserved DHCP lease, is in
+[lennoxs30-integration.md](lennoxs30-integration.md).
 
 ## Plan of attack
 
-1. **Finish verifying before spending anything.** MC2E/AADS telnet access and the keypad model are done
+1. **Finish verifying before spending anything.** MC2E/AADS telnet access, the keypad model, and the
+   Lennox thermostat model are done
    (see [crestron-migration.md](crestron-migration.md#direct-verification-whats-actually-on-the-wire-2026-08-04)).
-   Still open: identify the alarm panel make/model and trace its wiring, including the ST-IO; identify
-   the actual Lennox thermostat model; count the AADS's actively used audio zones and inputs; decide how
-   the ST-IO survives the AADS's removal; put a password on both consoles. Full list in
+   Still open: identify the alarm panel make/model and trace its wiring, including the ST-IO; count the
+   AADS's actively used audio zones and inputs; decide how the ST-IO survives the AADS's removal; put a
+   password on both consoles. Full list in
    [crestron-migration.md's open verification checklist](crestron-migration.md#open-verification-checklist).
-2. **Start the HVAC integration immediately.** It is fully decoupled and low-risk; install and
-   configure `lennoxs30` (or the appropriate alternative once the thermostat model is confirmed).
+2. **Start the HVAC integration immediately.** It is fully decoupled and low-risk. **Done (2026-08-04):**
+   `lennoxs30` is installed and live, local mode, both S30s. See "HVAC: independent of Crestron" above
+   for detail. Remaining: DHCP-reserve both thermostats' IPs.
 3. **Commission the Path A XSIG bridge.** Scope and hire a one-time programming job for the MC2E,
    confirmed to be small in scope since it is a join-mapping task, not new logic. Bring up the
    `home-assistant-crestron-component` integration against it.

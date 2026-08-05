@@ -23,6 +23,12 @@ Notes, planning, and specs for my Home Assistant buildout.
   measures accumulated running time instead of using a state trigger, and what is still
   needed to get the alert onto a phone.
 
+- [lennoxs30-integration.md](lennoxs30-integration.md)
+
+  How the two Lennox iComfort S30 thermostats (North and South) were brought into Home Assistant
+  via the `lennoxs30` HACS integration. IP identification method, the local-mode config used, and
+  the recovery steps for when South's un-reserved DHCP lease renews with a new address.
+
 - [homeii-music-flow.md](homeii-music-flow.md)
 
   Replacing the Sound dashboard's cards with the HOMEii Flow Music Assistant card. Why the

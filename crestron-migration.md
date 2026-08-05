@@ -33,6 +33,11 @@ short version of where things stand and what's left.
   Room). A CID collision from a prior SD card recovery was found and fixed during this investigation.
 - Alarm panel brand: DSC. HVAC: Lennox, fully separate from Crestron, confirmed stale Crestron
   thermostat definitions in the AADS's program from before Lennox, not a live dependency.
+- Lennox thermostats: two iComfort S30 units, named North and South (two independent systems, not
+  one dual-zone unit reporting two names). Both confirmed reachable on the LAN over HTTPS (port
+  443) with a TLS certificate issued to `CN=Lennox, O=Lennox International Inc., L=Richardson, ST=TX`,
+  confirming genuine Lennox local-API endpoints, not just an inference from the router's client list.
+  IP addresses are not recorded here; see the private dotfiles repo if they're needed again.
 - Neither console has a password. Known, not yet fixed.
 
 **Next physical steps, roughly in the order they'd naturally happen:**
@@ -43,16 +48,15 @@ short version of where things stand and what's left.
    risk to the lighting bus, since the ST-IO's leg is electrically separate from MC2E's.
 2. Alarm panel model number, without prying the faceplate off: check for a label inside the door if it
    opens without full removal, or ask the monitoring company if it's monitored.
-3. Lennox thermostat model: hasn't been started, this is pure homework, look at the unit itself.
-4. AADS zone/input count: read the zone/source list off a TSW-752's audio screen, then check the AADS's
+3. AADS zone/input count: read the zone/source list off a TSW-752's audio screen, then check the AADS's
    own rear terminal blocks in the living room cabinet for what's actually wired.
-5. Console passwords: set one on both the MC2E and the AADS. Low effort, hasn't been done yet.
-6. Get quotes from an independent Crestron programmer for the Path A join-mapping job. Doesn't require
+4. Console passwords: set one on both the MC2E and the AADS. Low effort, hasn't been done yet.
+5. Get quotes from an independent Crestron programmer for the Path A join-mapping job. Doesn't require
    being home, can happen anytime.
 
 **Open questions only the homeowner can answer**, not resolvable by more telnet digging: what the
 ST-IO's 8 relay outputs actually drive (needs the empirical test or a look inside the alarm panel),
-whether the alarm is professionally monitored and by whom, and the Lennox thermostat's exact model.
+and whether the alarm is professionally monitored and by whom.
 
 See [crestron-strategy.md](crestron-strategy.md#plan-of-attack) for the phased plan and "Open
 verification checklist" near the end of this document for the full, detailed list of what's open.
@@ -359,7 +363,8 @@ because it is hard.
       faceplate doesn't come off easily so the model is still unknown. Need a way to read it without
       prying the cover off - check for a label inside the door if it opens without full removal, or ask
       the monitoring company if it's monitored, they'll have it on file.
-- [ ] Identify the exact Lennox thermostat model installed.
+- [x] Identify the exact Lennox thermostat model installed. Two units, both iComfort S30, named
+      North and South.
 - [ ] Count how many audio zones and line inputs are actually in active use on the AADS today. Not
       answerable via telnet: the `.fp2` front-panel data file turned out to be generic firmware menu
       strings, not project-specific zone names. The practical path is to read the zone/source list
