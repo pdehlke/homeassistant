@@ -39,8 +39,15 @@ Notes, planning, and specs for my Home Assistant buildout.
 
   How dashboards are organised: a three-level hierarchy copied from the Crestron touch panels,
   domain then area then a single domain in a single area. Why every area gets a card but only
-  populated ones are tappable, why presets target areas rather than entities, and how the
-  generator is parameterised so each new subsystem is a config block rather than new code.
+  populated ones are tappable, why presets target areas rather than entities, how the generator is
+  parameterised per subsystem, and what A/V needed that the parameterisation could not express.
+
+- [dashboard-header-card.md](dashboard-header-card.md)
+
+  The date, time and weather banner shared by the domain dashboards. Why the clock and date swapped
+  places without the slots changing size, why a view header renders only on `sections` views and is
+  silently ignored by `masonry`, and why card-mod rules need `!important` to beat a card's own
+  stylesheet.
 
 - [light-entity-strategy.md](light-entity-strategy.md)
 

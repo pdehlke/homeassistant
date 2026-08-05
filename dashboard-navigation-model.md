@@ -23,8 +23,8 @@ The Home Assistant dashboards therefore mirror the Crestron hierarchy:
 | Level | Screen | Contents | Status |
 | :--- | :--- | :--- | :--- |
 | 1 | Root | One card per domain | Not built. The sidebar stands in for it |
-| 2 | Domain | One card per area | Built for lights |
-| 3 | Leaf | One domain in one area | Built for lights |
+| 2 | Domain | One card per area | Built for lights and A/V |
+| 3 | Leaf | One domain in one area | Built for lights and A/V |
 
 Level 1 is deliberately deferred. The sidebar already lists the domain dashboards, so it does the
 same job with no work, and building the real thing is trivial whenever it is wanted.
@@ -109,10 +109,47 @@ because a Lovelace save replaces the whole dashboard rather than merging.
 
 Everything domain-specific lives in a single `DOMAINS` table: which entity domains count, which
 dashboard to write, the icons, the leaf title suffix, which inline feature each tile gets, and the
-preset buttons. Adding A/V means adding a block to that table, not writing code. The generalisation
-was done before the second domain existed rather than after, on the grounds that the second case was
-already known and specified, which is the condition under which speculative abstraction is usually
-worth it.
+preset buttons. The generalisation was done before the second domain existed rather than after, on
+the grounds that the second case was already known and specified, which is the condition under which
+speculative abstraction is usually worth it.
+
+That mostly held. A/V was added on 2026-08-05 as a table entry, but it also needed one small change
+to the code, described below, because the area card cannot control a media player. The prediction
+that a new domain would be pure configuration was therefore close but not exact, and the reason is
+worth recording: the table can only express choices the underlying cards actually support.
+
+## A/V, the second domain
+
+Built 2026-08-05 over the 11 `media_player` entities. Only three areas are populated: Living Room,
+Office and Gym. Everything else is a card without a tap action, exactly as with lights.
+
+Two things differ from the lights case.
+
+**No inline area toggle.** The level 2 area card offers an `area-controls` feature, and the lights
+dashboard uses it to put a room-wide toggle on each populated card. That feature does not cover media
+players. `AREA_CONTROL_DOMAINS` in the frontend is `light`, `fan`, the `cover-*` variants and
+`switch`, and nothing else
+([source](https://github.com/home-assistant/frontend/blob/dev/src/panels/lovelace/card-features/types.ts)).
+Configuring `media_player` there would have produced a feature that silently does nothing, so
+`area_control` was made optional instead and the A/V cards are tappable with no inline control. The
+presets on the leaf still cover the room-wide case.
+
+**Duplicate players.** Music Assistant mirrors players it adopts, so a single physical device can
+appear more than once. The Gym leaf currently shows both `media_player.gym_gym` and
+`media_player.gymnasium`, the latter unavailable. The generator has no way to tell a mirror from an
+original, so this needs fixing at the source by hiding the redundant entities in the entity registry,
+not in the dashboard.
+
+The presets are All Off, Play, Pause and Mute, all area-targeted in the same way as the lights
+presets, so they need no per-room entity data.
+
+## The alarm dashboard
+
+The Alarm System dashboard exists and carries the standard header, but has no content, because there
+are no `alarm_control_panel` entities yet. The DSC panel's model is still unidentified and that is
+the blocking item, so there is nothing to generate a dashboard from. It is deliberately not in the
+`DOMAINS` table: adding it before the entities exist would produce a grid where no area is ever
+tappable. See [crestron-strategy.md](crestron-strategy.md) for the state of that decision.
 
 ## What was verified
 
@@ -126,6 +163,8 @@ Confirmed by driving the real dashboard on 2026-08-04 rather than by reading the
 
 ## Related
 
+- [dashboard-header-card.md](dashboard-header-card.md) for the date, time and weather banner the
+  level 2 view carries, and the view-type constraint on reusing it elsewhere.
 - [light-entity-strategy.md](light-entity-strategy.md) for how the light entities themselves are
   built and what happens to them when Crestron control arrives.
 - [area-floor-layout.md](area-floor-layout.md) for the area and floor structure the area grid is
