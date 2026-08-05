@@ -136,10 +136,21 @@ like a different bug (a resolution problem, an empty area) until the trace is ac
 
 Real Home Assistant scenes were considered as the mechanism and rejected as the *only* mechanism,
 because a scene is a snapshot of named entities at named states and therefore cannot be written for
-a room whose fixtures are unknown. Only one room currently qualifies. Scenes are instead layered in
-on top: any `scene` entity assigned to an area appears in its own section on that area's leaf, so
-faithful Crestron presets can be added per room as the channel map lands, without waiting for all of
-them.
+a room whose fixtures are unknown. Scenes are instead layered in on top: any `scene` entity assigned
+to an area appears in its own section on that area's leaf, so faithful Crestron presets can be added
+per room as the channel map lands, without waiting for all of them.
+
+`scene.bedroom_evening` is the first one, added 2026-08-05: `light.bedroom_perimeter` on at
+brightness 76, `light.bedroom_diagonals` off, `light.hallway` on at brightness 26. It is the concrete
+illustration of what a preset cannot be. The Bedroom group preset's Low button sets every bedroom
+light to the *same* 25 percent; this scene sets three different levels, one of them off, because that
+combination is what "evening" is supposed to look like in that room, not "everything a bit dim."
+Built through the same config-editor REST endpoint the automations and scripts here use
+(`/api/config/scene/config/<id>`), assigned to Primary Suite through the entity registry exactly like
+the lights themselves, since a scene has no device to inherit an area from either. Confirmed live:
+it appears in the Scenes section on the Primary Suite leaf, its more-info dialog lists the three
+entities with an Activate button rather than firing on a bare tap, and Activate set all three lights
+to precisely the stored levels, bath fixtures untouched.
 
 ### Group presets target a label, for the areas that need a level between area and fixture
 
