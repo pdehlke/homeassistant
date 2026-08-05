@@ -152,6 +152,17 @@ it appears in the Scenes section on the Primary Suite leaf, its more-info dialog
 entities with an Activate button rather than firing on a bare tap, and Activate set all three lights
 to precisely the stored levels, bath fixtures untouched.
 
+`scene.bathroom_evening` followed the same day: `light.bath_perimeter` on at 76, `light.bath_diagonals`
+off, `light.hallway` on at 26, same numbers as the bedroom scene, same hallway entry in both. Both
+scenes claiming the hallway is intentional and harmless, not a conflict to resolve; whichever one is
+activated last is the one whose hallway level stands, exactly as if the hallway belonged to both
+rooms, which on this floor plan it effectively does. Confirmed live the same way: Activate on
+Bathroom Evening set the bath fixtures and left the bedroom lights, already on from testing the first
+scene, untouched.
+
+Both scenes sort into the Scenes section alphabetically, no ordering config of their own; nothing in
+the generator controls it because nothing needed to yet.
+
 ### Group presets target a label, for the areas that need a level between area and fixture
 
 Primary Suite holds five lights split across two physical clusters, bedroom and bath, and HA areas
