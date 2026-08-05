@@ -63,15 +63,17 @@ bar. That native back button is invisible to anyone using [Tablet
 Home](dashboard-tablet-home.md), whose kiosk-mode setup hides that whole bar, so the leaf also
 carries its own explicit back button as in-page content, first thing on the page.
 
-The leaf holds four things in order:
+The leaf holds up to five things in order:
 
 1. A full-width button back to level 2, labelled with the domain title, `m3rf:arrow-back` icon.
    Its own section, not mixed into the presets, so it reads as navigation rather than a device
    action. Redundant with the native subview back button for anyone who can see it, but the only
    way back for anyone who can't.
 2. Room-wide preset buttons.
-3. Any real scene entities assigned to that area, omitted entirely when there are none.
-4. One tile per entity, each with the appropriate inline control. For lights that is a brightness
+3. One preset row per configured group, for the rare area that holds more than one distinct
+   fixture cluster. Omitted entirely for every area that has none configured.
+4. Any real scene entities assigned to that area, omitted entirely when there are none.
+5. One tile per entity, each with the appropriate inline control. For lights that is a brightness
    slider, so a fixture can be dimmed without leaving the screen.
 
 ### Presets target the area, not the entities
@@ -101,6 +103,36 @@ a room whose fixtures are unknown. Only one room currently qualifies. Scenes are
 on top: any `scene` entity assigned to an area appears in its own section on that area's leaf, so
 faithful Crestron presets can be added per room as the channel map lands, without waiting for all of
 them.
+
+### Group presets target a label, for the areas that need a level between area and fixture
+
+Primary Suite holds five lights split across two physical clusters, bedroom and bath, and HA areas
+cannot nest (see [area-floor-layout.md](area-floor-layout.md) on why the Garage is a floor rather
+than a sub-area for the same reason). An area-targeted preset cannot express "just the bath
+fixtures," and naming the two `light.bath_*` entities directly in the button config would have
+broken the same guarantee area-targeting exists for in the first place.
+
+The fix carries the area-targeting idea down one level: a label instead of an area. `bath` and
+`bedroom` are ordinary labels (`config/label_registry/create`), applied to the relevant light
+entities by hand, the same one-time step as assigning an entity to an area. The preset buttons then
+target `label_id` instead of `area_id`:
+
+```yaml
+tap_action:
+  action: perform-action
+  perform_action: light.turn_on
+  target:
+    label_id: bath
+  data:
+    brightness_pct: 25
+```
+
+Which areas get which group rows is a table, `AREA_GROUP_PRESETS` in `rebuild-domain-dashboard.py`,
+keyed by `area_id` with a list of `{name, label_id, icon}`. Added for `primary_suite` only, since it
+is the only area that currently needs it; extending it to another area later is a table entry, not
+new code, the same shape as `DOMAINS` itself. Confirmed live: the Bath row's Low preset turned on
+only `light.bath_perimeter` and `light.bath_diagonals` at 25 percent, leaving both bedroom lights
+untouched.
 
 ## Generation
 
