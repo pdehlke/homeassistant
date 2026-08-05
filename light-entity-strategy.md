@@ -90,13 +90,29 @@ device, which is the same order Home Assistant uses.
 
 ## Current inventory
 
-Two lights exist so far, both created as a first trial and both assigned to the Office area:
+Two lights exist from the first trial, assigned to the Office area:
 
 - `light.pool_bathroom`
 - `light.north_sink`
 
 Their names describe fixtures elsewhere in the house, so the Office assignment is a testing
 convenience rather than a claim about where they are.
+
+Five more were added 2026-08-05, assigned to the Primary Suite area, this time with names that do
+describe where they are:
+
+- `light.bedroom_perimeter`
+- `light.bedroom_diagonals`
+- `light.bath_perimeter`
+- `light.bath_diagonals`
+- `light.hallway`
+
+Same three-piece recipe, no changes. Created via the REST config flow API rather than the UI, which
+only matters in that it made one gotcha avoidable up front: `input_number/create` takes an `initial`
+field, so passing `initial: 255` at creation time means the very first `turn_on` never hits the
+zero-brightness case described below at all, rather than needing a follow-up fix. Confirmed live: a
+test `turn_on` at brightness 180 correctly set both helpers and reported back through `light.hallway`
+before being turned off again to leave it in the same off state as every other light here.
 
 **Which CLX channel drives each of these is still unknown.** All seven lighting modules are labeled
 `106 - Garage` in the MC2E program, which records where the hardware is racked and not what it
@@ -107,10 +123,13 @@ prerequisite for the rewiring described above.
 
 ## Gotchas
 
-The number helper starts at 0, so the very first `turn_on` after creating a light reports the light
-as on at zero brightness, which looks broken. Both helpers were set to 255 after creation to avoid
-this. After the first use the behaviour is correct on its own, because the number persists and acts
-as a last brightness memory across off and on cycles.
+The number helper starts at 0 unless told otherwise, so the very first `turn_on` after creating a
+light reports the light as on at zero brightness, which looks broken. For the first two lights this
+was fixed after the fact by setting both helpers to 255. For the five added later, passing
+`initial: 255` to `input_number/create` avoided the bad state ever existing in the first place, which
+is the better of the two and worth doing for any light created after this one. After the first real
+use the behaviour is correct on its own regardless of which path got there, because the number
+persists and acts as a last brightness memory across off and on cycles.
 
 Setting brightness to 0 through the slider leaves the light on at zero rather than turning it off.
 Real dimmers vary in how they handle this, and it is not worth adding conditional logic for a case
