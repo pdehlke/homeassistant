@@ -114,6 +114,20 @@ zero-brightness case described below at all, rather than needing a follow-up fix
 test `turn_on` at brightness 180 correctly set both helpers and reported back through `light.hallway`
 before being turned off again to leave it in the same off state as every other light here.
 
+Five more were added the same day, assigned to the Entry area:
+
+- `light.door`
+- `light.home_perimeter`
+- `light.garage_sconces`
+- `light.entry_perimeter`
+- `light.entry_center`
+
+Same recipe again, `initial: 255` included from the start this time too. No scenes and no
+label-based sub-group presets for Entry yet, unlike Primary Suite's Bedroom/Bath split; nothing
+about these five names implies a natural two-way grouping the way a bedroom and a bathroom under
+one area do. Confirmed live with two calls to `script.smart_toggle_lights` targeting the Entry
+area: all five went on together at brightness 255, then all five went off together, left off.
+
 **Which CLX channel drives each of these is still unknown.** All seven lighting modules are labeled
 `106 - Garage` in the MC2E program, which records where the hardware is racked and not what it
 controls, so the channel to room mapping cannot be recovered from the console dumps already
