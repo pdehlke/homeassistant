@@ -96,10 +96,43 @@ cover fixtures added later, which is the normal case here as Crestron channels g
 one. And they cannot break when an entity is renamed.
 
 The current presets are On/Off, Low at 25 percent, Medium at 60 percent, and Bright at 100 percent.
-On/Off calls `light.toggle` rather than `light.turn_off`, deliberately: toggling a group target
-flips each entity by its own current state rather than deciding a single group-wide direction, so
-one button does both directions instead of needing a dedicated all-off control. It was `light.turn_off`,
-labelled "All Off", until 2026-08-05.
+On/Off was `light.turn_off`, labelled "All Off", until 2026-08-05, when it became a real toggle so
+one button could do both directions. See below for why that took a script rather than a service
+call.
+
+### On/Off needed a script, because a plain toggle on a group is not one decision
+
+The first attempt at a toggle button called `light.toggle` directly on the area or label target.
+That is wrong for a group with more than one member, confirmed by actually using it: with the
+bedroom lights on and the bath lights off, tapping Primary Suite's On/Off turned the bath on and
+the bedroom off, because `light.toggle` on a multi-entity target toggles each entity by its own
+state, not the group by one shared decision. There is no HA service that looks at a whole target and
+picks a single on-or-off direction for it.
+
+`script.smart_toggle_lights` does that instead. Given a `target_area_id` or a `target_label_id`, it
+resolves the light entities in that area or label
+([`area_entities()`](https://www.home-assistant.io/template-functions/area_entities/) /
+[`label_entities()`](https://www.home-assistant.io/template-functions/label_entities/)), checks
+whether any of them is on, and turns the whole group off if so, or on if not.
+`preset_card()` routes any `script.*` preset action through the script's own fields as `data` rather
+than through a service `target:`, since a script's fields are not a target. Confirmed live, both
+directions, by reproducing the exact reported case: bedroom on, bath off, tapping the room-wide
+On/Off button turned all five Primary Suite lights off together, not toggled per fixture.
+
+**The fields are named `target_area_id` and `target_label_id`, not `area_id` and `label_id`, and
+that is not a style choice.** Home Assistant's template engine registers `area_id()`, `area_name()`,
+`area_entities()`, `label_id()`, `label_entities()`, and others as built-in Jinja global functions,
+available in any template regardless of what script fields exist. A script field named `area_id`
+that is not supplied for a given call is not empty or undefined inside the template; Jinja resolves
+the bare name against its own global environment first and finds the built-in `area_id` function
+instead, which is a function object, and therefore truthy. `{{ area_id | default(omit) }}` never
+falls back, because `default()` only triggers on `Undefined`, and a function object is not that. The
+first version of this script had exactly that bug: naming both fields `area_id`/`label_id` after the
+service `target:` fields they were meant to mirror. It traced as `target_entities: []`, `any_on:
+false`, and a rendered service target containing the literal string
+`<function AreaExtension.area_id at 0x...>`, caught by reading the script's own trace
+(`trace/get`) rather than by guessing from the wrong output, exactly the kind of failure that looks
+like a different bug (a resolution problem, an empty area) until the trace is actually read.
 
 Real Home Assistant scenes were considered as the mechanism and rejected as the *only* mechanism,
 because a scene is a snapshot of named entities at named states and therefore cannot be written for
