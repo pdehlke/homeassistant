@@ -35,6 +35,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   via the `lennoxs30` HACS integration. IP identification method, the local-mode config used, and
   the recovery steps for when South's un-reserved DHCP lease renews with a new address.
 
+- [dashboard-navigation-model.md](dashboard-navigation-model.md)
+
+  How dashboards are organised: a three-level hierarchy copied from the Crestron touch panels,
+  domain then area then a single domain in a single area. Why every area gets a card but only
+  populated ones are tappable, why presets target areas rather than entities, and how the
+  generator is parameterised so each new subsystem is a config block rather than new code.
+
 - [light-entity-strategy.md](light-entity-strategy.md)
 
   How light entities are built before Crestron control exists: template lights backed by an
