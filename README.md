@@ -35,6 +35,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   via the `lennoxs30` HACS integration. IP identification method, the local-mode config used, and
   the recovery steps for when South's un-reserved DHCP lease renews with a new address.
 
+- [light-entity-strategy.md](light-entity-strategy.md)
+
+  How light entities are built before Crestron control exists: template lights backed by an
+  `input_boolean` and an `input_number`, created entirely through the config flow. Why
+  `switch_as_x` and the `demo` integration were rejected, and what changes when real control
+  arrives.
+
 - [homeii-music-flow.md](homeii-music-flow.md)
 
   Replacing the Sound dashboard's cards with the HOMEii Flow Music Assistant card. Why the
