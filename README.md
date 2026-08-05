@@ -4,6 +4,12 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 ## Contents
 
+- [area-floor-layout.md](area-floor-layout.md)
+
+  The area and floor structure of the instance. Why the Garage is modelled as a floor (areas
+  cannot nest), why HVAC equipment sits in its own mechanical-closet areas, the areas the Lennox
+  integration invented on its own, and why entity IDs still contain old area names.
+
 - [crestron-strategy.md](crestron-strategy.md)
 
   The migration plan for lighting, audio, the alarm system, and HVAC from the existing Crestron
