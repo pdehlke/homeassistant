@@ -64,6 +64,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   `switch_as_x` and the `demo` integration were rejected, and what changes when real control
   arrives.
 
+- [vision-sample-demo-entities.md](vision-sample-demo-entities.md)
+
+  Populating the Vision Sample dashboard's placeholder entities so its cards show live controls
+  instead of the theme's demo-integration stand-ins. Which entities were actually missing, why
+  the real `demo` integration and the newly-installed Blueprint Studio HACS integration were
+  both set aside, and the tilt-support gap in config-flow template covers.
+
 - [homeii-music-flow.md](homeii-music-flow.md)
 
   Replacing the Sound dashboard's cards with the HOMEii Flow Music Assistant card. Why the
