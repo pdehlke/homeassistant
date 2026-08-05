@@ -134,11 +134,29 @@ Configuring `media_player` there would have produced a feature that silently doe
 `area_control` was made optional instead and the A/V cards are tappable with no inline control. The
 presets on the leaf still cover the room-wide case.
 
-**Duplicate players.** Music Assistant mirrors players it adopts, so a single physical device can
-appear more than once. The Gym leaf currently shows both `media_player.gym_gym` and
-`media_player.gymnasium`, the latter unavailable. The generator has no way to tell a mirror from an
-original, so this needs fixing at the source by hiding the redundant entities in the entity registry,
-not in the dashboard.
+**Duplicate players.** Music Assistant mirrors players it adopts, so a single physical device appears
+more than once. The generator has no way to tell a mirror from an original, so this was fixed at the
+source by hiding the redundant entity in the registry rather than by filtering in the dashboard.
+`group_by_area()` already skips anything hidden or disabled, so a regeneration picks the change up.
+
+The obvious rule, hide everything Music Assistant duplicates, is wrong here. Music Assistant is not
+consistently the redundant side:
+
+| Physical device | Kept | Hidden | Why that way round |
+| :--- | :--- | :--- | :--- |
+| Gym Sonos | `gym_gym` (sonos) | `gym` (MA), `gymnasium` (MA) | `gym` carries the same `RINCON_…` unique ID as the Sonos entity; `gymnasium` is a stale AirPlay view and was unavailable |
+| carol | `carol_2` (MA) | `carol` (cast) | the cast entity is the dead one |
+| LSX II-045089 | `lsx_ii_045089_2` (MA) | `lsx_ii_045089` (cast) | the MA entity is the one assigned to the Office area |
+
+Hiding uniformly by platform would have left `carol` as a dead entity and, worse, emptied the Office
+area entirely, since its only assigned player is the Music Assistant one. The rule that actually
+holds is to keep whichever entity of a pair is live and area-assigned, whatever platform it came
+from. Identifying the pairs is best done on `unique_id` rather than on name, since only the Gym pair
+shares a name.
+
+Hiding is not disabling. All four entities still hold state and still answer service calls; they are
+only kept out of auto-generated UI. The Sound dashboard is unaffected because the HOMEii Flow card
+talks to the Music Assistant server directly rather than through entity IDs.
 
 The presets are All Off, Play, Pause and Mute, all area-targeted in the same way as the lights
 presets, so they need no per-room entity data.
