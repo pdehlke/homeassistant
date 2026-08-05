@@ -128,6 +128,15 @@ about these five names implies a natural two-way grouping the way a bedroom and 
 one area do. Confirmed live with two calls to `script.smart_toggle_lights` targeting the Entry
 area: all five went on together at brightness 255, then all five went off together, left off.
 
+Three more went into Dining Room and five into Kitchen, same day:
+
+- `light.table`, `light.north`, `light.south` (Dining Room)
+- `light.range`, `light.island`, `light.pathway`, `light.cabinet`, `light.powder` (Kitchen)
+
+Same recipe, no scenes, no group-preset labels for either area. Confirmed live the same way as
+Entry: `script.smart_toggle_lights` targeting each area in turn brought all of that area's
+lights on together at brightness 255, then off together, left off.
+
 **Which CLX channel drives each of these is still unknown.** All seven lighting modules are labeled
 `106 - Garage` in the MC2E program, which records where the hardware is racked and not what it
 controls, so the channel to room mapping cannot be recovered from the console dumps already
