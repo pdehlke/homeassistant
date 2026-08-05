@@ -25,8 +25,11 @@ chosen answer loses the part that is expensive to reconstruct later.
 ## What does not belong here
 
 - Secrets of any kind. No tokens, API keys, passwords, or long-lived access tokens.
-- Internal IP addresses, MAC addresses, or non-default hostnames.
+- MAC addresses or non-default hostnames.
 - Anything identifying pde's accounts, subscriptions, or physical address.
+
+Internal IP addresses (LAN addresses like `192.168.x.x`) are fine to write down. They are not
+useful to anyone without existing access to the network.
 
 Assume this repo may become public. Anything sensitive belongs in the private dotfiles repo at
 `~/.yadr-private` instead. The default hostname `homeassistant.local` is fine to write down.
