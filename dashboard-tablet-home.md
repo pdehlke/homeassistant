@@ -1,0 +1,230 @@
+# Tablet Home: the root dashboard
+
+The level 1 screen that [dashboard-navigation-model.md](dashboard-navigation-model.md) deferred
+when the lights and A/V dashboards were built: one card per domain, standing in for the top
+screen of the Crestron TSW-752 panels this whole hierarchy replaces. Built 2026-08-05 on Home
+Assistant 2026.7.4, together with a dedicated kiosk user and a kiosk-mode plugin so a wall-mounted
+device can show it with no Home Assistant chrome at all.
+
+## The four domain cards
+
+Tablet Home carries exactly four cards, in the same order the Crestron top screen used: A/V,
+Climate, Lights, Alarm. Sound and Clock are deliberately left off. They are utility dashboards
+(the Music Assistant flow card and a wall clock respectively), not part of the domain hierarchy
+this navigation model is built around, so they stay reachable only through the sidebar for
+whoever is not on the kiosk account.
+
+Each card is a plain Lovelace `button` card, icon and label only, no entity, `tap_action: navigate`
+to the domain dashboard's default view:
+
+| Card | Icon | Navigates to |
+| :--- | :--- | :--- |
+| A/V | `m3rf:surround-sound` | `/dashboard-av` |
+| Climate | `m3rf:thermostat` | `/dashboard-lennox-home` |
+| Lights | `m3rf:lightbulb` | `/dashboard-lights` |
+| Alarm | `m3rf:shield-lock` | none, see below |
+
+Laid out as a 2x2 grid in a single `sections` view, `grid_options: {columns: 12, rows: 4}` per
+card inside a `column_span: 2` section (24 internal columns, so two 12-wide cards fill a row).
+The Lovelace sections grid math recorded in the `home-assistant` agent skill documents
+`columns: 12, rows: 7` as producing a roughly square 427x439px card, but that
+measurement was taken on the Sound dashboard's `column_span: 3` section (36 internal columns, so
+`columns: 12` there is a third of the width). At `column_span: 2` here, `columns: 12` is half the
+width, nearly double what the Sound dashboard case was. Using `rows: 7` unchanged produced cards
+tall enough that the bottom row scrolled off an 800px-tall viewport; `rows: 4` was the fix,
+confirmed by screenshot to show all four cards with no scrolling.
+
+### Alarm is not tappable, matching the level 2 rule
+
+[dashboard-navigation-model.md](dashboard-navigation-model.md) established that an area with
+nothing in it gets a card but not a `tap_action`, so the dashboard cannot dead-end. The Alarm
+System dashboard is in the same position one level up: it exists and carries the standard header,
+but has no `alarm_control_panel` entities yet, so there is nowhere useful to send a tap. The Alarm
+card omits `tap_action` entirely (confirmed live: clicking it leaves the URL on `/tablet-home/home`)
+and gets `card_mod: {style: "ha-card { opacity: 0.45; }"}` so it reads as visibly inert rather than
+just quietly broken. Whoever wires up the DSC panel and updates
+[crestron-strategy.md](crestron-strategy.md#alarm-system-no-recommendation-yet) should also flip
+this card back to tappable.
+
+The alternative, making all four cards tappable regardless, was rejected for consistency with the
+level 2 precedent: a dashboard with nothing behind it should not pretend otherwise.
+
+## Who sees it: the Tablet kiosk user
+
+A new Home Assistant user, name and username `Tablet`, non-admin (`group_ids: ["system-users"]`),
+`local_only: true` so it can never authenticate from outside the LAN. Tablet Home is set as this
+user's personal default dashboard, not the instance-wide default, so pde's own account and any
+future user keep whatever default they already have.
+
+### Setting a personal default for another user needs a session as that user
+
+Home Assistant exposes no admin-callable "set this other user's default dashboard" command.
+`frontend/set_user_data` (the command the frontend's own "set as default" profile option calls,
+[`saveFrontendUserData` in `ha-pick-dashboard-row.ts`](https://github.com/home-assistant/frontend/blob/dev/src/panels/profile/ha-pick-dashboard-row.ts))
+only ever writes the calling connection's own user; the server-side handler in
+[`homeassistant/components/frontend/storage.py`](https://github.com/home-assistant/core/blob/dev/homeassistant/components/frontend/storage.py)
+reads `connection.user.id` directly, with no `user_id` field in the command schema.
+`frontend/set_system_data` exists and does take an override, but it is instance-wide: writing
+`default_panel` there would make Tablet Home the default for every user without a personal
+override of their own, which was explicitly the rejected option (see "Default status" below).
+
+The only path left is to briefly authenticate as Tablet and call `frontend/set_user_data` from
+that session:
+
+1. `POST /auth/login_flow` with `handler: ["homeassistant", null]` to start a
+   username/password login.
+2. `POST /auth/login_flow/<flow_id>` with the username and password, returning a short-lived
+   authorization code.
+3. `POST /auth/token` with `grant_type=authorization_code` to exchange the code for an
+   `access_token` and `refresh_token`.
+4. Open a WebSocket connection authenticated with that `access_token`, read the existing
+   `frontend/get_user_data` key `core` (empty, for a brand new user), and write it back with
+   `default_panel: "tablet-home"` added.
+5. `POST /auth/revoke` with the `refresh_token` to end that session immediately rather than
+   leaving a long-lived credential lying around from a one-time setup step.
+
+Confirmed live: logging in as Tablet through the actual UI afterward landed directly on
+`/tablet-home/home` with no manual navigation.
+
+### Rejected: instance-wide default, or leaving pde as the default
+
+Setting `frontend/set_system_data` would have been one call instead of five, but makes Tablet
+Home the landing page for every account on the instance, including pde's own admin login, which
+was never the intent (see "Default status" below); this dashboard is for one mounted device, not
+a replacement for Overview. Leaving the instance default alone and only adding Tablet Home to the
+sidebar was also considered and rejected, because a kiosk device that has to be pointed at a URL
+by hand on every reboot is not actually a kiosk.
+
+## Kiosk chrome: the kiosk-mode plugin
+
+Home Assistant has no built-in way to hide the sidebar. The
+[`NemesisRE/kiosk-mode`](https://github.com/NemesisRE/kiosk-mode) HACS plugin (v14.0.2, installed
+2026-08-05) does, targeted per user rather than per dashboard so it follows the Tablet account
+wherever it goes:
+
+```yaml
+kiosk_mode:
+  user_settings:
+    - users: ["Tablet"]
+      hide_header: true
+      hide_sidebar: true
+```
+
+This block is placed at the root of the dashboard config (a sibling of `views`, not inside any
+view), because kiosk-mode's own config is read per dashboard, not once globally. It is present on
+Tablet Home and on all four domain dashboards (Lights, A/V, Lennox Home, Alarm System), since the
+Tablet user reaches all of them. Sound, Clock and Map do not carry it and were not touched; if the
+Tablet user ever ended up on one of those by URL, HA's own chrome would still show, but nothing in
+Tablet Home links there.
+
+Confirmed live at 1280x800: logged in as Tablet, the entire top app bar and left sidebar are gone
+on both Tablet Home and the Lights dashboard, leaving only the custom clock/date/weather header
+and the dashboard's own content.
+
+### `NemesisRE/kiosk-mode` vs. the archived original
+
+The plugin was originally authored by `maykar` (`maykar/kiosk-mode`); that repository was archived
+by its owner in 2022 and is no longer updated, despite still carrying an "HACS-Default" badge in
+its README. `NemesisRE/kiosk-mode` is the actively maintained continuation, still HACS-default
+(not a custom repository add), with CI running against Home Assistant nightlies as of the version
+installed here. Confirmed by fetching both READMEs directly rather than trusting either badge,
+since HACS default status does not by itself say which fork is current.
+
+### Rejected: `non_admin_settings` instead of naming the user
+
+kiosk-mode also supports `non_admin_settings`, which would apply to every non-admin account
+without listing any by name. Tablet is currently the only non-admin user on this instance, so the
+two options behave identically today, but `non_admin_settings` would silently kiosk-lock any
+future non-admin account too (a guest login, a second read-only device), which is a broader effect
+than intended. `user_settings` naming `Tablet` explicitly was chosen so a later, unrelated
+non-admin account does not inherit this behavior by accident. kiosk-mode matches `user_settings`
+entries on the account's display name, not its username, which is why the block says `Tablet` and
+not `tablet`.
+
+## Getting back: the header home icon
+
+Sidebar gone means there was nothing to return to Tablet Home from inside Lights, A/V, Lennox Home
+or Alarm System; the subview back button documented in
+[dashboard-navigation-model.md](dashboard-navigation-model.md#level-3-the-leaf) only ever goes
+from level 3 back to level 2, and level 1 never existed before today. Fixed by prepending a small
+icon-only `button` card to the shared header's `horizontal-stack`, ahead of the clock/date
+`vertical-stack`:
+
+```yaml
+- type: button
+  icon: m3rf:home
+  show_name: false
+  show_state: false
+  tap_action:
+    action: navigate
+    navigation_path: /tablet-home
+  card_mod:
+    style: |
+      :host { flex: 0 0 64px !important; }
+      ha-card { height: 100% !important; }
+```
+
+`horizontal-stack` gives each child card `flex: 1` by default, which would have made a bare icon
+button grow to a third of the header's width. `card_mod`'s `:host` selector targets the card's own
+custom element, which is exactly the flex item `horizontal-stack` placed it in, so overriding
+`flex` there pins the button to 64px wide while `height: 100%` lets it stretch to match its taller
+siblings. Both need `!important`: [dashboard-header-card.md](dashboard-header-card.md#card-mod-loses-ties-against-a-cards-own-stylesheet)
+already found that a card's own stylesheet, attached via `adoptedStyleSheets`, wins any tie against
+a plain card-mod rule.
+
+This touches the same shared header recipe that document describes, so it now has two variants:
+Tablet Home's own header (unmodified, clock/date/weather only, since tapping home from home would
+be pointless) and the four domain dashboards' header (home icon prepended). Lennox Home and Alarm
+System are hand-authored with no generator, so like the rest of that shared header, their copies
+will drift independently if this recipe changes again; Lights and A/V get theirs preserved
+verbatim by `rebuild-domain-dashboard.py`'s existing header-preservation behavior, so a future
+regeneration keeps the home icon automatically.
+
+Confirmed live: tapping the home icon from the Lights dashboard, logged in as Tablet, returned to
+`/tablet-home/home`.
+
+## An undocumented HA quirk found while minting the Tablet session
+
+The two-step login flow (`POST /auth/login_flow` then `POST /auth/login_flow/<id>`) failed
+consistently with `IP address changed` (HTTP 400 over plain `curl`, surfacing as a 403 from the
+browser) when both requests were made against `homeassistant.local`, even seconds apart from the
+same machine. The handler in `homeassistant/components/auth/login_flow.py` stores the requesting
+IP address on the flow at creation and rejects any later step if the apparent remote address
+differs. `homeassistant.local` is mDNS and resolved consistently to `192.168.4.125` when checked
+directly, so the mismatch is not the server's address changing; the more likely explanation is
+this machine's own dual-stack resolution picking a different local route (IPv4 vs. a link-local
+IPv6 form of the same interface) across two separate connections to the same mDNS name. Repeating
+both requests against the literal IP, `http://192.168.4.125:8123`, instead of the hostname made
+the failure disappear immediately and consistently, in both a raw `curl` reproduction and the
+actual browser login. Worth knowing for any future script or automation that authenticates in more
+than one request against `homeassistant.local`: use the LAN IP for that specific exchange.
+
+## What was verified
+
+Confirmed by driving the real dashboard on 2026-08-05, logged in as Tablet, not by reading config
+back:
+
+- Logging in as `tablet` lands directly on `/tablet-home/home`, no navigation needed.
+- No sidebar and no top app bar render anywhere in the Tablet session, on Tablet Home or on the
+  Lights dashboard.
+- Tapping Lights navigates to `/dashboard-lights/lights`; tapping the header's home icon from
+  there returns to `/tablet-home/home`.
+- Tapping Alarm does not navigate anywhere; the URL stays on `/tablet-home/home`.
+- The 2x2 grid renders with no scrolling at 1280x800.
+
+Not verified: kiosk-mode's behavior for any other non-admin account, since Tablet is the only one
+that exists. A stray Tablet session from this verification pass was revoked, but the browser-based
+UI login used to confirm the default-dashboard behavior created its own separate session that was
+not individually revoked afterward; this is a low-privilege, local-only account, and the real
+device will create and keep its own session the same way, so it was left alone rather than chased
+down.
+
+## Related
+
+- [dashboard-navigation-model.md](dashboard-navigation-model.md) for the three-level hierarchy
+  this is the top of, and the rule about not letting an empty destination be tappable.
+- [dashboard-header-card.md](dashboard-header-card.md) for the shared clock/date/weather header
+  this document adds a second variant of.
+- [crestron-strategy.md](crestron-strategy.md#touch-panels-replacing-the-tsw-752s) for the
+  physical wall-panel replacement (Shelly Wall Display or Sonoff NSPanel Pro) this dashboard is
+  meant to end up running on.

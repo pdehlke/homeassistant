@@ -49,6 +49,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   silently ignored by `masonry`, and why card-mod rules need `!important` to beat a card's own
   stylesheet.
 
+- [dashboard-tablet-home.md](dashboard-tablet-home.md)
+
+  The root, level 1 dashboard: four domain cards in Crestron top-screen order, why Alarm stays
+  non-tappable until it has entities, the new non-admin Tablet kiosk user and why setting its
+  personal default dashboard needed a short-lived login as that user, the kiosk-mode plugin that
+  hides the sidebar and header for it, and the home-icon nav added to the shared header so there is
+  a way back.
+
 - [light-entity-strategy.md](light-entity-strategy.md)
 
   How light entities are built before Crestron control exists: template lights backed by an
