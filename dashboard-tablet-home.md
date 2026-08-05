@@ -183,13 +183,13 @@ regeneration keeps the home icon automatically.
 Confirmed live: tapping the home icon from the Lights dashboard, logged in as Tablet, returned to
 `/tablet-home/home`.
 
-## `hide_header` hides more than the header: two more gaps found by actually using it
+## `hide_header` hides more than the header: three more gaps found by actually using it
 
 Pete tested this logged in as Tablet before a physical tablet existed to mount, using a resized
-desktop browser (see "Testing without the physical tablet" below), and found two things the
-home-icon fix didn't cover. Both come from the same root cause: `hide_header` in kiosk-mode hides
-HA's entire native top app bar, and that bar was quietly carrying two jobs beyond the sidebar
-toggle.
+desktop browser (see "Testing without the physical tablet" below), and found things the home-icon
+fix didn't cover. All three come from the same root cause: `hide_header` and `hide_sidebar` in
+kiosk-mode hide HA's entire native top app bar and sidebar, and between them those two pieces of
+chrome were quietly carrying more jobs than just navigation.
 
 **No way to tell domain dashboards apart.** The view's title (`Lights`, `A/V`, ...) only ever
 rendered in that native bar. With it gone, every domain dashboard's content starts with a floor
@@ -208,6 +208,21 @@ A/V configs, for the same reason the header is preserved rather than recreated: 
 have been silently overwritten by the next regeneration. Lennox Home and Alarm System have no
 generator, so their equivalent title headings were added by hand directly, the same drift caveat as
 the rest of their hand-authored content.
+
+**No way to log out.** The sidebar carries the profile menu, and with it gone there is no path to
+`/profile` at all, which is where HA's only "Log out" control lives; there is no logout affordance
+anywhere in Lovelace itself. Fixed the same way as the home icon: a `mdi:logout` button prepended
+to Tablet Home's own header, `tap_action: navigate` to `/profile/general`. `mdi:` rather than
+`m3rf:` deliberately, after `m3rf:cube-outline` 404'd on the Vision Sample dashboard's icon for the
+same underlying reason: `m3rf` is Material Symbols Rounded Filled, not MDI, and does not carry
+every MDI name. `mdi:logout` is guaranteed to exist without needing to guess at that pack's naming.
+
+This one has a wrinkle the other two didn't. `kiosk_mode` config lives on a Lovelace *dashboard*,
+and `/profile` is a core HA panel, not a dashboard, so it has no `kiosk_mode` block and nothing to
+hide it. Confirmed live: navigating there from Tablet's session renders the sidebar and top bar in
+full, "Log out" reachable and working, tokens actually cleared, landing back on the login screen.
+Kiosk-mode's hiding is real but narrower than "hide chrome everywhere for this user"; it is scoped
+to whatever dashboards carry the config block, and every other panel on the instance is unaffected.
 
 ### The regeneration that followed dropped `kiosk_mode` itself
 
@@ -276,6 +291,9 @@ back:
   `/dashboard-lights/lights`.
 - All five dashboards (Tablet Home plus the four domain dashboards) carry a `kiosk_mode` block,
   re-confirmed after the regeneration that briefly dropped it from Lights and A/V.
+- Tapping Tablet Home's logout icon reaches `/profile/general` with full chrome and a working
+  native "Log out" control; confirming it actually ends the session and returns to the login
+  screen.
 
 Not verified: kiosk-mode's behavior for any other non-admin account, since Tablet is the only one
 that exists. A stray Tablet session from this verification pass was revoked, but the browser-based
