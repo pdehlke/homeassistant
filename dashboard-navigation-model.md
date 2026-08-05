@@ -95,7 +95,11 @@ in any room the moment it gains its first light, with no per-room configuration.
 cover fixtures added later, which is the normal case here as Crestron channels get mapped one by
 one. And they cannot break when an entity is renamed.
 
-The current presets are All Off, Low at 25 percent, Medium at 60 percent, and Bright at 100 percent.
+The current presets are On/Off, Low at 25 percent, Medium at 60 percent, and Bright at 100 percent.
+On/Off calls `light.toggle` rather than `light.turn_off`, deliberately: toggling a group target
+flips each entity by its own current state rather than deciding a single group-wide direction, so
+one button does both directions instead of needing a dedicated all-off control. It was `light.turn_off`,
+labelled "All Off", until 2026-08-05.
 
 Real Home Assistant scenes were considered as the mechanism and rejected as the *only* mechanism,
 because a scene is a snapshot of named entities at named states and therefore cannot be written for
@@ -133,6 +137,11 @@ is the only area that currently needs it; extending it to another area later is 
 new code, the same shape as `DOMAINS` itself. Confirmed live: the Bath row's Low preset turned on
 only `light.bath_perimeter` and `light.bath_diagonals` at 25 percent, leaving both bedroom lights
 untouched.
+
+A label is not exclusive to one row. `light.hallway` carries both `bath` and `bedroom`, so it answers
+to either group's row while still being one fixture, not a third row of its own. That is the same
+reason labels were chosen over a stricter one-fixture-one-group scheme: an entity can belong to
+however many groups actually describe it, the way a hallway genuinely sits between both.
 
 ## Generation
 
