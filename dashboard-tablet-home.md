@@ -379,6 +379,38 @@ Home, though, since Home's cards (inherited from the Vision Sample demo dashboar
 it and the sidebar that would otherwise offer it is hidden for Tablet. If Tablet Home is meant to
 stay reachable, something on Home would need to link to it explicitly.
 
+## Home's Lights tab got the real Lights dashboard's content
+
+Home's own "Lights" view (`path: kitchen`, a leftover from the Vision Sample demo it was built
+from) carried one stray `light.kitchen_lights` tile and nothing else. It was replaced with the
+actual Lights dashboard's top-level content: the same three sections (the "Lights" title heading,
+the Main Floor area-card grid, and the Basement/second-floor grid below it), `max_columns: 2`, and
+the `m3rf:lightbulb` icon, copied from `dashboard-lights`'s `lights` view. `max_columns` and the
+sections came together because the sections grid math is tuned to a specific `max_columns`, the
+same fragility [dashboard-header-card.md](dashboard-header-card.md) and this document's own 2x2
+grid section ran into.
+
+One thing was deliberately left behind: that source view's own header card (home icon, clock/date,
+weather, the shared recipe documented above and in
+[dashboard-header-card.md](dashboard-header-card.md)). Home already has its own native header now
+that `hide_header` is off for it, so carrying the card-based one over would have stacked two
+headers, and its home icon navigates to `/tablet-home`, which is the wrong destination from inside
+Home. Only the `sections` content moved.
+
+This does not make Lights fully self-contained inside Home. The area cards' `tap_action` still
+points at `/dashboard-lights/area-entry`, `/dashboard-lights/area-kitchen`, and so on, the real
+Lights dashboard's own leaf views, not anything living on Home. Tapping an area still leaves Home
+and lands on `dashboard-lights`, which carries its own `kiosk_mode` block (`hide_header` and
+`hide_sidebar` both true) and whose header's home icon points back to `/tablet-home`, not to Home.
+Functionally identical to the Tablet Home orphaning noted above, and left alone for the same
+reason: not in scope of this change.
+
+Confirmed by reading the saved config back and diffing its `sections` against the source view's,
+byte for byte equal. Not confirmed in a browser; the area cards' `display_type: compact` sizing and
+the `column_span: 2` grid math were tuned for `dashboard-lights` at its own `max_columns: 2`, and
+Home is a different dashboard, so it is worth a visual check rather than assuming the numbers
+transfer perfectly.
+
 ## Related
 
 - [dashboard-navigation-model.md](dashboard-navigation-model.md) for the three-level hierarchy
