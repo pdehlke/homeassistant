@@ -71,6 +71,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   the real `demo` integration and the newly-installed Blueprint Studio HACS integration were
   both set aside, and the tilt-support gap in config-flow template covers.
 
+- [vision-sample-pergola-solar-gauge.md](vision-sample-pergola-solar-gauge.md)
+
+  Replacing the Vision Sample dashboard's Pergola Roof placeholder with a live solar/grid-export
+  gauge sourced from the Sense energy monitor. Other real entities considered for the spot, why
+  the unnamed `sense_287516` node is actually the mains meter, and why the second gauge reads
+  gross daily export rather than a net figure that doesn't exist as its own sensor.
+
 - [homeii-music-flow.md](homeii-music-flow.md)
 
   Replacing the Sound dashboard's cards with the HOMEii Flow Music Assistant card. Why the
