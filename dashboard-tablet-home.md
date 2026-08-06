@@ -312,21 +312,66 @@ user": a short-lived login as Tablet, `frontend/set_user_data` on key `core` wit
 changed from `"tablet-home"` to `"vision-sample"`, then the refresh token revoked. The read-back
 inside that same Tablet session confirmed both the old and new values.
 
-Home had no `kiosk_mode` block of its own, since it predates this whole kiosk setup. It got the
-same block already present on Tablet Home and the four domain dashboards:
+Home had no `kiosk_mode` block of its own, since it predates this whole kiosk setup. It first got
+the same block already present on Tablet Home and the four domain dashboards, `hide_header: true`
+and `hide_sidebar: true`, copied over without adjusting it for a dashboard that, unlike those five,
+has no custom-built replacement header.
+
+### `hide_header` broke the view tabs, fixed by dropping it
+
+Home is a stock multi-view dashboard (Home, Lights, A/V, Alarm, Climate, five separate views, not
+to be confused with the domain dashboards of the same names), and its native top app bar carries a
+job the five kiosk dashboards don't ask of it: the row of view tabs is the only navigation between
+those five views. kiosk-mode's `hide_header` and `hide_sidebar` are independent toggles that each
+hide one whole region; `hide_header` doesn't distinguish "the tabs" from "the rest of the header",
+so it took the tabs with it, along with the menu button and everything else native-header. Tablet
+Home and the four domain dashboards get away with `hide_header: true` only because
+[dashboard-navigation-model.md](dashboard-navigation-model.md) and the sections above built them a
+full replacement: their own header, their own home-icon nav, their own back buttons. Home has none
+of that, so hiding its native header just broke navigation between its views.
+
+Fixed by dropping `hide_header` from Home's `kiosk_mode` block and keeping only `hide_sidebar`:
 
 ```yaml
 kiosk_mode:
   user_settings:
     - users: ["Tablet"]
-      hide_header: true
       hide_sidebar: true
 ```
 
-Confirmed by reading the saved dashboard config back over the WebSocket API, not by driving a
-browser session; unlike the original setup, this pass did not include a live re-login as Tablet to
-watch the sidebar actually disappear on Home. Worth a real check once there is a browser or the
-physical tablet in hand.
+This leaves Home's header and view tabs rendering exactly as they do for every other user; only
+the sidebar stays hidden for Tablet. The dashboard config was backed up before both saves.
+
+The background image was assumed to be part of the same header region, on the theory that it was
+lost at the same time the tabs were. That theory was wrong (see below); the background is untouched
+by anything `kiosk_mode` does and was never working for Tablet regardless of the header setting.
+
+### The background was never a `kiosk_mode` problem: it is a per-user theme setting Tablet never had
+
+The background image on Home comes from the active theme, not the dashboard config. The instance
+runs [`Nezz/homeassistant-visionos-theme`](https://raw.githubusercontent.com/Nezz/homeassistant-visionos-theme/refs/heads/master/themes/visionos.yaml),
+which sets `lovelace-background: var(--background-image)` and a per-mode `background-image: url(...)`.
+Like `default_panel`, theme selection is personal frontend user data, not part of the dashboard:
+the profile theme picker calls `saveThemePreferences`, which is `saveFrontendUserData(connection,
+"theme", data)` under the hood, the same self-only `frontend/set_user_data` mechanism as
+`default_panel`, just under key `theme` instead of `core`. Reading pde's own selection back
+(readable directly with `$HA_TOKEN`, since that only ever reads the calling connection's own data)
+returned `{"dark": false, "theme": "visionos"}`. Tablet's `theme` key had never been set at all
+(`null`), because nothing had ever set it, so Tablet was rendering the instance's fallback theme,
+which has no background image, on every dashboard, independent of `kiosk_mode`, `hide_header`, or
+which dashboard is the default.
+
+Fixed the same way as `default_panel`: a short-lived login as Tablet, `frontend/set_user_data` on
+key `theme` with value `{"dark": false, "theme": "visionos"}` (mirroring pde's own), refresh token
+revoked immediately after. Read-back inside that same Tablet session confirmed `null` before and
+the new value after.
+
+Confirmed by reading the saved dashboard config and the Tablet session's own user data back over
+the WebSocket API, not by driving a browser session; this pass did not include a live re-login as
+Tablet to watch the tabs and background actually render, or to check whether the header's menu
+(hamburger) button, still present since only `hide_sidebar` is set, does anything visible now that
+there's no sidebar for it to open. Worth a real check once there is a browser or the physical
+tablet in hand.
 
 Tablet Home itself was left untouched: it still exists, still carries its `kiosk_mode` block, and
 is still where the four domain dashboards' home-icon nav points. It is no longer reachable from
