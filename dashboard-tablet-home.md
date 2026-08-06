@@ -534,20 +534,59 @@ most of it an `ha-state-icon` with `--mdc-icon-size: 100%`, `hui-button-card`'s 
 scaling its icon to fill whatever box it's handed rather than sizing to content. `grid_options` never
 had a lever for that.
 
-Fixed with `card_mod` on each preset button, live-tested by injecting the CSS into the running page
-before touching the script: pinning both `:host` and `ha-card` to a fixed `56px` height (new
-`PRESET_BUTTON_HEIGHT` constant) and capping the icon at `24px` (`PRESET_ICON_SIZE`). Confirmed live
-that this actually shrinks the button rather than leaving a smaller icon floating in an unchanged
-box: the section below moved up to close the gap, so the row track is content-sized, not fixed.
-Applied in `preset_card()`, which both the main presets and the `AREA_GROUP_PRESETS` rows already
-shared, so the fix covers both without touching `build_leaf()`.
+Fixed (or so it seemed at the time, see the correction directly below) with `card_mod` on each
+preset button, live-tested by injecting the CSS into the running page before touching the script:
+pinning both `:host` and `ha-card` to a fixed `56px` height (new `PRESET_BUTTON_HEIGHT` constant)
+and capping the icon at `24px` (`PRESET_ICON_SIZE`). Applied in `preset_card()`, which both the main
+presets and the `AREA_GROUP_PRESETS` rows already shared, so the fix covers both without touching
+`build_leaf()`.
 
-Re-screenshotted Primary Suite: each button row dropped from roughly 130px to roughly 90px (there is
-still a fixed gap between sections that `card_mod` doesn't reach, so the shrink isn't a straight 2x
-the way the icon-size number alone would suggest). Three rows still don't leave the tile section
-fully on-screen without scrolling, matching pde's framing that the leaf doesn't have to completely
-fit, only that the elements be smaller than before, which they measurably are. Re-screenshotted
-Kitchen Lights too, the simpler leaf: it now fits with room to spare.
+Re-screenshotted Primary Suite: each button row dropped from roughly 130px to roughly 90px. Three
+rows still didn't leave the tile section fully on-screen without scrolling, matching pde's framing
+that the leaf doesn't have to completely fit, only that the elements be smaller than before, which
+they measurably were. Re-screenshotted Kitchen Lights too, the simpler leaf: it fit with room to
+spare.
+
+## The button shrink was mostly cosmetic: the wrapper cell never actually got smaller
+
+pde flagged real leftover whitespace between rows after the change above, and it led to a wrong
+conclusion getting corrected. "The section below moved up to close the gap" was true, but for the
+wrong reason: that observation was made on the *tile* change earlier the same session, not the
+button one, and got attributed to the wrong fix in the writeup above. Re-inspected properly this
+time, admin session, same live page, walking every shadow root: the button's outer grid wrapper (a
+plain `<div>` inside `hui-grid-section`'s own shadow root, one level up from anything a card's own
+`card_mod` can reach) reports `grid-row: span 2` and a `120px` computed height, completely
+unaffected by shrinking the card inside it. Forcing the inner card down to `30px` live, wrapper
+stayed at exactly `120px`. The card_mod fix above was real, the button visibly got smaller, but it
+was shrinking inside an unchanged 120px cell, not shrinking the cell, which is exactly the dead space
+pde was pointing at.
+
+The actual cause, found by reading [`hui-button-card.ts`](https://raw.githubusercontent.com/home-assistant/frontend/dev/src/panels/lovelace/cards/hui-button-card.ts)
+directly rather than guessing further: its `getGridOptions()` is hardcoded, no config field reaches
+it:
+
+```ts
+if (config.show_icon && (config.show_name || config.show_state)) {
+  return { rows: 2, columns: 6, min_columns: 2, min_rows: 2 };  // icon + text
+}
+return { rows: 1, columns: 3, min_columns: 2, min_rows: 1 };     // icon only
+```
+
+Every preset button shows an icon and a name (`show_state` was already off), so every one landed on
+`min_rows: 2` regardless of the `rows: 1` this script asks for. The only way to reach the smaller
+branch is dropping one of icon or name. Given the choice (icon-only vs. keep both and accept the
+floor vs. both plus merging the group-preset rows into fewer sections), pde chose icon-only. Added
+`show_name: False` to `preset_card()`; `card_mod` was kept as a supplementary cap on the icon, which
+still defaults to filling 100% of whatever smaller box it now gets.
+
+Re-screenshotted both leaves as Tablet. Primary Suite: all three preset rows visibly shrank (not
+just their contents), the Scenes section and most of the Lights tile grid are now on-screen, only
+the last tile row is cut off. Kitchen Lights, the simpler leaf, now fits with real room to spare.
+The `name` field stays in each button's config even with `show_name: false`; `hui-button-card` uses
+it as the `aria-label` regardless of visibility, confirmed in the same DOM inspection, so this isn't
+an accessibility regression, just a visual one. Not verified: whether the icon-only buttons (power,
+moon, sun, gear for On/Off, Low, Medium, Bright) are actually legible without their labels to someone
+who hasn't memorized them, which is the real tradeoff of this fix, not the row height math.
 
 ## Related
 
