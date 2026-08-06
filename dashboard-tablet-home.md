@@ -302,6 +302,38 @@ not individually revoked afterward; this is a low-privilege, local-only account,
 device will create and keep its own session the same way, so it was left alone rather than chased
 down.
 
+## Default dashboard retargeted to Home
+
+Later the same day, Tablet's personal default dashboard was changed again, from Tablet Home to the
+dashboard titled Home (`url_path: vision-sample`, the former Vision Sample demo dashboard; see
+[vision-sample-demo-entities.md](vision-sample-demo-entities.md)). The mechanism was identical to
+the one described above under "Setting a personal default for another user needs a session as that
+user": a short-lived login as Tablet, `frontend/set_user_data` on key `core` with `default_panel`
+changed from `"tablet-home"` to `"vision-sample"`, then the refresh token revoked. The read-back
+inside that same Tablet session confirmed both the old and new values.
+
+Home had no `kiosk_mode` block of its own, since it predates this whole kiosk setup. It got the
+same block already present on Tablet Home and the four domain dashboards:
+
+```yaml
+kiosk_mode:
+  user_settings:
+    - users: ["Tablet"]
+      hide_header: true
+      hide_sidebar: true
+```
+
+Confirmed by reading the saved dashboard config back over the WebSocket API, not by driving a
+browser session; unlike the original setup, this pass did not include a live re-login as Tablet to
+watch the sidebar actually disappear on Home. Worth a real check once there is a browser or the
+physical tablet in hand.
+
+Tablet Home itself was left untouched: it still exists, still carries its `kiosk_mode` block, and
+is still where the four domain dashboards' home-icon nav points. It is no longer reachable from
+Home, though, since Home's cards (inherited from the Vision Sample demo dashboard) do not link to
+it and the sidebar that would otherwise offer it is hidden for Tablet. If Tablet Home is meant to
+stay reachable, something on Home would need to link to it explicitly.
+
 ## Related
 
 - [dashboard-navigation-model.md](dashboard-navigation-model.md) for the three-level hierarchy
