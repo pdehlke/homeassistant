@@ -10,6 +10,12 @@ It holds documentation only. No code, no deployable configuration. The live Home
 configuration lives on the Home Assistant machine itself and is not mirrored here. Nothing in
 this repo is applied to anything by any tooling.
 
+The one exception is `.claude/skills/home-assistant/`, the coding-agent skill used to work with
+this Home Assistant instance. It lives here, repo-scoped, rather than in the private dotfiles
+repo as a user-scoped skill, because it is about this instance specifically. It is not a
+documentation file and the README contents list does not need an entry per file inside it, but
+note its presence in the README all the same.
+
 The value of the archive is the reasoning, so preserve it. When a decision is recorded, record
 the options that were rejected and why they were rejected. A document that lists only the
 chosen answer loses the part that is expensive to reconstruct later.

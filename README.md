@@ -94,3 +94,10 @@ Notes, planning, and specs for my Home Assistant buildout.
 - [CLAUDE.md](CLAUDE.md)
 
   Repo conventions for coding agents. Meta, rather than documentation about Home Assistant.
+
+- [.claude/skills/home-assistant/](.claude/skills/home-assistant/SKILL.md)
+
+  The coding-agent skill for working with this instance and its Music Assistant add-on: which
+  of the REST, WebSocket, and MCP access paths to use for a given job, instance quirks, and
+  scripts for safe Lovelace edits and dashboard regeneration. Repo-scoped rather than a
+  user-scoped dotfiles skill, since it is specific to this instance.
