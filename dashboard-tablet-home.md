@@ -508,6 +508,47 @@ nav paths, and badges all reconfirmed unchanged from the check above.
 
 Not confirmed in a browser, same caveat as the rest of this document's Home work.
 
+## Shrinking the leaves for a 1280x800 tablet, actually confirmed in a browser this time
+
+Every earlier change in this document was verified by reading saved config back over the WebSocket
+API, with a repeated caveat that it hadn't been checked in an actual browser. This one was: a
+short-lived Tablet login (the same mechanism used to set `default_panel` and `theme`), a Playwright
+storage-state file built from that session's access token, `resize 1280 800` to match the wall
+tablet's actual screen, then `goto` and `screenshot` on the live leaves. Session revoked and every
+credential file deleted immediately after, same discipline as the other Tablet-session scripts.
+
+**Entity tiles.** `rebuild-domain-dashboard.py`'s `columns: 12, rows: 2` (2 tiles per row) was never
+checked against 1280x800; screenshotted live, 5 tiles at that size filled nearly the whole 800px
+height on their own. Changed to `columns: 8` (3 per row) as new constants `LEAF_TILE_COLUMNS` /
+`LEAF_TILE_ROWS` in `rebuild-home-tab.py`, leaving `rows` alone so the brightness-slider feature
+keeps its full height. Re-screenshotted: same leaf now ends around two-thirds of the way down the
+screen instead of filling it.
+
+**Preset buttons turned out to be the bigger problem, and grid_options couldn't fix them.**
+Screenshotted the Primary Suite leaf, which has the main preset row plus two `AREA_GROUP_PRESETS`
+rows (Bedroom, Bath): three rows of buttons pushed the entity tiles below the fold entirely, worse
+than the tiles ever were. `grid_options: {rows: 1}` looked like it should already be as small as a
+button gets, so the DOM had to be inspected directly (admin session, same page, walking every shadow
+root to reach inside `hui-button-card`) to find out why: a `rows: 1` button rendered at 120px tall,
+most of it an `ha-state-icon` with `--mdc-icon-size: 100%`, `hui-button-card`'s built-in behavior of
+scaling its icon to fill whatever box it's handed rather than sizing to content. `grid_options` never
+had a lever for that.
+
+Fixed with `card_mod` on each preset button, live-tested by injecting the CSS into the running page
+before touching the script: pinning both `:host` and `ha-card` to a fixed `56px` height (new
+`PRESET_BUTTON_HEIGHT` constant) and capping the icon at `24px` (`PRESET_ICON_SIZE`). Confirmed live
+that this actually shrinks the button rather than leaving a smaller icon floating in an unchanged
+box: the section below moved up to close the gap, so the row track is content-sized, not fixed.
+Applied in `preset_card()`, which both the main presets and the `AREA_GROUP_PRESETS` rows already
+shared, so the fix covers both without touching `build_leaf()`.
+
+Re-screenshotted Primary Suite: each button row dropped from roughly 130px to roughly 90px (there is
+still a fixed gap between sections that `card_mod` doesn't reach, so the shrink isn't a straight 2x
+the way the icon-size number alone would suggest). Three rows still don't leave the tile section
+fully on-screen without scrolling, matching pde's framing that the leaf doesn't have to completely
+fit, only that the elements be smaller than before, which they measurably are. Re-screenshotted
+Kitchen Lights too, the simpler leaf: it now fits with room to spare.
+
 ## Related
 
 - [dashboard-navigation-model.md](dashboard-navigation-model.md) for the three-level hierarchy
