@@ -440,6 +440,56 @@ already shows in the native tab strip, making the in-page heading a duplicate. R
 Main Floor and Garage area-card sections as the tab's first content. `dashboard-lights` keeps its
 own copy; the two dashboards' Lights content will keep drifting apart the same way noted above.
 
+## `rebuild-home-tab.py`: a generator for Home's tabs
+
+The hand transplant above (copy content, rewrite paths, drop the heading) was a one-time fix, not
+something that survives pde re-running `rebuild-domain-dashboard.py` against `dashboard-lights`
+later and expecting Home to still match. `scripts/rebuild-home-tab.py`, added 2026-08-06, is the
+repeatable version: it builds a Home tab straight from the live floor/area/entity registries, the
+same way `rebuild-domain-dashboard.py` builds a standalone domain dashboard, rather than by reading
+another dashboard's saved config. It is based directly on that script; everything domain-specific
+(presets, entity domains, the tile feature, `AREA_ORDER`, `AREA_GROUP_PRESETS`) is copied into its
+own `DOMAINS` table, which needs to be kept in sync by hand if the original ever changes.
+
+Three things differ from `rebuild-domain-dashboard.py`, all consequences of Home being meant as the
+self-contained kiosk dashboard rather than one domain's own:
+
+- No title-only heading section, matching the fix directly above: Home never hides its header, so
+  there is nothing for a heading to stand in for.
+- Every `navigate` action targets `/vision-sample/...`, never the standalone dashboard, the same
+  self-containment fix from the section above, now generated instead of hand-applied.
+- Leaf views are named `<domain>-area-<area_id>` (`lights-area-kitchen`), not `area-<area_id>`.
+  `dashboard-lights` only ever hosts its own leaves, so the plain name never collides there; Home
+  hosts leaves from more than one domain in one flat `views` list, where `area-kitchen` would
+  collide between a Lights leaf and a future A/V leaf.
+
+Home's own hand-picked badges (the device trackers, alarm panel, and weather chips pde added to the
+top of the Lights tab, see the view's `badges` key) are never invented by the script, only read from
+the live tab and carried forward, the same principle as the header the original script preserves
+for the domain dashboards, just for a different piece of config: Home has no per-tab header card,
+badges are its equivalent.
+
+The script only rebuilds a tab that already exists on Home (`home_view_path` in `DOMAINS` must match
+a real view), and only touches that domain's tab and leaves; every other Home view is read back and
+rewritten unchanged, at its original index, so the visible tab order (Home, Lights, A/V, Alarm,
+Climate) never shifts.
+
+### Tested against Lights, and a one-time cleanup it exposed
+
+Running `python3 rebuild-home-tab.py lights` regenerated the tab and its five leaves correctly,
+badges included, but left Home with 15 views instead of the expected 10: the five `area-*` leaves
+from the hand transplant above predate this script's `lights-area-*` naming, so its dedup logic
+(which only recognizes its own prefix) never removed them, and they sat alongside the new ones as
+dead weight, unreachable from any card. Not a bug worth handling inside the generator, since it can
+only ever happen once, right after adopting the naming scheme; fixed with a one-off scratchpad
+script that deleted the five `area-*` paths by name, backed up first. Confirmed by reading Home's
+config back afterward: 10 views, no `navigation_path` anywhere referencing `dashboard-lights`, no
+leaf path under `/area-` missing the `lights-` prefix, and the Lights tab's badges unchanged
+(`device_tracker.pete_iphone`, `media_player.gym`, `alarm_control_panel.security`,
+`sensor.openweathermap_temperature`, `sensor.openweathermap_humidity`).
+
+Not confirmed in a browser, same caveat as the rest of this document's Home work.
+
 ## Related
 
 - [dashboard-navigation-model.md](dashboard-navigation-model.md) for the three-level hierarchy
