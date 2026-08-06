@@ -429,6 +429,17 @@ still reference `dashboard-lights`. Not confirmed in a browser; worth checking t
 `display_type: compact` sizing and `column_span: 2` grid math, tuned on `dashboard-lights` at its
 own `max_columns: 2`, look right on Home too.
 
+### The bare "Lights" heading section is redundant here, and gone
+
+The Lights tab's first section was a title-only heading card reading "Lights", carried over from
+`dashboard-lights`'s own top view. That heading exists there for a reason:
+[dashboard-navigation-model.md](dashboard-navigation-model.md#level-2-the-area-grid) added it
+because `hide_header: true` removes the native top app bar, and with it the only other place a
+domain dashboard's title would show. Home doesn't hide its header, so the Lights tab's title
+already shows in the native tab strip, making the in-page heading a duplicate. Removed, leaving the
+Main Floor and Garage area-card sections as the tab's first content. `dashboard-lights` keeps its
+own copy; the two dashboards' Lights content will keep drifting apart the same way noted above.
+
 ## Related
 
 - [dashboard-navigation-model.md](dashboard-navigation-model.md) for the three-level hierarchy
