@@ -105,13 +105,14 @@ Verified 2026-08-04 on the lights domain: clicking a populated card navigates to
 
 ### Home's own tabs are generated too, by a second script
 
-`vision-sample` (titled "Home") is meant to become the main kiosk dashboard for wall-mounted touch
-panels, not just the theme demo it started as; see the `home-dashboard-main-kiosk` memory and
-`dashboard-tablet-home.md` in the `pdehlke/homeassistant` repo for the full story. Each of its tabs
-(Lights so far) mirrors a domain dashboard's content but has to stay self-contained: everything on
-Home navigates within `/vision-sample/...`, never out to `dashboard-lights` or the other standalone
-domain dashboards, which have different `kiosk_mode` chrome and a home icon that points to Tablet
-Home instead.
+`vision-sample` (titled "Home") is the main kiosk dashboard for wall-mounted touch panels, not just
+the theme demo it started as; see the `home-dashboard-main-kiosk` memory and `dashboard-home.md` in
+the `pdehlke/homeassistant` repo for the full story. Each of its tabs mirrors a domain dashboard's
+content but has to stay self-contained: everything on Home navigates within `/vision-sample/...`,
+never out to `dashboard-lights` or the other standalone domain dashboards, which have different
+`kiosk_mode` chrome and a home icon that points to the dead `tablet-home` dashboard instead. Lights
+is fully built this way (generated); Climate is hand-copied from `dashboard-lennox-home` with no
+generator yet; A/V and Alarm are still empty.
 
 `scripts/rebuild-home-tab.py` builds one Home tab from the same live registries
 `rebuild-domain-dashboard.py` reads, not by copying another dashboard's saved config. It's based on

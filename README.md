@@ -49,13 +49,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   silently ignored by `masonry`, and why card-mod rules need `!important` to beat a card's own
   stylesheet.
 
-- [dashboard-tablet-home.md](dashboard-tablet-home.md)
+- [dashboard-home.md](dashboard-home.md)
 
-  The root, level 1 dashboard: four domain cards in Crestron top-screen order, why Alarm stays
-  non-tappable until it has entities, the new non-admin Tablet kiosk user and why setting its
-  personal default dashboard needed a short-lived login as that user, the kiosk-mode plugin that
-  hides the sidebar and header for it, the home-icon nav added to the shared header so there is
-  a way back, and the later retargeting of Tablet's default dashboard to Home.
+  Home, the tabbed dashboard the Tablet kiosk user actually lands on: why a native tab strip
+  replaced the short-lived Tablet Home root dashboard, the session dance needed to set another
+  user's default dashboard and theme, why Home hides only the sidebar and not the header, and the
+  build status of each tab (Lights self-contained and generator-built, Climate hand-copied and
+  generator-pending, A/V and Alarm not yet built).
 
 - [light-entity-strategy.md](light-entity-strategy.md)
 

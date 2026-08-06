@@ -22,22 +22,28 @@ The Home Assistant dashboards therefore mirror the Crestron hierarchy:
 
 | Level | Screen | Contents | Status |
 | :--- | :--- | :--- | :--- |
-| 1 | Root | One card per domain | Built, see [dashboard-tablet-home.md](dashboard-tablet-home.md) |
+| 1 | Root | Tab selection on Home itself | Built, see [dashboard-home.md](dashboard-home.md) |
 | 2 | Domain | One card per area | Built for lights and A/V |
 | 3 | Leaf | One domain in one area | Built for lights and A/V |
 
-Level 1 was deferred at first. The sidebar already listed the domain dashboards, so it did the same
-job with no work, until [Tablet Home](dashboard-tablet-home.md) needed a real one to put a kiosk
-device's default dashboard on, at which point the sidebar was no longer available to stand in for
-it at all.
+Level 1 went through two shapes before landing here. It was deferred at first: the sidebar already
+listed the domain dashboards, so it did the same job with no work. Then, once a kiosk device needed
+a real level 1 to put its default dashboard on and the sidebar was no longer available to stand in
+for it, it became its own root dashboard, Tablet Home, a 2x2 grid of cards each navigating to a
+domain's standalone dashboard. That lasted less than a day: the kiosk user's default dashboard was
+retargeted to Home (`url_path: vision-sample`), whose own native view tabs (Home, Lights, A/V,
+Alarm, Climate) now do level 1's job directly, one tab per domain, with no separate dashboard or
+button-grid step involved. See [dashboard-home.md](dashboard-home.md) for the full story, including
+why the Tablet Home root dashboard is now considered dead.
 
 ## Level 2, the area grid
 
 The page opens with a title-only heading, the domain name and its icon, no cards under it. This
 exists for the same reason the leaf grew its own back button: kiosk-mode hides HA's native top app
-bar for the [Tablet Home](dashboard-tablet-home.md) user, which is the only other place the view's
-title (`Lights`, `A/V`, ...) would ever render, and without it every domain dashboard's floor
-sections look identical.
+bar for the Tablet kiosk user on these standalone domain dashboards (see
+[dashboard-home.md](dashboard-home.md)), which is the only other place the view's title (`Lights`,
+`A/V`, ...) would ever render, and without it every domain dashboard's floor sections look
+identical.
 
 Every area gets a card, including areas that contain nothing of that domain. This is on purpose.
 Most rooms have no lights in Home Assistant yet because the Crestron channel mapping is unknown, so
@@ -59,8 +65,9 @@ exactly the information that is most useful during a migration.
 
 Each populated area gets a subview at `/<dashboard>/area-<area_id>`. Marking it `subview: true`
 keeps it out of the tab bar and gives a back button that returns to level 2, in HA's own top app
-bar. That native back button is invisible to anyone using [Tablet
-Home](dashboard-tablet-home.md), whose kiosk-mode setup hides that whole bar, so the leaf also
+bar. That native back button is invisible to anyone using the Tablet kiosk user on these standalone
+dashboards (see [dashboard-home.md](dashboard-home.md)), whose kiosk-mode setup hides that whole
+bar, so the leaf also
 carries its own explicit back button as in-page content, first thing on the page.
 
 The leaf holds up to five things in order:
@@ -221,7 +228,7 @@ any other hand-authored key at the config root survives too.
 That last one was a real bug, not a precaution taken in advance. The first version of this script
 built `updated = {"views": [...]}` directly, which is fine as long as `views` is the only thing
 that has ever lived at the config root. It stopped being fine on 2026-08-05, the day
-[dashboard-tablet-home.md](dashboard-tablet-home.md) added a root-level `kiosk_mode` key to the
+[the Tablet Home work](dashboard-home.md) added a root-level `kiosk_mode` key to the
 Lights and A/V dashboards by hand. The next regeneration of either domain silently dropped it,
 because the header-preservation logic only ever looked inside `views[0]`, never at the config root
 itself. Caught by re-testing the Tablet kiosk user right after the regeneration, not by reading the
@@ -304,8 +311,9 @@ Confirmed by driving the real dashboard on 2026-08-04 rather than by reading the
 
 ## Related
 
-- [dashboard-tablet-home.md](dashboard-tablet-home.md) for level 1, and for why kiosk-mode hiding
-  HA's native chrome is what forced level 2 to grow its own title and level 3 its own back button.
+- [dashboard-home.md](dashboard-home.md) for level 1, and for why kiosk-mode hiding HA's native
+  chrome forced level 2 to grow its own title and level 3 its own back button on the standalone
+  domain dashboards, though not on Home's own tabs, which keep their native header.
 - [dashboard-header-card.md](dashboard-header-card.md) for the date, time and weather banner the
   level 2 view carries, and the view-type constraint on reusing it elsewhere.
 - [light-entity-strategy.md](light-entity-strategy.md) for how the light entities themselves are
