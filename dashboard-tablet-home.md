@@ -488,6 +488,24 @@ leaf path under `/area-` missing the `lights-` prefix, and the Lights tab's badg
 (`device_tracker.pete_iphone`, `media_player.gym`, `alarm_control_panel.security`,
 `sensor.openweathermap_temperature`, `sensor.openweathermap_humidity`).
 
+### The leaves' breadcrumb back button was next to go
+
+`build_leaf()` still carried over `rebuild-domain-dashboard.py`'s full-width back-button section, a
+`bare_section([back_card(cfg)])` ahead of the presets. That button exists on the domain dashboards
+because `hide_header: true` removes HA's native subview back arrow along with the rest of the
+header, so without it there is no way off a leaf at all (see
+[dashboard-navigation-model.md](dashboard-navigation-model.md#level-3-the-leaf)). Home never hides
+its header, so every leaf already gets that native back arrow for free; the hand-built button was
+pure duplication. Removed `back_card()` entirely and the section that held it, so a leaf now opens
+straight on its title-and-presets row. The dry-run summary printer's `baseline` section count, used
+to report how many scene sections a leaf has, was still counting the removed section and had started
+printing `-1 scene section(s)`; fixed alongside it.
+
+Re-tested against Lights: the Kitchen Lights leaf's first section now starts with the heading and
+preset buttons directly, no `m3rf:arrow-back` card anywhere in any of the five leaves, section count
+per leaf down from 3 to 2 (plus one more for Primary Suite's scene section, unchanged). View count,
+nav paths, and badges all reconfirmed unchanged from the check above.
+
 Not confirmed in a browser, same caveat as the rest of this document's Home work.
 
 ## Related
