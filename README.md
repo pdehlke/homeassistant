@@ -85,11 +85,6 @@ Notes, planning, and specs for my Home Assistant buildout.
   instead of `sections`, and why Sendspin and library artwork are blocked in Chrome by Local
   Network Access.
 
-- [home-av-homeii-flow-design.md](home-av-homeii-flow-design.md)
-
-  The approved design for placing HOMEii Flow full-width on Home's formerly empty A/V tab while
-  preserving every other view and using the existing active-player helper.
-
 - [mac-mini-migration.md](mac-mini-migration.md)
 
   Moving Home Assistant off the Raspberry Pi and onto a headless Late 2014 Mac mini.
