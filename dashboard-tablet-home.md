@@ -397,19 +397,37 @@ that `hide_header` is off for it, so carrying the card-based one over would have
 headers, and its home icon navigates to `/tablet-home`, which is the wrong destination from inside
 Home. Only the `sections` content moved.
 
-This does not make Lights fully self-contained inside Home. The area cards' `tap_action` still
-points at `/dashboard-lights/area-entry`, `/dashboard-lights/area-kitchen`, and so on, the real
-Lights dashboard's own leaf views, not anything living on Home. Tapping an area still leaves Home
-and lands on `dashboard-lights`, which carries its own `kiosk_mode` block (`hide_header` and
+At this point the area cards' `tap_action` still pointed at `/dashboard-lights/area-entry`,
+`/dashboard-lights/area-kitchen`, and so on, the real Lights dashboard's own leaf views. Tapping an
+area left Home for `dashboard-lights`, which carries its own `kiosk_mode` (`hide_header` and
 `hide_sidebar` both true) and whose header's home icon points back to `/tablet-home`, not to Home.
-Functionally identical to the Tablet Home orphaning noted above, and left alone for the same
-reason: not in scope of this change.
+Fixed below.
 
-Confirmed by reading the saved config back and diffing its `sections` against the source view's,
-byte for byte equal. Not confirmed in a browser; the area cards' `display_type: compact` sizing and
-the `column_span: 2` grid math were tuned for `dashboard-lights` at its own `max_columns: 2`, and
-Home is a different dashboard, so it is worth a visual check rather than assuming the numbers
-transfer perfectly.
+### Making Lights fully self-contained: the leaf views copied over too
+
+Home is meant to become the main kiosk dashboard for wall-mounted touch panels (see
+[crestron-strategy.md](crestron-strategy.md#touch-panels-replacing-the-tsw-752s) for the hardware
+this targets), which means it can't lean on `dashboard-lights` for navigation the way the plan
+above did. The fix: copy `dashboard-lights`'s five `subview: true` leaf views (Entry, Kitchen,
+Dining Room, Primary Suite, Office Lights) onto Home unchanged, then rewrite every
+`navigation_path` inside the copied content, both the leaves and the area cards added earlier, that
+pointed at `dashboard-lights`:
+
+| Old | New |
+| :--- | :--- |
+| `/dashboard-lights/lights` (the leaves' back button) | `/vision-sample/kitchen` (Home's own Lights tab) |
+| `/dashboard-lights/area-<name>` (the area cards' tap targets) | `/vision-sample/area-<name>` |
+
+`dashboard-lights` itself was left untouched, this only copies content into Home; the two
+dashboards now carry duplicate leaf views that will drift independently if either is edited later.
+Home went from 5 views to 10. The five new ones keep `subview: true`, so, same as on
+`dashboard-lights`, they don't add clutter to the visible tab strip; they're reachable only by
+tapping an area card or a leaf's own back button.
+
+Confirmed by reading the saved config back and searching every `navigation_path` value in it: none
+still reference `dashboard-lights`. Not confirmed in a browser; worth checking that the leaves'
+`display_type: compact` sizing and `column_span: 2` grid math, tuned on `dashboard-lights` at its
+own `max_columns: 2`, look right on Home too.
 
 ## Related
 
