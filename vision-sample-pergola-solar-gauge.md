@@ -94,13 +94,17 @@ No custom radial-gauge card is installed on this instance (checked `lovelace/res
 native `gauge` card already renders as a radial arc with an optional needle, so nothing new
 needed installing.
 
-## Left open
+## Cleanup: the orphaned cover and its helper
 
-`cover.pergola_roof` and its backing `input_number.pergola_roof_position` helper still exist;
-only the dashboard card was swapped, not the entity or its helper. Nothing else on the instance
-references either. Left in place rather than deleted, same call as leaving
-`water_heater.demo_water_heater` unbuilt in vision-sample-demo-entities.md: a decision for pde,
-not something to make unilaterally while touching an unrelated card.
+Once nothing referenced them, pde decided to delete rather than keep them around, unlike the
+`water_heater.demo_water_heater` gap in vision-sample-demo-entities.md which was left in place.
+`cover.pergola_roof` was a Template Helper, which config-flow helpers register as their own
+config entry, so it came off through `DELETE /api/config/config_entries/entry/<entry_id>`
+(confirmed working REST; the WebSocket equivalent, `config_entries/delete`, does not exist on
+this version and returns `unknown_command`). `input_number.pergola_roof_position` is a plain
+storage helper, not a config entry, so it went through `input_number/delete` over WebSocket
+instead, keyed by its unique ID rather than an entry ID. Both returned `404` from
+`/api/states` afterward and neither required a restart.
 
 ## Verified live
 
