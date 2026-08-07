@@ -1,0 +1,27 @@
+Read /Users/pde/src/github.com/pdehlke/homeassistant/homie-dashboard-install-plan.md
+completely, then read the project’s Home Assistant skill at /Users/pde/src/github.com/
+pdehlke/homeassistant/.claude/skills/home-assistant/SKILL.md. Resume Homie work from /
+Users/pde/src/github.com/pdehlke/homie-dashboard on main. Do not change anything until
+you have checked both repositories’ status and confirmed the documented live release and
+commit state.
+
+## Next-session checkpoint — 2026-08-07
+
+Release `20260807.11` is live. Overview C now has the Garden/Irrigation card in the center
+column, the Main House/floors card in the right column, and a bottom-right Main House
+thermostat launcher. That launcher opens the existing thermostat overlay filtered to
+`climate.casasolar_south_zone_1`; Overview A's Climate button remains unfiltered and shows
+both configured thermostats.
+
+Two verification items are intentionally deferred:
+
+- The close-time filter-reset test is not mutation-sensitive. A later unfiltered
+  `openThermostat()` independently clears the filter, so the current close/reopen test still
+  passes if the explicit reset inside `closeThermostat()` is removed. The implementation does
+  contain that reset; improve the test only if this redundant invariant remains desirable.
+- Browser visual verification remains pending for the swapped card layout, Main House launcher
+  presentation, one-zone overlay, and subsequent Overview A two-zone overlay.
+
+Repository tests pass 34/34. Live and repository `homie-dashboard.html` hashes matched after
+deployment. The latest live backup is `/config/backups/homie-dashboard-20260807-115717`.
+No secrets were copied into either repository.

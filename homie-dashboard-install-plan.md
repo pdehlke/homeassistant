@@ -9,18 +9,20 @@ the fork below rather than reconstructed from this plan:
 - GitHub: `https://github.com/pdehlke/homie-dashboard`
 - Origin: `git@github.com:pdehlke/homie-dashboard.git`
 - Upstream: `git@github.com:Big-Edge2297/homie-dashboard.git`
-- Latest pushed commit: `35bf0f9` on `main`
-- Deployed asset release: `20260807.10`
+- Latest pushed commit before the current uncommitted checkpoint: `35bf0f9` on `main`
+- Deployed asset release: `20260807.11`
 - Live assets: `/config/www/community/homie-dashboard/`
 - Lovelace dashboard: `homie-dash`, loading
-  `/local/community/homie-dashboard/homie-dashboard.html?v=20260807.10`
+  `/local/community/homie-dashboard/homie-dashboard.html?v=20260807.11`
 
 Resume work in the fork, directly on `main` unless the user changes that instruction. The next
 design area is the remainder of Overview C; Solar and the Overview C A/V sidebar icon are accepted.
 The A/V sidebar icon is tied semantically to `action: "media_browser"` and uses the circle-and-play
 Now Playing symbol.
 
-Release `20260807.10` is tracked by commit `35bf0f9`. In addition to the five-day OpenWeatherMap
+Release `20260807.10` is tracked by commit `35bf0f9`. Release `20260807.11` adds the Overview C
+card swap and filtered Main House thermostat launcher described in the checkpoint below. In
+addition to the five-day OpenWeatherMap
 forecast and AQI fallback from `.8`, it reads sunrise and sunset from `sun.sun`, UV index from
 `sensor.openweathermap_uv_index`, and moon phase from `sensor.moon_phase`. The native Home
 Assistant Moon integration was installed for that last entity. Release `.10` also fixes the `.9`
@@ -330,4 +332,13 @@ HACS updates can overwrite `config.js` and `homie-dashboard.html`, and can omit 
   `sensor.openweathermap_uv_index`, and moon phase from the native Moon integration's
   `sensor.moon_phase` entity.
 - Cache busting uses one release token at both the Lovelace iframe and nested asset boundaries.
-- Next session: continue evaluating and customizing the non-Solar portions of Overview C.
+- Overview C now places Garden/Irrigation in the center column and Main House/floors in the right
+  column. Its bottom-right Main House thermostat launcher opens the existing thermostat overlay
+  filtered to `climate.casasolar_south_zone_1`; Overview A remains unfiltered.
+- Deferred verification: the close-time filter-reset test is not mutation-sensitive because a
+  later unfiltered open independently resets the filter. The implementation is correct, but the
+  test does not independently prove the close-time reset.
+- Deferred verification: browser confirmation of the swapped layout, launcher presentation,
+  one-zone Main House overlay, and subsequent two-zone Overview A overlay remains pending.
+- Next session: complete or consciously waive those two verification items, then continue
+  evaluating and customizing the non-Solar portions of Overview C.
