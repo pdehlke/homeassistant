@@ -90,6 +90,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   The installed Homie Dashboard architecture, security model, fork location, deployment workflow,
   accepted Overview customizations, cache-busting strategy, and checkpoint for continuing work.
 
+- [homie-thermostat-control-fix.md](homie-thermostat-control-fix.md)
+
+  Post-mortem on the Main House thermostat launcher and overlay, which displayed plausible values
+  and moved an on-screen number without ever reaching the real Lennox thermostats. What was
+  actually wrong (a Home Assistant service-schema requirement and a silently-dropped step size,
+  both invisible to normal error handling), the fixes rejected along the way, and two mistakes the
+  fix itself made that only live browser verification caught.
+
 - [mac-mini-migration.md](mac-mini-migration.md)
 
   Moving Home Assistant off the Raspberry Pi and onto a headless Late 2014 Mac mini.

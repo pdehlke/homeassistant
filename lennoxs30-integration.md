@@ -116,6 +116,33 @@ the integration logs a connection error.
    reported name, not from its IP address, so they should not change.
 6. While there, set the DHCP reservation in eero for the new address so this does not happen again.
 
+## Known quirk: `climate.set_temperature` requires both bounds, and silently drops off-step calls
+
+Both zones report `hvac_mode` as `heat_cool` essentially all the time (see
+[homie-thermostat-control-fix.md](homie-thermostat-control-fix.md) for the investigation this was
+found during), using `target_temp_high`/`target_temp_low` rather than a single `temperature`
+attribute, and both declare `target_temp_step: 1.0`. Any caller of `climate.set_temperature`
+against these entities, not just the Homie dashboard, needs to respect two things Home Assistant
+does not surface as an error:
+
+- **Both bounds must be supplied together.** Home Assistant's own service schema treats
+  `target_temp_high` and `target_temp_low` as an all-or-nothing pair (`vol.Inclusive`). A call
+  that supplies only one gets a bare `400: Bad Request` at the schema-validation layer, before it
+  reaches the entity. The response over REST carries no detail; the same call over the WebSocket
+  API returns the real voluptuous message. To change one bound without moving the other, send
+  both keys and repeat the current value of the one that should stay put.
+- **The call is silently dropped if it doesn't land on a `target_temp_step` multiple.** Confirmed
+  directly against `climate.casasolar_south_zone_1`: a call with a 0.5° delta returns HTTP `200`
+  with an empty body, exactly like a successful call, but produces no state change, no `logbook`
+  entry, and nothing in `/api/error_log`. A 1.0° delta (matching the declared step) works
+  immediately. There is no client-visible signal that distinguishes an accepted-and-applied call
+  from an accepted-and-ignored one; the only way to tell is to read `target_temp_high` /
+  `target_temp_low` back after the call and compare.
+
+Read `target_temp_step` from the entity and round every delta to a multiple of it before calling
+the service. Do not assume 0.5° granularity from the UI convention of showing half-degree ticks;
+that convention does not match what this integration's entities actually accept.
+
 ## Open follow-ups
 
 - Set DHCP reservations for both S30s in eero. South is confirmed missing; North should be verified

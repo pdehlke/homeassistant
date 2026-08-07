@@ -9,11 +9,13 @@ the fork below rather than reconstructed from this plan:
 - GitHub: `https://github.com/pdehlke/homie-dashboard`
 - Origin: `git@github.com:pdehlke/homie-dashboard.git`
 - Upstream: `git@github.com:Big-Edge2297/homie-dashboard.git`
-- Latest pushed commit before the current uncommitted checkpoint: `35bf0f9` on `main`
-- Deployed asset release: `20260807.11`
+- Latest pushed commit on `main` as of this checkpoint: `b0d56d1` (Overview C card swap and
+  filtered Main House launcher), plus the thermostat control fix described below, committed and
+  pushed alongside this checkpoint update.
+- Deployed asset release: `20260807.13`
 - Live assets: `/config/www/community/homie-dashboard/`
 - Lovelace dashboard: `homie-dash`, loading
-  `/local/community/homie-dashboard/homie-dashboard.html?v=20260807.11`
+  `/local/community/homie-dashboard/homie-dashboard.html?v=20260807.13`
 
 Resume work in the fork, directly on `main` unless the user changes that instruction. The next
 design area is the remainder of Overview C; Solar and the Overview C A/V sidebar icon are accepted.
@@ -28,6 +30,15 @@ forecast and AQI fallback from `.8`, it reads sunrise and sunset from `sun.sun`,
 Assistant Moon integration was installed for that last entity. Release `.10` also fixes the `.9`
 expanded-view regression where `uvValue` was referenced outside the scope in which it had
 accidentally been declared.
+
+Release `20260807.13` fixes the Main House thermostat launcher and overlay added in `.11`: it
+displayed but never actually controlled the real Lennox thermostats. See
+[homie-thermostat-control-fix.md](homie-thermostat-control-fix.md) for the full investigation.
+The short version: both thermostats run in dual-setpoint `heat_cool` mode, which
+`climate.set_temperature` requires as a paired `target_temp_high`/`target_temp_low` call, and both
+silently drop any call that does not land on their declared 1.0° step. `.12` was an intermediate,
+still-broken deploy caused by redeploying under an unchanged cache-busting token; only `.13` is
+verified working, confirmed by an actual browser tap that moved the real entity's setpoint.
 
 Credential handoff files now persist across reboots under `/Users/pde/tmp`, outside both Git
 repositories:
@@ -337,8 +348,14 @@ HACS updates can overwrite `config.js` and `homie-dashboard.html`, and can omit 
   filtered to `climate.casasolar_south_zone_1`; Overview A remains unfiltered.
 - Deferred verification: the close-time filter-reset test is not mutation-sensitive because a
   later unfiltered open independently resets the filter. The implementation is correct, but the
-  test does not independently prove the close-time reset.
-- Deferred verification: browser confirmation of the swapped layout, launcher presentation,
-  one-zone Main House overlay, and subsequent two-zone Overview A overlay remains pending.
-- Next session: complete or consciously waive those two verification items, then continue
-  evaluating and customizing the non-Solar portions of Overview C.
+  test does not independently prove the close-time reset. Still open.
+- Browser confirmation of the swapped layout, launcher presentation, one-zone Main House overlay,
+  and two-zone Overview A overlay is done: verified live via Playwright against release
+  `20260807.13`, including an actual thermostat setpoint change confirmed on the real entity. See
+  [homie-thermostat-control-fix.md](homie-thermostat-control-fix.md).
+- The Main House launcher and thermostat overlay now actually control the real thermostats.
+  Previously they displayed plausible values and moved an on-screen number without ever reaching
+  the physical Lennox units; see the post-mortem linked above for what was actually wrong and how
+  it was found.
+- Next session: complete or consciously waive the remaining close-time filter-reset test item,
+  then continue evaluating and customizing the non-Solar portions of Overview C.
