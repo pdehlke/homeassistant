@@ -10,7 +10,9 @@ description: Work with pde's Home Assistant at http://homeassistant.local:8123 a
 - Base URL `http://homeassistant.local:8123`. Local network only.
 - `$HA_TOKEN` is always a valid long-lived access token with **full admin rights**. Read it from the environment. Never echo, log, or paste it. See [Never leak the token](#never-leak-the-token).
 - Runs on a Raspberry Pi. Config dir is `/config`, not reachable from this machine.
-- Music Assistant runs as an HA add-on at `http://mass.local:8095` (also `http://192.168.4.125:8095`). Drive it through the HA-side `music_assistant.*` services; its own API rejects `$HA_TOKEN` and needs separate credentials we do not have. **Pandora and SiriusXM are both connected.** Pandora surfaces as 36 library radio stations; SiriusXM is reachable only via `search`, never `get_library`. Artist/album/track counts are 0 because both are station services, not because nothing is configured. Never judge provider presence from `get_library`. Read [references/music-assistant.md](references/music-assistant.md) before touching it.
+- Music Assistant runs as an HA add-on at `http://mass.local:8095`. Drive it through the HA-side `music_assistant.*` services; its own API rejects `$HA_TOKEN` and needs separate credentials we do not have. **Pandora and SiriusXM are both connected.** Pandora surfaces as 36 library radio stations; SiriusXM is reachable only via `search`, never `get_library`. Artist/album/track counts are 0 because both are station services, not because nothing is configured. Never judge provider presence from `get_library`. Read [references/music-assistant.md](references/music-assistant.md) before touching it.
+- IPv6 is disabled. Use `homeassistant.local` for HA and `mass.local` for Music Assistant. Do not
+  revive the obsolete literal-IP workaround for multi-request login flows or browser requests.
 
 ## Pick the right access path
 
@@ -55,3 +57,26 @@ Full entity inventory, the Sense dead list, installed custom cards, and dashboar
 ## Lovelace and cards
 
 Dashboard editing, the sections grid math, and hard-won lessons about the `wall-clock-card` are in [references/lovelace.md](references/lovelace.md). Read it before resizing or laying out any card.
+
+## Homie Dashboard fork
+
+- Working copy: `/Users/pde/src/github.com/pdehlke/homie-dashboard`
+- GitHub fork: `https://github.com/pdehlke/homie-dashboard`
+- Git remote: `git@github.com:pdehlke/homie-dashboard.git`
+- Live HA assets: `/config/www/community/homie-dashboard/`
+- Lovelace dashboard path: `homie-dash`
+
+The fork's `main` branch is the source of truth for custom Homie code and its placeholder-bearing
+`dist/config.js`. The live copy injects a real token and must never be copied back into Git. HACS
+can overwrite the live directory, so do not update Homie through HACS without first reconciling the
+fork and taking a backup.
+
+Persistent credential handoff files live outside both repositories under `/Users/pde/tmp`:
+
+- `/Users/pde/tmp/homie-ha-edit-key`
+- `/Users/pde/tmp/homie-dashboard-password`
+- `/Users/pde/tmp/homie-dashboard-token`
+
+Never print their contents. SSH/SFTP uses `root@homeassistant.local` on port `2222`. Read
+`homie-dashboard-install-plan.md` in this repository for the current customization ledger,
+deployment procedure, backups, and next-work checkpoint.

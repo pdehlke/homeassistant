@@ -39,19 +39,12 @@ Also note the API may return a series whose data starts later than the requested
 
 **A start time earlier than the recorder's oldest row also returns `[]`, not the subset that does exist.** Asking for 48h on an instance holding 24h gets you nothing at all, which reads exactly like "this entity has no history". Confirmed 2026-08-04: a 48h query on `binary_sensor.fridge_power` returned `[]` while a 24h query returned 86 events. When a history query comes back empty, halve the window and retry before concluding the entity is unrecorded.
 
-### A multi-request login flow against `homeassistant.local` can 400 with "IP address changed"
+### The former dual-stack login failure is resolved
 
-`POST /auth/login_flow` then `POST /auth/login_flow/<id>` (the two-step username/password exchange,
-used when minting a session for a non-admin user rather than using `$HA_TOKEN`) failed consistently
-with `{"message": "IP address changed"}` when both requests targeted the hostname, even from the
-same machine seconds apart. The flow's IP check compares the two requests' apparent remote address,
-and this machine's dual-stack resolution picks a different local route across separate connections
-to the same mDNS name. Confirmed the server side is stable (`homeassistant.local` resolves to the
-same address every time via `ping`); the mismatch is this machine's outbound path, not the server's.
-
-Fix: use the literal LAN IP for both requests in that exchange, not the hostname. `curl` reproduces
-it directly, which is the fastest way to confirm this is what's happening before chasing anything
-else.
+A multi-request login flow once failed with `{"message": "IP address changed"}` because consecutive
+requests could take different IPv4 and IPv6 routes. IPv6 is now disabled for this installation, so
+the literal-IP workaround is obsolete. Use `homeassistant.local` consistently for login flows,
+REST, WebSocket, browser, and SSH access. Use `mass.local` for direct Music Assistant access.
 
 ### Install an integration via config flow
 

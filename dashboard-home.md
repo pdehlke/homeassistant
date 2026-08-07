@@ -75,21 +75,17 @@ which was never the intent. The only path is a short-lived login as Tablet:
 5. `POST /auth/revoke` with the `refresh_token` to end the session immediately rather than leaving a
    long-lived credential from a one-time setup step.
 
-### An undocumented HA quirk found while minting the session
+### Resolved dual-stack login issue
 
-The two-step login flow failed consistently with `IP address changed` (HTTP 400 over plain `curl`,
-surfacing as a 403 from the browser) when both requests targeted `homeassistant.local`, even
-seconds apart from the same machine. The handler in
-`homeassistant/components/auth/login_flow.py` stores the requesting IP address on the flow at
-creation and rejects any later step if the apparent remote address differs.
-`homeassistant.local` is mDNS and resolved consistently to `192.168.4.125` when checked directly,
-so the mismatch is not the server's address changing; the more likely explanation is this machine's
-own dual-stack resolution picking a different local route (IPv4 vs. a link-local IPv6 form of the
-same interface) across two separate connections to the same mDNS name. Repeating both requests
-against the literal IP instead of the hostname made the failure disappear immediately and
-consistently, in both a raw `curl` reproduction and the actual browser login. Worth knowing for any
-future script or automation that authenticates in more than one request against
-`homeassistant.local`: use the LAN IP for that specific exchange.
+The two-step login flow once failed with `IP address changed` when consecutive requests used
+`homeassistant.local`. Home Assistant records the requesting client address when a login flow is
+created and rejects a later step if that address differs. The client was able to reach the server
+over both IPv4 and IPv6, so separate requests could appear to originate from different addresses.
+
+IPv6 has since been disabled for this installation, eliminating that route ambiguity. The literal
+IPv4 workaround is obsolete. Use `homeassistant.local` for Home Assistant browser, HTTP API, and
+WebSocket connections. Use `mass.local` for direct Music Assistant connections. Do not hardcode a
+LAN address for either service.
 
 ### `default_panel`: retargeted from `tablet-home` to `vision-sample`
 

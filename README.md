@@ -85,6 +85,11 @@ Notes, planning, and specs for my Home Assistant buildout.
   instead of `sections`, and why Sendspin and library artwork are blocked in Chrome by Local
   Network Access.
 
+- [homie-dashboard-install-plan.md](homie-dashboard-install-plan.md)
+
+  The installed Homie Dashboard architecture, security model, fork location, deployment workflow,
+  accepted Overview customizations, cache-busting strategy, and checkpoint for continuing work.
+
 - [mac-mini-migration.md](mac-mini-migration.md)
 
   Moving Home Assistant off the Raspberry Pi and onto a headless Late 2014 Mac mini.

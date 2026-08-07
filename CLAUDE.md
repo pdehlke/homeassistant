@@ -76,3 +76,7 @@ problems.
 Music Assistant runs as a Home Assistant add-on. Several documents depend on the Supervisor
 and its ingress proxy existing, so any change to the installation method has knock-on effects
 worth checking before it is recommended.
+
+Use `homeassistant.local` for Home Assistant browser, HTTP API, and WebSocket endpoints, and use
+`mass.local` for direct Music Assistant endpoints. IPv6 is disabled, so earlier advice to use a
+literal IPv4 address to avoid dual-stack route ambiguity is obsolete. Do not hardcode LAN addresses.

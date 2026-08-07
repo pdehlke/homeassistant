@@ -1,6 +1,6 @@
 # Music Assistant
 
-Server 2.9.10, schema 31, running as an HA add-on. `http://mass.local:8095`, also `http://192.168.4.125:8095`.
+Server 2.9.10, schema 31, running as an HA add-on at `http://mass.local:8095`.
 
 ## Reaching MA's full API through HA ingress
 
