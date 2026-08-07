@@ -4,6 +4,11 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 ## Contents
 
+- [project-todo.md](project-todo.md)
+
+  A live, ordered backlog for ongoing work, unlike the rest of this archive which records
+  finished reasoning. Check it for what's next.
+
 - [area-floor-layout.md](area-floor-layout.md)
 
   The area and floor structure of the instance. Why the Garage is modelled as a floor (areas
