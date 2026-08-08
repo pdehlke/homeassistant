@@ -41,11 +41,7 @@ removing an item for any reason other than completing it.
 9. Investigate lighting scenes. I have two scenes defined but I don't see them
    anywhere in homie.
 10. Water meter monitoring: https://github.com/gunnaraas/watermeter.git
-11. Decide whether to add a periodic `homeassistant.reload_config_entry` automation for the
-    Rachio integration. Without it, neither the zone-disabled alert's 30-minute fallback nor its
-    state trigger ever sees a real zone disable: confirmed via source (Rachio zone entities are
-    non-polling and only re-fetch enabled/disabled status at `async_setup_entry`, i.e. HA start
-    or a reload) and empirically (a still-enabled zone went two full days with zero state writes).
-    See `rachio-zone-disabled-alert.md`'s investigation section for the recommended interval
-    (every 15-30 minutes, well under Rachio's rate limit) and its tradeoff (briefly flashes every
-    Rachio entity through `unavailable` on each reload).
+11. ~~Decide whether to add a periodic `homeassistant.reload_config_entry` automation for the
+    Rachio integration.~~ Done 2026-08-08: `automation.rachio_periodic_config_entry_reload`
+    reloads the entry every hour, on pde's explicit call (hourly rather than the doc's recommended
+    15-30 minutes, since a webhook fix may make this moot soon; see `rachio-zone-disabled-alert.md`).

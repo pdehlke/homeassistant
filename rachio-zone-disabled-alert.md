@@ -7,12 +7,14 @@ the Main Irrigation controller's whole-device standby mode turns on.
 |---|---|
 | Automation | `automation.rachio_zone_or_valve_disabled_alert` (id `rachio_zone_disabled_alert`) |
 | Automation | `automation.rachio_standby_mode_engaged_alert` (id `rachio_standby_engaged_alert`) |
+| Automation | `automation.rachio_periodic_config_entry_reload` (id `rachio_periodic_reload`) |
 | Helper | `input_text.rachio_known_zone_switches` (baseline, max length 255) |
 | Source | Rachio integration switches on the Main Irrigation controller and the Back Yard Smart Hose Timer |
 
-Both automations are live and enabled. Verified working on 2026-08-08 against Home Assistant
-2026.7.4, first by calling `automation.trigger` directly, then later the same day against a real
-North re-disable that also confirmed push delivery. See Trigger history below for both.
+All three automations are live and enabled. The two alert automations were verified working on
+2026-08-08 against Home Assistant 2026.7.4, first by calling `automation.trigger` directly, then
+later the same day against a real North re-disable that also confirmed push delivery. See Trigger
+history below for both. The periodic reload automation was added later the same day; see below.
 
 ## Why this exists
 
@@ -393,6 +395,50 @@ choices) was made to guard against exactly that 3 AM scenario; the guard itself 
 keep, but the scenario it guards against turns out not to be reachable on this instance as
 currently configured.
 
+## The periodic reload automation, added 2026-08-08
+
+The investigation above concluded that nothing on this instance ever surfaces a real zone disable
+without a forced Rachio config-entry reload, and recommended a `homeassistant.reload_config_entry`
+automation on a 15-30 minute cadence. pde decided on an hourly cadence instead, explicitly trading
+detection latency for fewer reload-triggered `unavailable` blips across every Rachio entity, on the
+grounds that a webhook fix (making this instance internet-reachable, see `project-todo.md` item 3)
+might make the whole reload workaround moot within the week; if that happens this automation can
+likely be deleted rather than tuned.
+
+```yaml
+id: rachio_periodic_reload
+alias: Rachio periodic config entry reload
+description: >-
+  Forces a reload of the Rachio integration every hour so zone-disable and other config-only
+  changes actually get picked up. See rachio-zone-disabled-alert.md.
+triggers:
+  - trigger: time_pattern
+    hours: "/1"
+conditions: []
+actions:
+  - action: homeassistant.reload_config_entry
+    data:
+      entry_id: 01KZCBXSB0RM5JM99NAJ1V4J19
+mode: single
+```
+
+`entry_id` is a fixed value, not a template; it will need updating by hand if the Rachio
+integration is ever removed and re-added (a new entry gets a new ID). The service accepts
+`entry_id` as a `data` field, not under `target`, despite the config entry selector; posting it
+under `target` fails config validation with "extra keys not allowed."
+
+Verified end to end the same day it was created: triggered directly via `automation.trigger`, trace
+showed a clean `finished` run with no error, and `switch.main_irrigation_east_of_garage`'s
+`last_changed` timestamp moved to within two seconds of the trigger, confirming the entity actually
+flashed through the reload rather than the service call being a no-op.
+
+An hourly reload costs roughly 8-12 Rachio API calls, well under the documented 3,500/day cap
+([rachio.readme.io/reference/rate-limiting](https://rachio.readme.io/reference/rate-limiting)).
+
+This closes the gap the investigation above found: both the zone-disabled alert's state trigger
+and its 30-minute fallback now have a real source of new information to react to, at worst one hour
+stale.
+
 ## Remaining gaps
 
 - ~~North's re-enablement has not happened yet as of this writing.~~ Resolved 2026-08-08: pde
@@ -412,9 +458,9 @@ currently configured.
   the config.js side.
 - The `entity_registry_updated` event, set aside above for reliability reasons, was never
   actually tested against a real zone disablement, so its rejection is reasoned from the docs
-  and the event schema, not from an observed false positive on this instance. Moot either way
-  unless something forces periodic reloads (see the investigation above): that event fires on
-  entity registry changes, which on this instance currently only happen at a reload too.
+  and the event schema, not from an observed false positive on this instance. Worth another look
+  now that the periodic reload automation (below) makes registry changes happen on a predictable
+  hourly cadence instead of only at ad hoc manual reloads, but not revisited yet.
 - No automation clears `rachio_standby_engaged` when standby turns back off, matching the same
   gap already recorded for `fridge_failure_alert`; `notification_id` means a repeat trigger
   overwrites rather than stacks, which is something, not a fix.
@@ -424,10 +470,9 @@ currently configured.
   was guarding against (a false page from the 3 AM schedule) turns out not to be reachable on this
   instance at all, per the investigation above, so this is now purely pde's preference, not a
   precaution against an active risk.
-- **The open decision**: whether to add a periodic `homeassistant.reload_config_entry` automation
-  for the Rachio entry, without which neither the state trigger nor the 30-minute fallback ever
-  sees a real disable. See the investigation above for the recommended interval and its tradeoff.
-  Not yet built; needs a decision, not just an edit.
+- ~~**The open decision**: whether to add a periodic `homeassistant.reload_config_entry`
+  automation for the Rachio entry~~ Resolved 2026-08-08: built, hourly. See "The periodic reload
+  automation" above.
 
 ## Maintenance note: Homie's zone list is static, not a gap to fix
 
