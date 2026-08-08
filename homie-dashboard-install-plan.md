@@ -9,13 +9,53 @@ the fork below rather than reconstructed from this plan:
 - GitHub: `https://github.com/pdehlke/homie-dashboard`
 - Origin: `git@github.com:pdehlke/homie-dashboard.git`
 - Upstream: `git@github.com:Big-Edge2297/homie-dashboard.git`
-- Latest pushed commit on `main` as of this checkpoint: `b0d56d1` (Overview C card swap and
-  filtered Main House launcher), plus the thermostat control fix described below, committed and
-  pushed alongside this checkpoint update.
-- Deployed asset release: `20260807.13`
+- Latest pushed commit on `main` as of this checkpoint: `71b07e5`. Since the `.13` checkpoint
+  below, the fork also added a floors-card thermostat expand button (filters by whichever floor,
+  Main House or Office Wing, is currently visible) and a 2x2 target/humidity stat grid on the
+  floors card faces, then removed the now-redundant Main House thermostat launcher card the expand
+  button superseded. Commit range: `b2eae8b`..`71b07e5`.
+- Deployed asset release: `20260807.16`
 - Live assets: `/config/www/community/homie-dashboard/`
 - Lovelace dashboard: `homie-dash`, loading
-  `/local/community/homie-dashboard/homie-dashboard.html?v=20260807.13`
+  `/local/community/homie-dashboard/homie-dashboard.html?v=20260807.16`
+- Verified 2026-08-07: live `homie-dashboard.html` SHA-256 matches the repo's local
+  `dist/homie-dashboard.html`; regression suite passes 42/42 (`node --test
+  test/screen-a.test.cjs`). **Not yet committed**: the `.16` changes (Overview C overflow fix,
+  below) exist in the fork's working tree but not in its git history as of this checkpoint. Last
+  pushed commit remains `71b07e5`.
+
+### Overview C vertical overflow on the Fire HD 10, fixed via `kiosk_mode` (release `.16`)
+
+The target tablet is an Amazon Fire HD 10 (13th gen), Fully Kiosk Browser, chromeless, 1280x800.
+Manual measurement (Firefox responsive design mode, shrinking the viewport until nothing clipped)
+found Overview C needed 821px, 21px over budget.
+
+Root cause was not Homie's layout. Direct-load testing of `homie-dashboard.html` at a true
+1280x800 viewport, real live data, showed Overview C's own content bottoming out at 763px, 37px
+under budget. The actual cause: `homie-dash` is a Lovelace `strategy: iframe` dashboard, and Home
+Assistant's own top app bar around that iframe was consuming 56px that Homie's CSS, written to
+assume it owns the full viewport, has no way to see. 763px of content in a 744px box (800 minus
+that 56px) overflows by 19px, and 763 + 56 ≈ 819, matching the manually measured 821 within
+rounding.
+
+Fixed on the Home Assistant side: added a `kiosk_mode` block to `homie-dash`'s saved dashboard
+config, scoped to `users: ["Homie Dashboard"]` (display name; username `homie`), setting
+`hide_header` and `hide_sidebar`. Same per-user mechanism already used for `Tablet` on the domain
+dashboards, see [dashboard-home.md](dashboard-home.md). Verified live with Playwright, once as the
+`Homie Dashboard` user (its own long-lived token, not its password) and once as `Pete` (admin): the
+`homie-dash` iframe measures `x:0, y:0, w:1280, h:800` for Homie Dashboard and unchanged
+`x:256, y:56, w:1024, h:744` for Pete, confirming the fix applies only to the intended account and
+does not touch admin sessions used for development and testing.
+
+As a defensive fallback only, not the primary fix, `.ov3-main` changed from `overflow: hidden` to
+`overflow-x: hidden` / `overflow-y: auto` in the fork. Confirmed inert under the current fix
+(`scrollHeight === clientHeight === 800`): if `kiosk_mode` ever stops hiding the header again, the
+failure becomes a visible, scrollable cutoff instead of silently clipped content, which is what
+made the original 21px overflow hard to notice in the first place.
+
+Side discovery, not yet fixed: with no purifier entity configured, `.ov3-col3`'s
+`justify-content: space-between` stretches a large, visually awkward gap between the security card
+and the floors card. Cosmetic only, does not overflow. Noted on `project-todo.md` as a follow-up.
 
 Resume work in the fork, directly on `main` unless the user changes that instruction. The next
 design area is the remainder of Overview C; Solar and the Overview C A/V sidebar icon are accepted.
@@ -344,18 +384,28 @@ HACS updates can overwrite `config.js` and `homie-dashboard.html`, and can omit 
   `sensor.moon_phase` entity.
 - Cache busting uses one release token at both the Lovelace iframe and nested asset boundaries.
 - Overview C now places Garden/Irrigation in the center column and Main House/floors in the right
-  column. Its bottom-right Main House thermostat launcher opens the existing thermostat overlay
-  filtered to `climate.casasolar_south_zone_1`; Overview A remains unfiltered.
-- Deferred verification: the close-time filter-reset test is not mutation-sensitive because a
-  later unfiltered open independently resets the filter. The implementation is correct, but the
-  test does not independently prove the close-time reset. Still open.
+  column. Overview A remains unfiltered, showing both configured thermostats.
+- The Main House thermostat launcher card described in the `.11`/`.13` checkpoints below has since
+  been removed (`4f526ba`, release `.15`). The floors card grew its own expand button that opens
+  the same thermostat overlay filtered to whichever floor is currently visible, Main House or
+  Office Wing, so the separate launcher card was redundant. The floors card faces also gained a
+  2x2 stat grid (Temp/Target on top, Humid/PM2.5 below).
+- Deferred verification carries forward under the new name: the close-time filter-reset test
+  (`test/screen-a.test.cjs`, "Overview C floors button opens only Main House, while Overview A
+  remains unfiltered after close") is still not mutation-sensitive, because a later unfiltered
+  `openThermostat()` independently clears the filter regardless of whether the explicit reset
+  inside `closeThermostat()` runs. The implementation is correct; the test still does not
+  independently prove the close-time reset. Still open.
 - Browser confirmation of the swapped layout, launcher presentation, one-zone Main House overlay,
-  and two-zone Overview A overlay is done: verified live via Playwright against release
-  `20260807.13`, including an actual thermostat setpoint change confirmed on the real entity. See
-  [homie-thermostat-control-fix.md](homie-thermostat-control-fix.md).
-- The Main House launcher and thermostat overlay now actually control the real thermostats.
-  Previously they displayed plausible values and moved an on-screen number without ever reaching
-  the physical Lennox units; see the post-mortem linked above for what was actually wrong and how
-  it was found.
-- Next session: complete or consciously waive the remaining close-time filter-reset test item,
-  then continue evaluating and customizing the non-Solar portions of Overview C.
+  and two-zone Overview A overlay was done against release `20260807.13`, before the launcher's
+  removal, verified live via Playwright including an actual thermostat setpoint change confirmed
+  on the real entity. See [homie-thermostat-control-fix.md](homie-thermostat-control-fix.md). The
+  floors-card expand button that replaced the launcher has automated coverage (41/41 passing) but
+  not yet its own live Playwright pass.
+- The thermostat overlay actually controls the real thermostats. Previously it displayed plausible
+  values and moved an on-screen number without ever reaching the physical Lennox units; see the
+  post-mortem linked above for what was actually wrong and how it was found.
+- Next session: browser-verify the floors card's expand button end to end (the launcher it
+  replaced had that verification; the replacement does not yet), decide whether the close-time
+  filter-reset test item is worth resolving or should be consciously waived, then continue
+  evaluating and customizing the non-Solar portions of Overview C.

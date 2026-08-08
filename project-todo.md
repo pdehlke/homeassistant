@@ -9,9 +9,12 @@ this file links to it once one exists).
 New items go at the bottom unless told otherwise. Ask before reordering or removing an item for
 any reason other than completing it.
 
-1. Fix Overview C geometry
-2. Fix Overview C calendar entries
-3. Overview A irrigation indicator
-4. Tesla inverter integration
-5. More complete Energy panel
-6. Investigate empty weather card
+1. Fix Overview C calendar entries
+2. Overview A irrigation indicator
+3. Tesla inverter integration
+4. More complete Energy panel
+5. Investigate empty weather card
+6. Fix Overview C floors card's uneven spacing (`.ov3-col3`'s `justify-content: space-between`
+   stretches an oversized gap between the security and floors cards when no purifier entity is
+   configured; cosmetic, found while fixing Overview C's vertical overflow, see
+   `homie-dashboard-install-plan.md`)

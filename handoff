@@ -1,27 +1,33 @@
 Read /Users/pde/src/github.com/pdehlke/homeassistant/homie-dashboard-install-plan.md
-completely, then read the project’s Home Assistant skill at /Users/pde/src/github.com/
+completely, then read the project's Home Assistant skill at /Users/pde/src/github.com/
 pdehlke/homeassistant/.claude/skills/home-assistant/SKILL.md. Resume Homie work from /
 Users/pde/src/github.com/pdehlke/homie-dashboard on main. Do not change anything until
-you have checked both repositories’ status and confirmed the documented live release and
+you have checked both repositories' status and confirmed the documented live release and
 commit state.
 
 ## Next-session checkpoint — 2026-08-07
 
-Release `20260807.11` is live. Overview C now has the Garden/Irrigation card in the center
-column, the Main House/floors card in the right column, and a bottom-right Main House
-thermostat launcher. That launcher opens the existing thermostat overlay filtered to
-`climate.casasolar_south_zone_1`; Overview A's Climate button remains unfiltered and shows
-both configured thermostats.
+Release `20260807.16` is live and Playwright-verified. It is NOT yet committed to the
+homie-dashboard fork: the working tree has the Overview C overflow fix (CSS + version bump +
+tests + docs) uncommitted, last pushed commit is still `71b07e5`. Commit (or discard) that
+working tree before starting anything else there.
 
-Two verification items are intentionally deferred:
+Overview C's 21px overflow on the Fire HD 10 (1280x800, Fully Kiosk) turned out to be a Home
+Assistant chrome problem, not a Homie layout problem: `homie-dash`'s Lovelace iframe strategy was
+losing 56px to HA's own top app bar. Fixed with a `kiosk_mode` block on `homie-dash` scoped to the
+`Homie Dashboard` user (`hide_header` + `hide_sidebar`), same pattern as `Tablet` elsewhere. Full
+writeup with measurements in `homie-dashboard-install-plan.md`'s new "Overview C vertical
+overflow" section.
 
-- The close-time filter-reset test is not mutation-sensitive. A later unfiltered
-  `openThermostat()` independently clears the filter, so the current close/reopen test still
-  passes if the explicit reset inside `closeThermostat()` is removed. The implementation does
-  contain that reset; improve the test only if this redundant invariant remains desirable.
-- Browser visual verification remains pending for the swapped card layout, Main House launcher
-  presentation, one-zone overlay, and subsequent Overview A two-zone overlay.
+Two things intentionally deferred, unrelated to the above:
 
-Repository tests pass 34/34. Live and repository `homie-dashboard.html` hashes matched after
-deployment. The latest live backup is `/config/backups/homie-dashboard-20260807-115717`.
-No secrets were copied into either repository.
+- The close-time filter-reset test on the floors card's expand button is not mutation-sensitive
+  (a later unfiltered `openThermostat()` independently clears the filter). Implementation is
+  correct; the test doesn't independently prove it. Still open.
+- `.ov3-col3`'s `justify-content: space-between` leaves an ugly gap between the security and
+  floors cards when no purifier entity is configured. Cosmetic, not overflow. On `project-todo.md`.
+
+No secrets were copied into either repository. The Homie user's password file was not touched;
+the fix used the Homie Dashboard's own long-lived token (already documented in
+`/Users/pde/tmp/homie-dashboard-token`) to verify the fix as that account via Playwright, admin
+token used to verify it does *not* affect Pete's sessions.
