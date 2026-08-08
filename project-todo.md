@@ -9,8 +9,9 @@ this file links to it once one exists).
 New items go at the bottom unless told otherwise. Ask before reordering or removing an item for
 any reason other than completing it.
 
-1. Fix Overview C calendar entries
-2. Overview A irrigation indicator (not a Homie/HA config bug: Rachio's HA integration needs an
+1. Fix the A/V speaker selection dropdown
+2. Fix Overview C calendar entries
+3. Overview A irrigation indicator (not a Homie/HA config bug: Rachio's HA integration needs an
    inbound webhook to learn real-world zone state, this instance has no `external_url` and isn't
    internet-reachable, so zone switches never update after the initial toggle. Confirmed live:
    a zone run triggered directly from the Rachio app, bypassing Homie entirely, still left
@@ -19,14 +20,14 @@ any reason other than completing it.
    the webhook, no open port), a self-hosted tunnel like Cloudflare Tunnel (no open port, more
    DIY/maintenance), manual port-forward + `external_url` (free, opens an inbound port), or leave
    zone control one-way and just document the limitation)
-3. Tesla inverter integration
-4. More complete Energy panel
-5. Investigate empty weather card
-6. Fix Overview C floors card's uneven spacing (`.ov3-col3`'s `justify-content: space-between`
+4. Tesla inverter integration
+5. More complete Energy panel
+6. Investigate empty weather card
+7. Fix Overview C floors card's uneven spacing (`.ov3-col3`'s `justify-content: space-between`
    stretches an oversized gap between the security and floors cards when no purifier entity is
    configured; cosmetic, found while fixing Overview C's vertical overflow, see
    `homie-dashboard-install-plan.md`)
-7. Remove Solar from Homie Dashboard's Screensaver rotation options (`ssm-solar`). Same trap as
+8. Remove Solar from Homie Dashboard's Screensaver rotation options (`ssm-solar`). Same trap as
    the Startup option removed in the fork's `4277ee6` (release `20260808.1`): Solar's fullscreen
    overlay hides its close button and exits by gesture only, and an idle tablet/wallscreen could
    rotate into it unattended with no visible way out. Startup was fixed; Screensaver rotation was
