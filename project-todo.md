@@ -26,3 +26,8 @@ any reason other than completing it.
    stretches an oversized gap between the security and floors cards when no purifier entity is
    configured; cosmetic, found while fixing Overview C's vertical overflow, see
    `homie-dashboard-install-plan.md`)
+7. Remove Solar from Homie Dashboard's Screensaver rotation options (`ssm-solar`). Same trap as
+   the Startup option removed in the fork's `4277ee6` (release `20260808.1`): Solar's fullscreen
+   overlay hides its close button and exits by gesture only, and an idle tablet/wallscreen could
+   rotate into it unattended with no visible way out. Startup was fixed; Screensaver rotation was
+   explicitly left out of scope at the time. See the fork's `docs/pdehlke-customizations.md`.
