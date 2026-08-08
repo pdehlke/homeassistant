@@ -11,8 +11,8 @@ the Main Irrigation controller's whole-device standby mode turns on.
 | Source | Rachio integration switches on the Main Irrigation controller and the Back Yard Smart Hose Timer |
 
 Both automations are live and enabled. Verified working on 2026-08-08 against Home Assistant
-2026.7.4 by calling `automation.trigger` directly and confirming the resulting persistent
-notification, then dismissing it.
+2026.7.4, first by calling `automation.trigger` directly, then later the same day against a real
+North re-disable that also confirmed push delivery. See Trigger history below for both.
 
 ## Why this exists
 
@@ -97,9 +97,10 @@ leak fix and diff against this table.
 
 ## How it works
 
-Disabling a zone does not flip a flag Home Assistant can watch; it deletes the entity. There is
-nothing to put a `state` trigger on. Detection has to be a diff against a remembered set of
-entities that should exist.
+Disabling a zone does not flip a flag Home Assistant can watch; it deletes the entity, or (see
+below) marks it `unavailable` and strips its attributes until the next full removal. There is no
+single state to key a trigger off of that unambiguously means "disabled." Detection has to be a
+diff against a remembered set of entities that should exist.
 
 `input_text.rachio_known_zone_switches` holds a comma-separated list of short keys, one per zone
 or valve switch last seen present: the Main Irrigation prefix is stripped
@@ -112,6 +113,14 @@ so North reappearing is picked up automatically without an edit here.
 id: rachio_zone_disabled_alert
 alias: Rachio zone or valve disabled alert
 triggers:
+  - trigger: state
+    entity_id:
+      - switch.main_irrigation_east_of_garage
+      - switch.main_irrigation_east_triangle
+      - switch.main_irrigation_emmas_yard
+      - switch.main_irrigation_south_of_driveway
+      - switch.main_irrigation_north
+      - switch.back_yard_irrigation
   - trigger: time_pattern
     minutes: "/30"
   - trigger: homeassistant
@@ -157,11 +166,6 @@ actions:
             {{ missing_keys.replace(',', ', ') }}. A Rachio zone or the Back Yard valve may
             have been disabled in the Rachio app, or the integration dropped it for another
             reason. Verify in Settings > Devices & Services > Rachio, then in the Rachio app.
-      - action: notify.notify
-        continue_on_error: true
-        data:
-          title: Rachio zone or valve may be disabled
-          message: "Missing: {{ missing_keys.replace(',', ', ') }}. Check the Rachio app."
   - action: input_text.set_value
     target:
       entity_id: input_text.rachio_known_zone_switches
@@ -179,6 +183,44 @@ That makes this a one-shot notice per drop rather than a recurring nag: once fir
 starts from the new, smaller baseline and stays quiet until something changes again. It also means
 a legitimate addition, North's switch reappearing, is absorbed silently as growth, never treated
 as a false alarm.
+
+### The state trigger, added 2026-08-08
+
+The automation originally ran on the 30-minute `time_pattern` and HA-start triggers alone, since
+disabling a zone deletes the entity rather than flipping a state, so there was no single entity
+worth putting a `state` trigger on. That was true, but incomplete: a `state` trigger doesn't need
+to target the specific state transition that means "disabled", it only needs to fire the check
+often enough to catch it, and any state change on a zone/valve switch, including it going
+`unavailable`, is a fine reason to re-run the diff. Added a `state` trigger on the six known
+zone/valve switches (any change, no `to:` filter) alongside the existing 30-minute fallback.
+
+Two motivations, both from pde directly:
+
+- **Speed.** Detection latency drops from up to 30 minutes to effectively immediate, since the
+  Rachio integration reload that clears a disabled zone's attributes fires a state change on that
+  entity the moment it happens.
+- **Discoverability.** Home Assistant's "Related" card, under Settings > Devices & Services >
+  Rachio > a specific device, lists automations by statically scanning their config for literal
+  `entity_id`/`device_id` references in triggers, conditions, and actions. It does not evaluate
+  Jinja templates, so an automation whose only entity/device references live inside
+  `variables:` templates (as this one's `current_keys`/`missing_keys` computation does) was
+  invisible there even though it worked correctly, confirmed against `switch.main_irrigation_north`
+  and `switch.back_yard_irrigation`'s device pages via the WebSocket `search/related` command,
+  the same one that card calls.
+
+This reintroduces exactly the hardcoded zone list the `device_entities()`-based diff logic was
+built to avoid, but only as a supplementary fast path: a zone that exists when this automation was
+last edited but isn't in the trigger's `entity_id` list still gets caught, just on the next
+30-minute tick rather than instantly, since the diff logic itself still walks every entity on both
+devices at run time regardless of what triggered it. A newly added zone (as opposed to
+enabled/disabled) needs a manual edit here either way, per the maintenance note below.
+
+Every state change on these six entities re-runs the check, including a zone simply switching on
+or off for a normal watering cycle. That's expected and harmless: `current_keys` is unaffected by
+on/off, only by an entity's `Zone number` attribute disappearing (which happens when it goes
+`unavailable`, not when it just turns off), so a scheduled run at 3 AM does not produce a false
+positive. It does mean the automation's `last_triggered` timestamp updates far more often than
+before; that's cosmetic.
 
 The standby-mode automation is simpler, a direct state trigger, since standby is a real entity
 with a real `off`/`on` state rather than something that disappears:
@@ -219,8 +261,10 @@ disappearing) and a different blast radius (every zone paused at once, not one z
   latency than a 30-minute poll. It was set aside in favor of the baseline-diff approach above:
   that event also fires for reasons that are not a disabled zone (an integration reload, a
   reauth, a genuinely deleted rather than merely disabled zone), so trusting it alone risked
-  false positives without a real test against each of those cases. The baseline diff has a
-  30-minute detection latency in exchange for being unambiguous about what actually changed.
+  false positives without a real test against each of those cases. The baseline diff originally
+  had a 30-minute detection latency in exchange for being unambiguous about what actually changed;
+  the state trigger added later (see above) closed most of that gap without changing the
+  underlying diff logic.
 - **Scope.** Covers the Main Irrigation controller's zones, the separate Back Yard valve, and
   standby mode engaging, all three, on request. Back Yard is a single valve rather than a set of
   Rachio zones, so it is tracked the same way as a zone switch (present or absent in the entity
@@ -229,35 +273,125 @@ disappearing) and a different blast radius (every zone paused at once, not one z
   automatically, but the automation itself lives on the Home Assistant instance, not in this
   repo, so building it directly via the REST API and documenting it here afterward, the same
   split already used for `fridge-failure-alert.md`, was in scope.
-- **Delivery.** Both a persistent notification and `notify.notify`, matching the existing
-  `fridge_failure_alert` convention (`fridge-failure-alert.md`), including
+- **Delivery.** Both automations originally sent both a persistent notification and `notify.notify`,
+  matching the existing `fridge_failure_alert` convention (`fridge-failure-alert.md`), including
   `continue_on_error: true` on the push step so a notify failure can never block the persistent
-  notification.
+  notification. The zone-disabled alert's `notify.notify` step was removed on 2026-08-08, the same
+  day the state trigger was added, at pde's request: with `time_pattern` alone, a push could only
+  ever mean a real drop, but the new state trigger fires on every zone on/off cycle including the
+  Even Days schedule's roughly 3 AM run, and pde wanted to see the wider trigger set behave for a
+  while, local-notification-only, before trusting it not to page his phone overnight. The diff
+  logic itself does not distinguish on/off from disabled, so in practice a false page from the 3 AM
+  schedule was never actually expected, but this was pde's call to make, not an engineering
+  necessity. The standby-mode automation's `notify.notify` step is untouched; standby is a real,
+  low-frequency state flip, not a per-cycle trigger. Re-adding the zone-disabled alert's push step
+  is a matter of adding back the same `notify.notify` action block shown above.
 
 ## Mobile push actually reaches a phone now
 
 `fridge-failure-alert.md` recorded that `notify.notify` completed successfully but delivered to
 nothing, because no companion app had been registered on this instance. That has since changed:
 `notify.mobile_app_pete_iphone` now exists as a registered service. `notify.notify` fans out to
-every registered platform, so both automations above should reach that phone. This was not
-independently re-verified end to end (the trigger tests below check the trace for a step error,
-which `continue_on_error` would suppress even on delivery failure); worth a real device check the
-next time a live test runs.
+every registered platform. Confirmed end to end on 2026-08-08 during the real North re-disable
+test below: pde received the push on his phone in addition to the persistent notification, while
+the zone-disabled alert still had its `notify.notify` step (removed later that day; see Design
+choices above). The standby-mode automation's push step is unchanged and unverified against a real
+device, only against a manual trigger call whose trace showed no step error.
 
 ## Trigger history
 
-Neither automation has fired on a real condition yet. Both were tested by calling
-`automation.trigger` directly, bypassing the real triggers, on 2026-08-08:
-
-| When | Automation | What was simulated |
+| When | Automation | What happened |
 |---|---|---|
-| 2026-08-08T16:03:21Z | `rachio_zone_or_valve_disabled_alert` | `input_text.rachio_known_zone_switches` was seeded with an extra `phantom_test_zone` key not present in the real current set, then the automation was triggered |
-| 2026-08-08T16:04:04Z | `rachio_standby_mode_engaged_alert` | Direct trigger call; does not exercise the real `state` trigger condition, only the action sequence |
+| 2026-08-08T16:03:21Z | `rachio_zone_or_valve_disabled_alert` | Synthetic test: `input_text.rachio_known_zone_switches` was seeded with an extra `phantom_test_zone` key not present in the real current set, then the automation was triggered directly via `automation.trigger`, bypassing the real triggers |
+| 2026-08-08T16:04:04Z | `rachio_standby_mode_engaged_alert` | Direct `automation.trigger` call; does not exercise the real `state` trigger condition, only the action sequence |
+| 2026-08-08T20:09:44Z | `rachio_zone_or_valve_disabled_alert` | Real test against a real condition: pde disabled North in the Rachio app a second time. HA still showed `switch.main_irrigation_north` as stale `off` at the next scheduled 20:00:00Z run (Rachio's integration hadn't polled the change yet, so nothing was actually missing and correctly no alert fired). Forced a Rachio config-entry reload, which flipped the entity to `unavailable` and dropped its `Zone number` attribute. Then triggered the automation (still only via `automation.trigger` at this point; the state trigger didn't exist yet) and confirmed a clean run: `missing_keys` computed to `north`, the persistent notification and `notify.notify` both fired with no trace error, and pde confirmed the push actually reached his phone |
 
-Both traces showed `script_execution: finished` with no per-step error. The first test's
-resulting notification correctly named `phantom_test_zone` as the missing key and correctly
-reset the baseline to the real current set afterward, with no manual cleanup needed. Both test
-notifications were dismissed after confirming their content.
+The first two rows were synthetic dry runs of the action sequence. The third is the first time
+either automation's actual detection logic (not just its actions) ran against a real Rachio
+change, and the first confirmed real end-to-end push delivery. The state trigger added afterward
+(see above) has not yet fired on an organic zone state change; the entity list is the same
+mechanism already exercised here, so this is considered covered rather than untested.
+
+## Investigation: does anything besides a forced reload ever surface a real disable? (2026-08-08)
+
+After the state trigger above was added, pde disabled North a second time and reported something
+worth revisiting: on the Rachio integration's device page, North didn't disappear from the
+Controls list, it showed up greyed out with a generic raindrop avatar in place of its zone photo.
+That observation matches `unavailable`/`restored: true` exactly, the same state the diff logic
+already keys off (see How it works). The deeper question was whether anything besides the manual
+config-entry reload used to test this earlier ever produces that state on its own.
+
+It does not. Investigated directly against this instance and against the Rachio integration's
+source pinned to the running version, [`home-assistant/core` tag
+`2026.7.4`](https://github.com/home-assistant/core/tree/2026.7.4/homeassistant/components/rachio):
+
+- Zone entities (`RachioZone` in
+  [`switch.py`](https://github.com/home-assistant/core/blob/2026.7.4/homeassistant/components/rachio/switch.py))
+  are plain, non-polling entities (`_attr_should_poll = False`, not a `CoordinatorEntity`; see
+  [`entity.py`](https://github.com/home-assistant/core/blob/2026.7.4/homeassistant/components/rachio/entity.py)).
+  There is no periodic refresh for a Main Irrigation zone at all.
+- The zone list, including each zone's `enabled` flag, is fetched exactly once, synchronously, in
+  [`RachioPerson._setup()`](https://github.com/home-assistant/core/blob/2026.7.4/homeassistant/components/rachio/device.py#L136-L156),
+  called only from `async_setup_entry` — HA start, first integration add, or a config-entry reload.
+  `list_zones()` defaults to excluding disabled zones
+  ([`device.py:314-321`](https://github.com/home-assistant/core/blob/2026.7.4/homeassistant/components/rachio/device.py#L314-L321)),
+  so a zone disabled at that one snapshot moment simply isn't (re-)created; the entity that already
+  exists for it from before is neither removed nor flagged.
+- After creation, a zone's state is driven only by an incoming webhook event
+  ([`switch.py:448-464`](https://github.com/home-assistant/core/blob/2026.7.4/homeassistant/components/rachio/switch.py#L448-L464),
+  dispatched only for `ZONE_STARTED`/`STOPPED`/`COMPLETED`/`PAUSED`), and this instance's webhook is
+  unreachable (no `external_url`; already established in `project-todo.md`'s Overview A irrigation
+  item). Even a reachable webhook would not help here: Rachio's webhook categories include a
+  separate `DELTA` type for exactly this kind of configuration change
+  ([rachio.readme.io/reference/webhooks](https://rachio.readme.io/reference/webhooks)), and HA's
+  integration never subscribes to it
+  ([`webhooks.py`](https://github.com/home-assistant/core/blob/2026.7.4/homeassistant/components/rachio/webhooks.py)
+  lists only `DEVICE_STATUS_EVENT, ZONE_STATUS_EVENT, RAIN_DELAY_EVENT,
+  RAIN_SENSOR_DETECTION_EVENT, SCHEDULE_STATUS_EVENT`).
+- A zone's `available` property is never overridden, so its `enabled` flag plays no role in HA's
+  availability computation either.
+
+Confirmed empirically on this instance too: `switch.main_irrigation_north`'s history shows no
+write at all between the second disable and the forced reload. A comparison entity that stayed
+enabled the whole time, `switch.main_irrigation_east_of_garage`, went over two full days
+(2026-08-06 to 2026-08-08) without a single state write before today's forced reload touched it.
+Nothing polls these entities, disabled or not.
+
+The Back Yard Smart Hose Timer is a partial exception: it genuinely is coordinator-based
+([`RachioUpdateCoordinator`](https://github.com/home-assistant/core/blob/2026.7.4/homeassistant/components/rachio/coordinator.py#L32-L72),
+polling every `base_count + 1` minutes, 2 minutes here), and its `available` property does check
+live connectivity. But valve entity creation/removal is still the same one-time snapshot as zones,
+so a valve permanently disappearing from the account would still need a reload to be reflected in
+whether the entity exists at all; only its connectivity readout is genuinely live.
+
+**What this means for the alert as built.** The diff logic itself needs no change; it was
+re-confirmed correct on the same real North test (see Trigger history below). But without
+something forcing a Rachio config-entry reload, `missing_keys` will never actually go non-empty
+from a real-world disable — the 30-minute `time_pattern` fallback and the state trigger added
+above both check the same stale, un-refreshed data between reloads, neither is a source of new
+information by itself. This is a real gap in the mechanism, and it is not fixable from inside this
+automation.
+
+**Recommendation, not yet acted on.** Add a `time_pattern`-triggered
+`homeassistant.reload_config_entry` call for the Rachio config entry (`01KZCBXSB0RM5JM99NAJ1V4J19`),
+e.g. every 15-30 minutes, ahead of this alert's own checks. A reload costs roughly 8-12 Rachio API
+calls; against Rachio's documented 3,500/day cap
+([rachio.readme.io/reference/rate-limiting](https://rachio.readme.io/reference/rate-limiting)), a
+15-minute cadence (96/day) leaves comfortable headroom, while something closer to every 1-2 minutes
+would not, and isn't warranted for an event this rare. The tradeoff: a reload briefly flashes every
+Rachio entity through `unavailable` (observed here as a ~2-second gap even on a healthy zone), which
+would become a small, regular blip across every Rachio entity in Home Assistant, not just the ones
+this alert watches, worth weighing against anything else that might key off Rachio entity state
+changes before wiring one up.
+
+**Correction to the state-trigger reasoning above.** The state trigger was added partly so a normal
+watering cycle (specifically the roughly 3 AM Even Days schedule) would exercise the check
+organically. Per the findings here, that will not happen: a Rachio-app-driven schedule run doesn't
+touch Home Assistant at all without the unreachable webhook, so it can neither cause a false alert
+nor provide real coverage. The push-removal decision made alongside the state trigger (see Design
+choices) was made to guard against exactly that 3 AM scenario; the guard itself is harmless to
+keep, but the scenario it guards against turns out not to be reachable on this instance as
+currently configured.
 
 ## Remaining gaps
 
@@ -278,13 +412,22 @@ notifications were dismissed after confirming their content.
   the config.js side.
 - The `entity_registry_updated` event, set aside above for reliability reasons, was never
   actually tested against a real zone disablement, so its rejection is reasoned from the docs
-  and the event schema, not from an observed false positive on this instance. Worth revisiting
-  if the 30-minute detection latency ever turns out to matter.
+  and the event schema, not from an observed false positive on this instance. Moot either way
+  unless something forces periodic reloads (see the investigation above): that event fires on
+  entity registry changes, which on this instance currently only happen at a reload too.
 - No automation clears `rachio_standby_engaged` when standby turns back off, matching the same
   gap already recorded for `fridge_failure_alert`; `notification_id` means a repeat trigger
   overwrites rather than stacks, which is something, not a fix.
-- Real end-to-end push delivery (a notification actually arriving on the phone, not just the
-  trace showing no step error) has not been separately confirmed.
+- The zone-disabled alert's `notify.notify` step is currently removed (see Design choices above).
+  pde wants to watch the new state trigger behave for a while, quietly, before deciding whether to
+  add push back. Revisit this; it was explicitly framed as "for now." The specific scenario it
+  was guarding against (a false page from the 3 AM schedule) turns out not to be reachable on this
+  instance at all, per the investigation above, so this is now purely pde's preference, not a
+  precaution against an active risk.
+- **The open decision**: whether to add a periodic `homeassistant.reload_config_entry` automation
+  for the Rachio entry, without which neither the state trigger nor the 30-minute fallback ever
+  sees a real disable. See the investigation above for the recommended interval and its tradeoff.
+  Not yet built; needs a decision, not just an edit.
 
 ## Maintenance note: Homie's zone list is static, not a gap to fix
 

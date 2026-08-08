@@ -37,10 +37,10 @@ Notes, planning, and specs for my Home Assistant buildout.
 - [rachio-zone-disabled-alert.md](rachio-zone-disabled-alert.md)
 
   Two automations that alert when a Rachio zone or valve disappears from Home Assistant, or
-  when the Main Irrigation controller's standby mode turns on. Why disabling a zone deletes its
-  entity instead of flagging it, why the "Standby" switch was never a renamed zone despite the
-  name, the baseline-diff detection design, and the pre-fix zone inventory kept for comparison
-  after North's leak repair.
+  when the Main Irrigation controller's standby mode turns on. Why a disabled zone's entity goes
+  stale rather than flagging itself, why the "Standby" switch was never a renamed zone despite the
+  name, the baseline-diff detection design, and a source-level investigation into why the
+  mechanism needs a periodic forced reload to ever see a real disable at all.
 
 - [lennoxs30-integration.md](lennoxs30-integration.md)
 
