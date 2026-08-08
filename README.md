@@ -34,6 +34,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   measures accumulated running time instead of using a state trigger, and what is still
   needed to get the alert onto a phone.
 
+- [rachio-zone-disabled-alert.md](rachio-zone-disabled-alert.md)
+
+  Two automations that alert when a Rachio zone or valve disappears from Home Assistant, or
+  when the Main Irrigation controller's standby mode turns on. Why disabling a zone deletes its
+  entity instead of flagging it, why the "Standby" switch was never a renamed zone despite the
+  name, the baseline-diff detection design, and the pre-fix zone inventory kept for comparison
+  after North's leak repair.
+
 - [lennoxs30-integration.md](lennoxs30-integration.md)
 
   How the two Lennox iComfort S30 thermostats (North and South) were brought into Home Assistant
