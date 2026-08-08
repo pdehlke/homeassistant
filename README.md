@@ -103,6 +103,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   both invisible to normal error handling), the fixes rejected along the way, and two mistakes the
   fix itself made that only live browser verification caught.
 
+- [roborock-status-mqtt-stall.md](roborock-status-mqtt-stall.md)
+
+  Why the Q5 Max+'s charging/status entities freeze for hours after the vacuum actually finishes
+  charging: a known upstream bug where the integration's MQTT push channel stalls while its
+  separately-polled entities (battery, consumables) keep updating fine. Options considered for a
+  workaround and the periodic-reload automation chosen instead, verified only partway so far.
+
 - [mac-mini-migration.md](mac-mini-migration.md)
 
   Moving Home Assistant off the Raspberry Pi and onto a headless Late 2014 Mac mini.
