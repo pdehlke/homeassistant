@@ -10,7 +10,15 @@ New items go at the bottom unless told otherwise. Ask before reordering or remov
 any reason other than completing it.
 
 1. Fix Overview C calendar entries
-2. Overview A irrigation indicator
+2. Overview A irrigation indicator (not a Homie/HA config bug: Rachio's HA integration needs an
+   inbound webhook to learn real-world zone state, this instance has no `external_url` and isn't
+   internet-reachable, so zone switches never update after the initial toggle. Confirmed live:
+   a zone run triggered directly from the Rachio app, bypassing Homie entirely, still left
+   `switch.main_irrigation_east_of_garage` reporting stale `off` in HA throughout the run.
+   Fix requires making HA internet-reachable. Options: Nabu Casa Cloud (paid, auto-configures
+   the webhook, no open port), a self-hosted tunnel like Cloudflare Tunnel (no open port, more
+   DIY/maintenance), manual port-forward + `external_url` (free, opens an inbound port), or leave
+   zone control one-way and just document the limitation)
 3. Tesla inverter integration
 4. More complete Energy panel
 5. Investigate empty weather card
