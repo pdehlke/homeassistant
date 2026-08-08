@@ -107,8 +107,9 @@ Notes, planning, and specs for my Home Assistant buildout.
 
   Why the Q5 Max+'s charging/status entities freeze for hours after the vacuum actually finishes
   charging: a known upstream bug where the integration's MQTT push channel stalls while its
-  separately-polled entities (battery, consumables) keep updating fine. Options considered for a
-  workaround and the periodic-reload automation chosen instead, verified only partway so far.
+  separately-polled entities (battery, consumables) keep updating fine. The periodic-reload
+  automation tried first, and the strategy change that replaced it: deriving Overview A/B's status
+  pill from battery and cleaning state instead of trusting the fields proven to get stuck.
 
 - [mac-mini-migration.md](mac-mini-migration.md)
 

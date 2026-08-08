@@ -111,3 +111,56 @@ device-driven transition will clear it correctly next time.
 This needs to be watched over further reload cycles, ideally the next time the vacuum finishes a
 full charge, before concluding the automation actually resolves the user-visible symptom rather
 than just proving the reload path itself works.
+
+## Strategy change: stop trusting `charging`/`status`, derive from battery and cleaning instead
+
+The reload automation stays in place as a general mitigant, but the verification above left its
+actual effect on the display genuinely unresolved, and it still depends on the exact fields proven
+to get stuck. Decided to route around `binary_sensor.q5_max_charging` and `sensor.q5_max_status`
+entirely for the dashboard-facing status, rather than wait to see whether periodic reloads reliably
+correct them.
+
+`sensor.homie_robot_status`'s template (a UI-managed helper, same pattern as the other
+`sensor.homie_*` status pills Overview A/B read) was rewritten to derive its value from
+`binary_sensor.q5_max_cleaning` and `sensor.q5_max_battery` instead:
+
+- If `cleaning` is `unavailable`/`unknown`: `Offline`.
+- Else if `cleaning` is `on`: `Cleaning: <room>` from `sensor.q5_max_current_room`, or plain
+  `Cleaning` if the room isn't available yet (e.g. right as a clean starts).
+- Else if `battery` is `unavailable`/`unknown`: `Offline`.
+- Else if `battery >= 90`: `Charged`.
+- Else: `Charging`.
+
+The Offline check is scoped to whichever source the active branch actually needs, rather than
+requiring every source entity to be healthy at once: an actively-cleaning robot still shows
+`Cleaning: <room>` even if `battery` happens to glitch, since that branch never reads battery.
+
+Considered implementing this in the Homie Dashboard fork's own JS instead, reading the raw
+entities client-side. Rejected: every other Overview A/B status pill is a template sensor Homie
+just displays verbatim, and keeping this one consistent means no fork change, no version bump, no
+redeploy, and the logic lives next to its siblings instead of becoming the one pill computed
+differently.
+
+`battery` was chosen as the trustworthy signal specifically because the evidence above shows it
+kept updating normally through the entire stall that froze `charging`. `cleaning` doesn't have that
+same direct proof of immunity to the same MQTT-push mechanism, but it's a different field from the
+two proven to freeze, and the reload automation still bounds its worst-case staleness to 30
+minutes regardless.
+
+The battery threshold of 90 came from the person who watches this vacuum charge, not from any
+documented spec. Exactly 90 folds into `Charged` rather than sitting in an uncovered gap between
+"less than 90" and "91 or greater" in the original ask, and the bias toward calling it done sooner
+rather than later matches the direction the original bug already erred in.
+
+## Verification
+
+Rendered the new template against live state via `POST /api/template` before saving, confirmed
+clean output with no stray whitespace, then saved it through the template helper's options flow
+(`config_entries/options/flow`, not a simple state write, since UI-managed template sensors are
+config entries with their own multi-step flow).
+
+Immediately live: `sensor.homie_robot_status` reads `Charged`, matching the Roborock phone app and
+the vacuum's own charging LED, with no reload cycle needed and no dependency on
+`binary_sensor.q5_max_charging` or `sensor.q5_max_status` at all. This is the actual fix for the
+Overview A/B pill; the reload automation above remains as a lower-priority mitigant for anything
+else that reads those two fields directly.
