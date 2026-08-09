@@ -104,6 +104,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   The installed Homie Dashboard architecture, security model, fork location, deployment workflow,
   accepted Overview customizations, cache-busting strategy, and checkpoint for continuing work.
 
+- [lennox-thermostat-alerts.md](lennox-thermostat-alerts.md)
+
+  Forwarding each Lennox S30 thermostat's own console alert into Home Assistant, with critical
+  alerts pushed to a phone and a red-dot indicator added to the Homie dashboard's Climate entry
+  points. Why the integration's two alert entities can disagree (the console-accurate `_alert`
+  sensor versus the detail-bearing but sometimes-empty `_active_alerts` list), the severity
+  thresholds agreed with pde, and the automation and dashboard verification.
+
 - [overview-c-solar-home-green-percentage.md](overview-c-solar-home-green-percentage.md)
 
   Changing the full-screen Solar view's "Low Carbon" stat from the raw TEP grid green percentage

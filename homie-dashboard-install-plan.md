@@ -9,18 +9,21 @@ the fork below rather than reconstructed from this plan:
 - GitHub: `https://github.com/pdehlke/homie-dashboard`
 - Origin: `git@github.com:pdehlke/homie-dashboard.git`
 - Upstream: `git@github.com:Big-Edge2297/homie-dashboard.git`
-- Latest commit on `main` as of this checkpoint: `5b0386e`, the home-green-percentage change in
+- Latest commit on `main` as of this checkpoint: `23b774a`, the Climate entry-point alert badge in
+  [lennox-thermostat-alerts.md](lennox-thermostat-alerts.md), on top of `5b0386e`, the
+  home-green-percentage change in
   [overview-c-solar-home-green-percentage.md](overview-c-solar-home-green-percentage.md). Several
-  commits landed between the `71b07e5` checkpoint below and this one covering irrigation and garden
-  work not detailed in this file; see `git log` in the fork for that range.
-- Deployed asset release: `20260809.1`
+  commits landed between the `71b07e5` checkpoint below and `5b0386e` covering irrigation and
+  garden work not detailed in this file; see `git log` in the fork for that range.
+- Deployed asset release: `20260809.2`
 - Live assets: `/config/www/community/homie-dashboard/`
 - Lovelace dashboard: `homie-dash`, loading
-  `/local/community/homie-dashboard/homie-dashboard.html?v=20260809.1`
-- Verified 2026-08-09: live `homie-custom.js` and `homie-dashboard.html` SHA-256 match the fork's
-  local `dist/`; regression suite passes 56/56 (`node --test test/screen-a.test.cjs`). Both the
-  Lovelace iframe URL's `?v=` and the nested `HOMIE_ASSET_VERSION` token were bumped together, per
-  the cache-busting convention below.
+  `/local/community/homie-dashboard/homie-dashboard.html?v=20260809.2`
+- Verified 2026-08-09: live `config.js`, `homie-custom.js`, and `homie-dashboard.html` SHA-256
+  (config.js compared with its token line stripped) match the fork's local `dist/`; regression
+  suite passes 57/57 (`node --test test/screen-a.test.cjs`). Both the Lovelace iframe URL's `?v=`
+  and the nested `HOMIE_ASSET_VERSION` token were bumped together, per the cache-busting
+  convention below, on both deploys made this checkpoint.
 
 ### Prior checkpoint: 2026-08-07
 
@@ -422,6 +425,13 @@ HACS updates can overwrite `config.js` and `homie-dashboard.html`, and can omit 
   token has to be bumped at both the Lovelace iframe and nested asset boundaries whenever a nested
   file's bytes change, not only on releases meant for a person to notice, same lesson as
   `homie-thermostat-control-fix.md`.
+- The Climate control's chip, Overview B sidebar list, and Overview C sidebar icon now show a red
+  alert dot whenever either thermostat's Lennox alert sensor reads anything other than "none",
+  reusing the same DOM/CSS Irrigation's disabled-zone badge already established (`23b774a`, release
+  `.2`, 2026-08-09). Paired with `automation.lennox_thermostat_alert` in Home Assistant, forwarding
+  moderate/critical Lennox alerts to a persistent_notification and critical ones to the phone. See
+  [lennox-thermostat-alerts.md](lennox-thermostat-alerts.md), including why the integration's two
+  alert entities can disagree and why the coarse one, not the detailed one, is the trigger.
 - Next session: browser-verify the floors card's expand button end to end (the launcher it
   replaced had that verification; the replacement does not yet), decide whether the close-time
   filter-reset test item is worth resolving or should be consciously waived, then continue
