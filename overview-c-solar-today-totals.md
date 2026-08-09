@@ -189,4 +189,47 @@ infrequent.
 
 ## Verification
 
-Pending. Filled in after implementation, testing, and live deployment.
+- `node --test test/screen-a.test.cjs` in the fork: added `mergeHourlyStatistics`,
+  `todayGreenPercentage`, and `todayCo2Intensity` unit tests (normal case, a skipped gap hour,
+  clamping, all-missing, and missing/zero consumption), updated the config-roles test for the three
+  new roles, and updated the full-screen markup test for the repurposed cards. Full suite 61/61.
+- Deployed `config.js`, `homie-custom.js`, and `homie-dashboard.html` (commit `f3a1531`) to
+  `/config/www/community/homie-dashboard/`, bumped `HOMIE_ASSET_VERSION` to `20260809.4`, and bumped
+  the matching `?v=` on the `homie-dash` Lovelace iframe strategy.
+- Confirmed `homie-custom.js` and `homie-dashboard.html` byte-identical between the fork's working
+  tree, the live filesystem over SFTP, and an HTTP fetch through the new cache-busting version.
+- Exercised the deployed page directly in a live browser session (loaded
+  `homie-dashboard.html?v=20260809.4` and called `openSolarFS()`), against the instance's actual
+  readings at the time: **% Green Today read 64.8%**, **CO2 Intensity Today read 171 gCO2/kWh**,
+  against a same-moment instantaneous Low Carbon of 100% (fully solar-covered right then) and
+  instantaneous CO2 Intensity of 435 gCO2/kWh (the grid's current raw mix). The gap between the two
+  pairs is the whole point of building this: the day started on grid-only power overnight at roughly
+  82-86% fossil, and only became solar-dominant mid-morning, so the day-so-far average sits well
+  below the sunny-moment snapshot on carbon and well above the overnight-only figure on green share.
+- Independently recomputed the same two numbers from scratch: fetched
+  `recorder/statistics_during_period` for the same five entities directly (not through the browser),
+  fed the result through `mergeHourlyStatistics`/`todayGreenPercentage`/`todayCo2Intensity` in a
+  plain Node script, and got **64.82%** and **171.11 gCO2/kWh** — matching the live page's rounded
+  display exactly.
+- Screenshot of the live full-screen Solar view, both new cards populated, in the fork's
+  deployment record.
+
+### A deployment mistake this change caught
+
+The token-preserving `config.js` procedure documented above (splice the live token into the tracked
+placeholder file server-side, never through a local shell that could print it) was skipped on the
+first upload attempt: `dist/config.js`, placeholder token and all, was `scp`'d straight over the live
+file. This broke Homie's WebSocket auth for the few minutes between that upload and the fix. Caught
+immediately by re-reading the live file's state rather than assuming the upload succeeded correctly,
+fixed by pulling the real token out of the pre-upload backup (`config.js.bak-20260809-133148`,
+taken before any upload per the standing convention) and splicing it into the live file server-side,
+then confirming with a diff against that same backup, redacting only the token line, that the sole
+difference was the three intended new config roles. No token was displayed or logged at any point,
+including during the mistake.
+
+Same category of error as the two cache-busting mistakes in
+[overview-c-solar-home-green-percentage.md](overview-c-solar-home-green-percentage.md) and
+[homie-thermostat-control-fix.md](homie-thermostat-control-fix.md): a documented procedure exists
+for exactly this reason, and skipping a step in it under time pressure is the failure mode it exists
+to prevent. Take the backup before touching the live file, then splice the token into a working copy
+before it goes anywhere near the live filesystem, not after.

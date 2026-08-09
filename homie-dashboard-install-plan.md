@@ -9,7 +9,9 @@ the fork below rather than reconstructed from this plan:
 - GitHub: `https://github.com/pdehlke/homie-dashboard`
 - Origin: `git@github.com:pdehlke/homie-dashboard.git`
 - Upstream: `git@github.com:Big-Edge2297/homie-dashboard.git`
-- Latest commit on `main` as of this checkpoint: `782bb5a`, the Climate chip activity-count fix in
+- Latest commit on `main` as of this checkpoint: `f3a1531`, the % Green Today / CO2 Intensity
+  Today stats in [overview-c-solar-today-totals.md](overview-c-solar-today-totals.md), on top of
+  `782bb5a`, the Climate chip activity-count fix in
   [climate-chip-activity-count.md](climate-chip-activity-count.md), on top of `23b774a`, the
   Climate entry-point alert badge in
   [lennox-thermostat-alerts.md](lennox-thermostat-alerts.md), on top of `5b0386e`, the
@@ -17,15 +19,19 @@ the fork below rather than reconstructed from this plan:
   [overview-c-solar-home-green-percentage.md](overview-c-solar-home-green-percentage.md). Several
   commits landed between the `71b07e5` checkpoint below and `5b0386e` covering irrigation and
   garden work not detailed in this file; see `git log` in the fork for that range.
-- Deployed asset release: `20260809.3`
+- Deployed asset release: `20260809.4`
 - Live assets: `/config/www/community/homie-dashboard/`
 - Lovelace dashboard: `homie-dash`, loading
-  `/local/community/homie-dashboard/homie-dashboard.html?v=20260809.3`
+  `/local/community/homie-dashboard/homie-dashboard.html?v=20260809.4`
 - Verified 2026-08-09: live `config.js`, `homie-custom.js`, and `homie-dashboard.html` SHA-256
   (config.js compared with its token line stripped) match the fork's local `dist/`; regression
-  suite passes 58/58 (`node --test test/screen-a.test.cjs`). Both the Lovelace iframe URL's `?v=`
+  suite passes 61/61 (`node --test test/screen-a.test.cjs`). Both the Lovelace iframe URL's `?v=`
   and the nested `HOMIE_ASSET_VERSION` token were bumped together, per the cache-busting
-  convention below, on both deploys made this checkpoint.
+  convention below, on both deploys made this checkpoint. The `f3a1531` deploy briefly shipped
+  `config.js` with its tracked placeholder token instead of the live one (the splice-in-a-working-copy
+  step was skipped under the moment's time pressure); caught immediately, fixed from the pre-upload
+  backup, see [overview-c-solar-today-totals.md](overview-c-solar-today-totals.md) for the full
+  account.
 
 ### Prior checkpoint: 2026-08-07
 
@@ -383,8 +389,8 @@ HACS updates can overwrite `config.js` and `homie-dashboard.html`, and can omit 
 - The fork is the source of truth. It must commit only a placeholder-bearing `config.js`; deployment
   injects `/Users/pde/tmp/homie-dashboard-token` outside Git.
 - Overview A is accepted. Overview B's center grid matches Overview A.
-- Overview C Solar uses real Sense and Electricity Maps data, shows hourly history, has no battery,
-  and retains two unbound `— °F` placeholders labeled Left Inverter and Right Inverter.
+- Overview C Solar uses real Sense and Electricity Maps data, shows hourly history, and has no
+  battery. The two `— °F` inverter-temperature placeholders it used to retain are gone; see below.
 - All temperature-related dashboard displays use Fahrenheit permanently.
 - Overview C's A/V sidebar button uses the circle-and-play Now Playing icon rather than the generic
   switch slider.
@@ -439,6 +445,14 @@ HACS updates can overwrite `config.js` and `homie-dashboard.html`, and can omit 
   `heat_cool` mode nearly always, so the old `state !== "off"` check counted both as on almost
   permanently. Reuses the `climateIsActive()` check Overview C's sidebar glow already had, hoisted
   to a shared function. See [climate-chip-activity-count.md](climate-chip-activity-count.md).
+- The full-screen Solar view's two `— °F` inverter-temperature placeholders (Left Inverter, Right
+  Inverter) are gone, repurposed into "% Green Today" and "CO2 Intensity Today" (`f3a1531`, release
+  `.4`, 2026-08-09): hourly time-weighted extensions of the Low Carbon / CO2 Intensity stats above,
+  built from HA recorder long-term statistics rather than a single instantaneous reading. See
+  [overview-c-solar-today-totals.md](overview-c-solar-today-totals.md) for the formulas, the
+  rejected alternatives, and a token-handling deployment mistake this change caught and fixed live.
+  The repurposing is permanent: the Tesla inverter integration these placeholders were reserved for
+  is not happening, see the correction below.
 - Next session: browser-verify the floors card's expand button end to end (the launcher it
   replaced had that verification; the replacement does not yet), decide whether the close-time
   filter-reset test item is worth resolving or should be consciously waived, then continue
