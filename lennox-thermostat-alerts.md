@@ -231,3 +231,118 @@ deployed copy was built by taking the tracked (placeholder) `dist/config.js`, su
 token line pulled directly from the already-deployed live file entirely over the SSH session (never
 printed, never touched this machine), and verifying byte-for-byte equality with the tracked file
 on every other line via a token-line-stripped SHA-256 comparison before deploying.
+
+## Filter-change alert for code 312 (Reduced Airflow-Indoor Blower Cutback)
+
+A second, independent automation, `automation.lennox_reduced_airflow_filter_alert`, watches for one
+specific code rather than a severity level: Lennox code 312, "Reduced Airflow-Indoor Blower
+Cutback," Lennox's own shorthand for "the blower can't move the air it wants to, most commonly
+because the filter needs changing." Both South and North have sat at `info` severity for a while
+(see "Two alert signals" above), which the severity-based automation and dashboard badge correctly
+ignore now that [climate-alert-dashboard-threshold.md](climate-alert-dashboard-threshold.md)
+narrowed their threshold to moderate/critical. Code 312 needed its own path because it is
+actionable at `info` severity specifically: "change the filter" is a real, useful thing to tell pde
+even though it never rises to a level either the phone push or the dashboard dot cares about.
+
+### Why a separate automation rather than extending the existing one
+
+`automation.lennox_thermostat_alert` triggers on the `_alert` severity sensor and branches on
+severity level; it does not look at `_active_alerts`' code list at all except as enrichment once
+already triggered. Code 312 needed to be found regardless of what `_alert` currently reads, which
+means triggering directly on the `_active_alerts` entity instead. Different trigger entity,
+different question being asked ("is this specific code present" vs. "how bad is the current
+severity"), so a second automation kept the two concerns from tangling in one automation's
+branching logic.
+
+### The automation
+
+Same `repeat`/per-thermostat/dismiss-safety-net shape as `automation.lennox_thermostat_alert`,
+built via the REST config API:
+
+```yaml
+id: lennox_reduced_airflow_filter_alert
+alias: Lennox reduced airflow filter alert
+triggers:
+  - trigger: state
+    entity_id:
+      - sensor.basement_casasolar_south_casasolar_south_active_alerts
+      - sensor.basement_casasolar_north_casasolar_north_active_alerts
+conditions: []
+actions:
+  - repeat:
+      for_each:
+        - name: South
+          key: south
+          active_entity: sensor.basement_casasolar_south_casasolar_south_active_alerts
+        - name: North
+          key: north
+          active_entity: sensor.basement_casasolar_north_casasolar_north_active_alerts
+      sequence:
+        - variables:
+            alert_list: "{{ state_attr(repeat.item.active_entity, 'alert_list') or [] }}"
+            has_312: "{{ alert_list | selectattr('code', 'eq', 312) | list | count > 0 }}"
+        - if:
+            - condition: template
+              value_template: "{{ has_312 }}"
+          then:
+            - action: persistent_notification.create
+              data:
+                notification_id: "lennox_filter_{{ repeat.item.key }}"
+                title: "{{ repeat.item.name }} thermostat: reduced airflow"
+                message: >-
+                  Code 312 (Reduced Airflow-Indoor Blower Cutback) is active on the
+                  {{ repeat.item.name }} unit. Common fix: change the air filter.
+          else:
+            - action: persistent_notification.dismiss
+              data:
+                notification_id: "lennox_filter_{{ repeat.item.key }}"
+mode: queued
+max: 10
+```
+
+A plain HA `state` trigger with no `to`/`from` fires on any update to the entity, attribute changes
+included, so this catches code 312 appearing or clearing from `alert_list` even on a pass where the
+`_active_alerts` entity's numeric `state` (its active-alert count) doesn't itself change. Per-unit
+`notification_id`s (`lennox_filter_south` / `lennox_filter_north`), same reasoning as the severity
+automation: both can show independently, and `persistent_notification.dismiss` on a nonexistent id
+is a no-op, so the `else` branch is safe to run unconditionally every pass.
+
+Display-only on purpose: `persistent_notification.create` only, no `notify.notify` call. Explicit
+ask from pde: this condition is common enough (both units have things sitting in `_active_alerts`
+at `info` more or less permanently) that a phone push would be noise; the dashboard/HA UI is enough
+for something that just means "change the filter when convenient."
+
+### Verification
+
+Created via `POST /api/config/automation/config/lennox_reduced_airflow_filter_alert`, `POST
+/api/config/core/check_config` returned `"result": "valid"`. Triggered manually with
+`automation/trigger` (`skip_condition: true`) against the instance's real live data at the time
+(South carrying code 312, North carrying only code 901): the trace showed `script_execution:
+"finished"` with no errors, per-iteration `has_312` of `true` for South and `false` for North, and
+`persistent_notification/get` afterward showed exactly one notification,
+`lennox_filter_south`, with the expected title and message. North correctly got no notification.
+
+### Checking alert codes without the dashboard
+
+pde asked for a way to check either unit's current alert codes directly, since none of the HA UI's
+existing views surface `_active_alerts`' `alert_list` attribute in a readable form.
+`.claude/skills/home-assistant/scripts/check-lennox-alerts.py` reads both units' `_alert` and
+`_active_alerts` sensors over REST and prints each unit's severity plus every currently active
+code, message, and priority:
+
+```
+$ python3 check-lennox-alerts.py
+South (Main House)
+  Severity (_alert): info
+  Active alert codes:
+    312: Reduced Airflow-Indoor Blower Cutback (priority: info)
+
+North (Office Wing)
+  Severity (_alert): info
+  Active alert codes:
+    901: Inconsistent Indoor Temp (priority: info)
+```
+
+`--unit south`/`--unit north` limits the check to one thermostat. `--code 312` highlights a specific
+code and sets the exit status (0 if present on a checked unit, 1 otherwise), for scripting against.
+Needs `$HA_TOKEN` in the environment, same as every other script in that directory.

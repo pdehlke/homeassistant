@@ -118,7 +118,9 @@ Notes, planning, and specs for my Home Assistant buildout.
   alerts pushed to a phone and a red-dot indicator added to the Homie dashboard's Climate entry
   points. Why the integration's two alert entities can disagree (the console-accurate `_alert`
   sensor versus the detail-bearing but sometimes-empty `_active_alerts` list), the severity
-  thresholds agreed with pde, and the automation and dashboard verification.
+  thresholds agreed with pde, and the automation and dashboard verification. Also covers a second,
+  code-specific automation for reduced-airflow filter reminders (display-only, no phone push) and
+  the CLI script for checking either unit's active alert codes directly.
 
 - [climate-alert-dashboard-threshold.md](climate-alert-dashboard-threshold.md)
 
