@@ -127,6 +127,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   power weighted by each source's share of live usage. The formula, the alternatives rejected
   during a grilling session, and a cache-busting deployment gap the change caught before it shipped.
 
+- [overview-c-solar-today-totals.md](overview-c-solar-today-totals.md)
+
+  Adding "% Green Today" and "CO2 Intensity Today" to the full-screen Solar view: an hourly
+  time-weighted extension of the instantaneous Low Carbon formula above, why a single current
+  reading misrepresents a whole day, the recorder long-term statistics that make the calculation
+  possible, and repurposing the two permanently-unbound inverter-temperature placeholders to show
+  them.
+
 - [homie-thermostat-control-fix.md](homie-thermostat-control-fix.md)
 
   Post-mortem on the Main House thermostat launcher and overlay, which displayed plausible values
