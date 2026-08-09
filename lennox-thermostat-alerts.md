@@ -59,10 +59,17 @@ generates an alert, critical also to iPhone") left the exact thresholds open:
 | `info` | Nothing | No |
 | `none` | Existing notification for that thermostat is dismissed | — |
 
-The Homie dashboard badge uses a separate, more permissive threshold: any state other than
-`none` (including `minor` and `info`) lights the red dot. That was pde's explicit call, distinct
-from the HA-notification threshold above: a glanceable dashboard indicator and an interruption
-worth a persistent record are different bars.
+The Homie dashboard badge originally used a separate, more permissive threshold: any state other
+than `none` (including `minor` and `info`) lit the red dot. That was pde's explicit call at the
+time, distinct from the HA-notification threshold above: a glanceable dashboard indicator and an
+interruption worth a persistent record are different bars.
+
+**Revised 2026-08-09**: with both real thermostats spending most of their time at `info`, the
+permissive threshold meant the dot stayed lit almost continuously for conditions nobody intended to
+act on. The dashboard badge now uses the same "moderate or worse" bar as the notification above.
+See [climate-alert-dashboard-threshold.md](climate-alert-dashboard-threshold.md) for the change and
+what was rejected. The rest of this section, including the severity mapping table above, is
+unchanged and still describes the current automation.
 
 ## The automation
 

@@ -120,6 +120,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   sensor versus the detail-bearing but sometimes-empty `_active_alerts` list), the severity
   thresholds agreed with pde, and the automation and dashboard verification.
 
+- [climate-alert-dashboard-threshold.md](climate-alert-dashboard-threshold.md)
+
+  Raising the Climate chip's red-dot threshold from "any severity other than none" to "moderate or
+  critical," matching the phone/persistent_notification bar. Why the original, more permissive
+  threshold left the dot lit almost continuously once both real thermostats settled into a
+  near-permanent `info` state, and why a per-code ignore-list was rejected in favor of the
+  across-the-board fix.
+
 - [overview-c-solar-home-green-percentage.md](overview-c-solar-home-green-percentage.md)
 
   Changing the full-screen Solar view's "Low Carbon" stat from the raw TEP grid green percentage
@@ -134,6 +142,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   reading misrepresents a whole day, the recorder long-term statistics that make the calculation
   possible, and repurposing the two permanently-unbound inverter-temperature placeholders to show
   them.
+
+- [overview-c-alert-triangle-css-bug.md](overview-c-alert-triangle-css-bug.md)
+
+  Why Overview C's bottom-left alert triangle showed with no active alerts while Overview A/B
+  correctly stayed hidden: a CSS specificity tie between two equally-specific selectors, resolved
+  by source order rather than the intended `.visible` toggle. The fix, and why reordering the CSS
+  instead of raising specificity was rejected as more fragile.
 
 - [homie-thermostat-control-fix.md](homie-thermostat-control-fix.md)
 

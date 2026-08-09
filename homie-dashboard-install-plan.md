@@ -9,9 +9,16 @@ the fork below rather than reconstructed from this plan:
 - GitHub: `https://github.com/pdehlke/homie-dashboard`
 - Origin: `git@github.com:pdehlke/homie-dashboard.git`
 - Upstream: `git@github.com:Big-Edge2297/homie-dashboard.git`
-- Latest commit on `main` as of this checkpoint: `f3a1531`, the % Green Today / CO2 Intensity
-  Today stats in [overview-c-solar-today-totals.md](overview-c-solar-today-totals.md), on top of
-  `782bb5a`, the Climate chip activity-count fix in
+- Latest commit on `main` as of this checkpoint: `91e0e6a`, the Overview C alert-triangle and
+  Climate alert-threshold fixes in
+  [overview-c-alert-triangle-css-bug.md](overview-c-alert-triangle-css-bug.md) and
+  [climate-alert-dashboard-threshold.md](climate-alert-dashboard-threshold.md), on top of
+  `245c7af`, a small CSS alignment fix for the two CO2 Intensity stat cards (not separately
+  documented), on top of `437dd78`, a docs-only correction in the fork's own
+  `docs/pdehlke-customizations.md` reflecting the Tesla inverter cancellation below, on top of
+  `f3a1531`, the % Green Today / CO2 Intensity Today stats in
+  [overview-c-solar-today-totals.md](overview-c-solar-today-totals.md), on top of `782bb5a`, the
+  Climate chip activity-count fix in
   [climate-chip-activity-count.md](climate-chip-activity-count.md), on top of `23b774a`, the
   Climate entry-point alert badge in
   [lennox-thermostat-alerts.md](lennox-thermostat-alerts.md), on top of `5b0386e`, the
@@ -19,15 +26,19 @@ the fork below rather than reconstructed from this plan:
   [overview-c-solar-home-green-percentage.md](overview-c-solar-home-green-percentage.md). Several
   commits landed between the `71b07e5` checkpoint below and `5b0386e` covering irrigation and
   garden work not detailed in this file; see `git log` in the fork for that range.
-- Deployed asset release: `20260809.4`
+- Deployed asset release: `20260809.6`
 - Live assets: `/config/www/community/homie-dashboard/`
 - Lovelace dashboard: `homie-dash`, loading
-  `/local/community/homie-dashboard/homie-dashboard.html?v=20260809.4`
-- Verified 2026-08-09: live `config.js`, `homie-custom.js`, and `homie-dashboard.html` SHA-256
-  (config.js compared with its token line stripped) match the fork's local `dist/`; regression
-  suite passes 61/61 (`node --test test/screen-a.test.cjs`). Both the Lovelace iframe URL's `?v=`
-  and the nested `HOMIE_ASSET_VERSION` token were bumped together, per the cache-busting
-  convention below, on both deploys made this checkpoint. The `f3a1531` deploy briefly shipped
+  `/local/community/homie-dashboard/homie-dashboard.html?v=20260809.6`
+- Verified 2026-08-09: live `homie-dashboard.html` SHA-256 matches the fork's local `dist/` after
+  the `91e0e6a` deploy (only that file changed; `config.js` and `homie-custom.js` were untouched
+  this time, so no token-splicing step was needed); regression suite passes 63/63 (`node --test
+  test/screen-a.test.cjs`, 2 new tests plus 1 updated for the `91e0e6a` fixes). Both the Lovelace
+  iframe URL's `?v=` and the nested `HOMIE_ASSET_VERSION` token were bumped together to `.6`, per
+  the cache-busting convention below. Live-verified via Playwright, authenticated as the Homie
+  Dashboard account: `#ov3-alert-btn`'s computed `display` reads `none` with `pnCache.size === 0`,
+  and `lennoxAlertActive()`'s dashboard dot no longer lights for either thermostat's real `info`
+  state. The `f3a1531` deploy (an earlier checkpoint) briefly shipped
   `config.js` with its tracked placeholder token instead of the live one (the splice-in-a-working-copy
   step was skipped under the moment's time pressure); caught immediately, fixed from the pre-upload
   backup, see [overview-c-solar-today-totals.md](overview-c-solar-today-totals.md) for the full
@@ -434,12 +445,14 @@ HACS updates can overwrite `config.js` and `homie-dashboard.html`, and can omit 
   file's bytes change, not only on releases meant for a person to notice, same lesson as
   `homie-thermostat-control-fix.md`.
 - The Climate control's chip, Overview B sidebar list, and Overview C sidebar icon now show a red
-  alert dot whenever either thermostat's Lennox alert sensor reads anything other than "none",
+  alert dot whenever either thermostat's Lennox alert sensor reads "moderate" or "critical",
   reusing the same DOM/CSS Irrigation's disabled-zone badge already established (`23b774a`, release
-  `.2`, 2026-08-09). Paired with `automation.lennox_thermostat_alert` in Home Assistant, forwarding
-  moderate/critical Lennox alerts to a persistent_notification and critical ones to the phone. See
-  [lennox-thermostat-alerts.md](lennox-thermostat-alerts.md), including why the integration's two
-  alert entities can disagree and why the coarse one, not the detailed one, is the trigger.
+  `.2`, 2026-08-09; threshold narrowed from "anything other than none" to "moderate or critical"
+  by `91e0e6a`, release `.6`, see below). Paired with `automation.lennox_thermostat_alert` in Home
+  Assistant, forwarding moderate/critical Lennox alerts to a persistent_notification and critical
+  ones to the phone. See [lennox-thermostat-alerts.md](lennox-thermostat-alerts.md), including why
+  the integration's two alert entities can disagree and why the coarse one, not the detailed one,
+  is the trigger.
 - The Climate chip's "N on" count on Overview A/B now reflects `hvac_action` (actively heating or
   cooling), not `hvac_mode` (`782bb5a`, release `.3`, 2026-08-09): both thermostats stay in
   `heat_cool` mode nearly always, so the old `state !== "off"` check counted both as on almost
@@ -453,6 +466,13 @@ HACS updates can overwrite `config.js` and `homie-dashboard.html`, and can omit 
   rejected alternatives, and a token-handling deployment mistake this change caught and fixed live.
   The repurposing is permanent: the Tesla inverter integration these placeholders were reserved for
   is not happening, see the correction below.
+- Two independent dashboard bugs fixed together (`91e0e6a`, release `.6`, 2026-08-09): Overview C's
+  bottom-left alert triangle showed constantly regardless of whether any HA `persistent_notification`
+  was active, a CSS specificity tie broken by source order rather than a JS logic bug (see
+  [overview-c-alert-triangle-css-bug.md](overview-c-alert-triangle-css-bug.md)); and the Climate
+  chip's red dot threshold change described above (see
+  [climate-alert-dashboard-threshold.md](climate-alert-dashboard-threshold.md)). Bundled into one
+  commit and one release on pde's call, since both land in `homie-dashboard.html`.
 - Next session: browser-verify the floors card's expand button end to end (the launcher it
   replaced had that verification; the replacement does not yet), decide whether the close-time
   filter-reset test item is worth resolving or should be consciously waived, then continue
