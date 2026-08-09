@@ -1,6 +1,6 @@
 # Homie Dashboard Installation Plan
 
-## Checkpoint: 2026-08-07
+## Checkpoint: 2026-08-09
 
 The installation and first customization phase are complete. Custom Homie code is now tracked in
 the fork below rather than reconstructed from this plan:
@@ -9,20 +9,29 @@ the fork below rather than reconstructed from this plan:
 - GitHub: `https://github.com/pdehlke/homie-dashboard`
 - Origin: `git@github.com:pdehlke/homie-dashboard.git`
 - Upstream: `git@github.com:Big-Edge2297/homie-dashboard.git`
-- Latest pushed commit on `main` as of this checkpoint: `71b07e5`. Since the `.13` checkpoint
+- Latest commit on `main` as of this checkpoint: `5b0386e`, the home-green-percentage change in
+  [overview-c-solar-home-green-percentage.md](overview-c-solar-home-green-percentage.md). Several
+  commits landed between the `71b07e5` checkpoint below and this one covering irrigation and garden
+  work not detailed in this file; see `git log` in the fork for that range.
+- Deployed asset release: `20260809.1`
+- Live assets: `/config/www/community/homie-dashboard/`
+- Lovelace dashboard: `homie-dash`, loading
+  `/local/community/homie-dashboard/homie-dashboard.html?v=20260809.1`
+- Verified 2026-08-09: live `homie-custom.js` and `homie-dashboard.html` SHA-256 match the fork's
+  local `dist/`; regression suite passes 56/56 (`node --test test/screen-a.test.cjs`). Both the
+  Lovelace iframe URL's `?v=` and the nested `HOMIE_ASSET_VERSION` token were bumped together, per
+  the cache-busting convention below.
+
+### Prior checkpoint: 2026-08-07
+
+- Latest pushed commit on `main` as of that checkpoint: `71b07e5`. Since the `.13` checkpoint
   below, the fork also added a floors-card thermostat expand button (filters by whichever floor,
   Main House or Office Wing, is currently visible) and a 2x2 target/humidity stat grid on the
   floors card faces, then removed the now-redundant Main House thermostat launcher card the expand
   button superseded. Commit range: `b2eae8b`..`71b07e5`.
 - Deployed asset release: `20260807.16`
-- Live assets: `/config/www/community/homie-dashboard/`
-- Lovelace dashboard: `homie-dash`, loading
-  `/local/community/homie-dashboard/homie-dashboard.html?v=20260807.16`
-- Verified 2026-08-07: live `homie-dashboard.html` SHA-256 matches the repo's local
-  `dist/homie-dashboard.html`; regression suite passes 42/42 (`node --test
-  test/screen-a.test.cjs`). **Not yet committed**: the `.16` changes (Overview C overflow fix,
-  below) exist in the fork's working tree but not in its git history as of this checkpoint. Last
-  pushed commit remains `71b07e5`.
+- Verified 2026-08-07: live `homie-dashboard.html` SHA-256 matched the repo's local
+  `dist/homie-dashboard.html`; regression suite passed 42/42.
 
 ### Overview C vertical overflow on the Fire HD 10, fixed via `kiosk_mode` (release `.16`)
 
@@ -405,6 +414,14 @@ HACS updates can overwrite `config.js` and `homie-dashboard.html`, and can omit 
 - The thermostat overlay actually controls the real thermostats. Previously it displayed plausible
   values and moved an on-screen number without ever reaching the physical Lennox units; see the
   post-mortem linked above for what was actually wrong and how it was found.
+- The full-screen Solar view's "Low Carbon" stat now reports the green share of the home's own
+  consumption instead of the raw TEP grid mix, blending solar production with imported grid power
+  weighted by each source's share of live usage (`5b0386e`, release `.1`, 2026-08-09). See
+  [overview-c-solar-home-green-percentage.md](overview-c-solar-home-green-percentage.md) for the
+  formula and the alternatives rejected. Deploying it surfaced a cache-busting gap: the release
+  token has to be bumped at both the Lovelace iframe and nested asset boundaries whenever a nested
+  file's bytes change, not only on releases meant for a person to notice, same lesson as
+  `homie-thermostat-control-fix.md`.
 - Next session: browser-verify the floors card's expand button end to end (the launcher it
   replaced had that verification; the replacement does not yet), decide whether the close-time
   filter-reset test item is worth resolving or should be consciously waived, then continue

@@ -104,6 +104,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   The installed Homie Dashboard architecture, security model, fork location, deployment workflow,
   accepted Overview customizations, cache-busting strategy, and checkpoint for continuing work.
 
+- [overview-c-solar-home-green-percentage.md](overview-c-solar-home-green-percentage.md)
+
+  Changing the full-screen Solar view's "Low Carbon" stat from the raw TEP grid green percentage
+  to the green share of the home's own consumption, blending solar production with imported grid
+  power weighted by each source's share of live usage. The formula, the alternatives rejected
+  during a grilling session, and a cache-busting deployment gap the change caught before it shipped.
+
 - [homie-thermostat-control-fix.md](homie-thermostat-control-fix.md)
 
   Post-mortem on the Main House thermostat launcher and overlay, which displayed plausible values
