@@ -23,7 +23,9 @@ removing an item for any reason other than completing it.
    tunnel like Cloudflare Tunnel (no open port, more DIY/maintenance), manual
    port-forward + `external_url` (free, opens an inbound port), or leave zone
    control one-way and just document the limitation)
-4. Tesla inverter integration
+4. ~~Tesla inverter integration~~ Cancelled 2026-08-09: not happening. The two `— °F`
+   placeholders it was reserved for have been repurposed into "% Green Today" and "CO2
+   Intensity Today"; see `overview-c-solar-today-totals.md`.
 5. More complete Energy panel
 6. Investigate empty weather card
 7. Fix Overview C floors card's uneven spacing (`.ov3-col3`'s
