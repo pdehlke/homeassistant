@@ -104,6 +104,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   The installed Homie Dashboard architecture, security model, fork location, deployment workflow,
   accepted Overview customizations, cache-busting strategy, and checkpoint for continuing work.
 
+- [climate-chip-activity-count.md](climate-chip-activity-count.md)
+
+  Fixing the Climate chip's "N on" count on Overview A/B, which counted both thermostats as on
+  almost permanently because they stay in `heat_cool` mode nearly always. Now counts only units
+  actually heating or cooling, reusing the `hvac_action`-based check Overview C's sidebar glow
+  already had, and why the AC card's own on/off toggle deliberately keeps its separate,
+  mode-based meaning.
+
 - [lennox-thermostat-alerts.md](lennox-thermostat-alerts.md)
 
   Forwarding each Lennox S30 thermostat's own console alert into Home Assistant, with critical
