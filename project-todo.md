@@ -27,23 +27,23 @@ removing an item for any reason other than completing it.
    placeholders it was reserved for have been repurposed into "% Green Today" and "CO2
    Intensity Today"; see `overview-c-solar-today-totals.md`.
 5. More complete Energy panel
-6. Investigate empty weather card
-7. Fix Overview C floors card's uneven spacing (`.ov3-col3`'s
+6. Fix Overview C floors card's uneven spacing (`.ov3-col3`'s
    `justify-content: space-between` stretches an oversized gap between the
    security and floors cards when no purifier entity is configured; cosmetic,
    found while fixing Overview C's vertical overflow, see
    `homie-dashboard-install-plan.md`)
-8. Remove Solar from Homie Dashboard's Screensaver rotation options
+7. Remove Solar from Homie Dashboard's Screensaver rotation options
    (`ssm-solar`). Same trap as the Startup option removed in the fork's
    `4277ee6` (release `20260808.1`): Solar's fullscreen overlay hides its close
    button and exits by gesture only, and an idle tablet/wallscreen could rotate
    into it unattended with no visible way out. Startup was fixed; Screensaver
    rotation was explicitly left out of scope at the time. See the fork's
    `docs/pdehlke-customizations.md`.
-9. Investigate lighting scenes. I have two scenes defined but I don't see them
+8. Investigate lighting scenes. I have two scenes defined but I don't see them
    anywhere in homie.
-10. Water meter monitoring: https://github.com/gunnaraas/watermeter.git
-11. ~~Decide whether to add a periodic `homeassistant.reload_config_entry` automation for the
+9. Water meter monitoring: https://github.com/gunnaraas/watermeter.git
+10. ~~Decide whether to add a periodic `homeassistant.reload_config_entry` automation for the
     Rachio integration.~~ Done 2026-08-08: `automation.rachio_periodic_config_entry_reload`
     reloads the entry every hour, on pde's explicit call (hourly rather than the doc's recommended
     15-30 minutes, since a webhook fix may make this moot soon; see `rachio-zone-disabled-alert.md`).
+11. Build a remotely accessible Homie Dashboard.
