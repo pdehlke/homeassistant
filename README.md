@@ -36,12 +36,27 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 - [rachio-zone-disabled-alert.md](rachio-zone-disabled-alert.md)
 
-  Three automations: two that alert when a Rachio zone or valve disappears from Home Assistant or
-  when the Main Irrigation controller's standby mode turns on, and one that reloads the Rachio
-  config entry hourly so the other two ever have something new to detect. Why a disabled zone's
-  entity goes stale rather than flagging itself, why the "Standby" switch was never a renamed zone
-  despite the name, the baseline-diff detection design, and a source-level investigation into why
-  the mechanism needs a periodic forced reload to ever see a real disable at all.
+  Four automations: three that alert when a Rachio zone or valve disappears from Home Assistant,
+  when the Main Irrigation controller's standby mode turns on, or when the separate battery-powered
+  Back Yard Smart Hose Timer goes offline or reports low battery, and one that reloads the Rachio
+  config entry hourly so the others ever have something new to detect. Why a disabled zone's entity
+  goes stale rather than flagging itself, the baseline-diff detection design, a source-level
+  investigation into why the mechanism needs a periodic forced reload to ever see a real disable at
+  all, a reload-driven race condition that caused recurring false-positive alerts and its fix, a
+  live current-state red-dot indicator distinct from the diff logic, and the Back Yard automation's
+  verification against a real battery pull.
+
+- [rachio-webhook-responsiveness-plan.md](rachio-webhook-responsiveness-plan.md)
+
+  Revisiting two Rachio limitations once Home Assistant Cloud made this instance internet-reachable:
+  zone on/off staleness (fixed by the webhook becoming deliverable) and disabled-zone detection
+  latency (not fixed by it, since HA's `rachio` integration never subscribes to Rachio's
+  `DELTA`/`ZONE_DELTA` config-change webhooks). Confirms those event types are live via Rachio's
+  authenticated API but carry no field-level diff, only a "something changed, go re-fetch" signal,
+  which caps how much a native webhook integration would actually buy over the existing reload.
+  Records what was scoped, what shipped instead (the false-positive fix in
+  `rachio-zone-disabled-alert.md`), and what's still open (the homie-dashboard UX, the 15-minute
+  reload retiming, the native webhook automation).
 
 - [lennoxs30-integration.md](lennoxs30-integration.md)
 

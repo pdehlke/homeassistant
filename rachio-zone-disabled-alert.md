@@ -1,20 +1,28 @@
 # Rachio zone disabled alert
 
-Two automations that alert when a Rachio zone or valve disappears from Home Assistant, or when
-the Main Irrigation controller's whole-device standby mode turns on.
+Four automations. Three alert when a Rachio zone or valve disappears from Home Assistant, when
+the Main Irrigation controller's whole-device standby mode turns on, or when the separate Back
+Yard Smart Hose Timer goes offline or reports a low battery. The fourth reloads the Rachio config
+entry hourly so the others ever have something new to detect.
 
 | Object | Entity |
 |---|---|
 | Automation | `automation.rachio_zone_or_valve_disabled_alert` (id `rachio_zone_disabled_alert`) |
 | Automation | `automation.rachio_standby_mode_engaged_alert` (id `rachio_standby_engaged_alert`) |
 | Automation | `automation.rachio_periodic_config_entry_reload` (id `rachio_periodic_reload`) |
+| Automation | `automation.rachio_back_yard_hose_timer_health_alert` (id `rachio_back_yard_health_alert`) |
 | Helper | `input_text.rachio_known_zone_switches` (baseline, max length 255) |
+| Helper | `input_boolean.rachio_zone_or_valve_disabled` (live current-state flag, not diff-based) |
+| Helper (Template) | `binary_sensor.main_irrigation_rachio_zone_or_valve_disabled` (`device_class: problem`, mirrors the input_boolean for dashboard red-dot badges) |
 | Source | Rachio integration switches on the Main Irrigation controller and the Back Yard Smart Hose Timer |
 
-All three automations are live and enabled. The two alert automations were verified working on
-2026-08-08 against Home Assistant 2026.7.4, first by calling `automation.trigger` directly, then
-later the same day against a real North re-disable that also confirmed push delivery. See Trigger
-history below for both. The periodic reload automation was added later the same day; see below.
+All four automations are live and enabled. The two Main Irrigation alert automations were verified
+working on 2026-08-08 against Home Assistant 2026.7.4, first by calling `automation.trigger`
+directly, then later the same day against a real North re-disable that also confirmed push
+delivery. See Trigger history below for both. The periodic reload automation was added later the
+same day. On 2026-08-10, a reload-driven false-positive race in `rachio_zone_disabled_alert` was
+found and fixed, two new indicator entities were added, and the Back Yard automation was built and
+verified against a real battery pull. See the dedicated sections below for all three.
 
 ## Why this exists
 
@@ -111,6 +119,12 @@ or valve switch last seen present: the Main Irrigation prefix is stripped
 identified generically, by having a `Zone number` attribute, rather than by a hardcoded name list,
 so North reappearing is picked up automatically without an edit here.
 
+The YAML below is the live 2026-08-10 version, after the fixes described in "The reload race
+condition, and the fix" and "Live current-state indicator, not just a diff" further down. The
+`for: {seconds: 60}` on the state trigger, the split 30-minute fallback, `expected_keys`,
+`currently_missing`, the input_boolean actions, and the restored `notify.notify` step are all new;
+the `current_keys`/`missing_keys` diff logic itself is unchanged from when it was first built.
+
 ```yaml
 id: rachio_zone_disabled_alert
 alias: Rachio zone or valve disabled alert
@@ -123,8 +137,12 @@ triggers:
       - switch.main_irrigation_south_of_driveway
       - switch.main_irrigation_north
       - switch.back_yard_irrigation
+    for:
+      seconds: 60
   - trigger: time_pattern
-    minutes: "/30"
+    minutes: 10
+  - trigger: time_pattern
+    minutes: 40
   - trigger: homeassistant
     event: start
 conditions: []
@@ -145,6 +163,8 @@ actions:
         {% endfor %}
         {{ ns.keys | sort | join(',') }}
   - variables:
+      expected_keys: "back_yard_irrigation,east_of_garage,east_triangle,emmas_yard,north,south_of_driveway"
+  - variables:
       missing_keys: >-
         {% set baseline = states('input_text.rachio_known_zone_switches').split(',') %}
         {% set current_list = current_keys.split(',') %}
@@ -155,6 +175,32 @@ actions:
           {% endif %}
         {% endfor %}
         {{ ns2.missing | join(',') }}
+  - variables:
+      currently_missing: >-
+        {% set current_list = current_keys.split(',') %}
+        {% set exp = expected_keys.split(',') %}
+        {% set ns3 = namespace(missing=[]) %}
+        {% for k in exp %}
+          {% if k not in current_list %}
+            {% set ns3.missing = ns3.missing + [k] %}
+          {% endif %}
+        {% endfor %}
+        {{ ns3.missing | join(',') }}
+  - if:
+      - condition: template
+        value_template: "{{ currently_missing | length > 0 }}"
+    then:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.rachio_zone_or_valve_disabled
+    else:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.rachio_zone_or_valve_disabled
+      - action: persistent_notification.dismiss
+        continue_on_error: true
+        data:
+          notification_id: rachio_zone_disabled
   - if:
       - condition: template
         value_template: "{{ missing_keys | length > 0 }}"
@@ -166,8 +212,16 @@ actions:
           message: >-
             Missing from Home Assistant since the last check:
             {{ missing_keys.replace(',', ', ') }}. A Rachio zone or the Back Yard valve may
-            have been disabled in the Rachio app, or the integration dropped it for another
-            reason. Verify in Settings > Devices & Services > Rachio, then in the Rachio app.
+            have been disabled in the Rachio app, disabled automatically by Rachio (e.g. leak
+            detection), or the integration dropped it for another reason. Verify in
+            Settings > Devices & Services > Rachio, then in the Rachio app.
+      - action: notify.notify
+        continue_on_error: true
+        data:
+          title: Rachio zone or valve may be disabled
+          message: >-
+            Missing from Home Assistant: {{ missing_keys.replace(',', ', ') }}. Verify in
+            Settings > Devices & Services > Rachio, then in the Rachio app.
   - action: input_text.set_value
     target:
       entity_id: input_text.rachio_known_zone_switches
@@ -175,6 +229,10 @@ actions:
       value: "{{ current_keys }}"
 mode: single
 ```
+
+`time_pattern` rejects a comma-separated `minutes` value in one trigger (`"10,40"` fails config
+validation with "invalid time_pattern value"); it wants a wildcard/`/N` pattern or exactly one fixed
+value, hence two separate triggers for `:10` and `:40`.
 
 Both device IDs are stable Home Assistant device registry IDs, not something Rachio assigns;
 `1a3374a701b62fe0e05e7faae6e19b50` is the Main Irrigation `CasaSolar Rachio` controller,
@@ -223,6 +281,9 @@ on/off, only by an entity's `Zone number` attribute disappearing (which happens 
 `unavailable`, not when it just turns off), so a scheduled run at 3 AM does not produce a false
 positive. It does mean the automation's `last_triggered` timestamp updates far more often than
 before; that's cosmetic.
+
+This reasoning turned out to be incomplete in a way that took until 2026-08-10 to find. See "The
+reload race condition, and the fix" below.
 
 The standby-mode automation is simpler, a direct state trigger, since standby is a real entity
 with a real `off`/`on` state rather than something that disappears:
@@ -286,8 +347,8 @@ disappearing) and a different blast radius (every zone paused at once, not one z
   logic itself does not distinguish on/off from disabled, so in practice a false page from the 3 AM
   schedule was never actually expected, but this was pde's call to make, not an engineering
   necessity. The standby-mode automation's `notify.notify` step is untouched; standby is a real,
-  low-frequency state flip, not a per-cycle trigger. Re-adding the zone-disabled alert's push step
-  is a matter of adding back the same `notify.notify` action block shown above.
+  low-frequency state flip, not a per-cycle trigger. Restored 2026-08-10 once "The reload race
+  condition, and the fix" identified and closed the actual source of false pages.
 
 ## Mobile push actually reaches a phone now
 
@@ -307,12 +368,17 @@ device, only against a manual trigger call whose trace showed no step error.
 | 2026-08-08T16:03:21Z | `rachio_zone_or_valve_disabled_alert` | Synthetic test: `input_text.rachio_known_zone_switches` was seeded with an extra `phantom_test_zone` key not present in the real current set, then the automation was triggered directly via `automation.trigger`, bypassing the real triggers |
 | 2026-08-08T16:04:04Z | `rachio_standby_mode_engaged_alert` | Direct `automation.trigger` call; does not exercise the real `state` trigger condition, only the action sequence |
 | 2026-08-08T20:09:44Z | `rachio_zone_or_valve_disabled_alert` | Real test against a real condition: pde disabled North in the Rachio app a second time. HA still showed `switch.main_irrigation_north` as stale `off` at the next scheduled 20:00:00Z run (Rachio's integration hadn't polled the change yet, so nothing was actually missing and correctly no alert fired). Forced a Rachio config-entry reload, which flipped the entity to `unavailable` and dropped its `Zone number` attribute. Then triggered the automation (still only via `automation.trigger` at this point; the state trigger didn't exist yet) and confirmed a clean run: `missing_keys` computed to `north`, the persistent notification and `notify.notify` both fired with no trace error, and pde confirmed the push actually reached his phone |
+| 2026-08-10T19:01:03Z | `rachio_zone_or_valve_disabled_alert` | Post-fix verification: forced a real `homeassistant.reload_config_entry` on the Rachio entry. Before the fix this reliably produced a burst of 5-6 runs within milliseconds with intermittent non-empty `missing_keys`; after the fix the automation did not run until ~60s after the last entity settled, ran once per entity, and every run computed `missing_keys: ''` and `currently_missing: ''`. `input_boolean.rachio_zone_or_valve_disabled`'s history for the whole window showed zero transitions |
+| 2026-08-10T19:26:11.713Z | `rachio_back_yard_health_alert` | Real test: pde physically removed the Back Yard Smart Hose Timer's batteries at pde's own offer. `switch.back_yard_irrigation` went `unavailable` at 19:25:11.687Z; the `offline` branch fired exactly 60.0s later, created `persistent_notification.rachio_back_yard_offline`, and called `notify.notify` with no trace error. pde confirmed the push reached his phone and the correct red-dot indicators appeared on all three Homie Overview dashboards |
+| 2026-08-10T19:31:11.6Z | `rachio_back_yard_health_alert` | Same test, recovery half: pde replaced the batteries. `battery_ok` and `back_online` both fired within milliseconds of each other (no debounce on recovery), correctly dismissing `rachio_back_yard_battery_low` (a harmless no-op, that notification never existed) and `rachio_back_yard_offline` (confirmed actually gone via `persistent_notification/get`, not just attempted) |
 
 The first two rows were synthetic dry runs of the action sequence. The third is the first time
 either automation's actual detection logic (not just its actions) ran against a real Rachio
 change, and the first confirmed real end-to-end push delivery. The state trigger added afterward
 (see above) has not yet fired on an organic zone state change; the entity list is the same
-mechanism already exercised here, so this is considered covered rather than untested.
+mechanism already exercised here, so this is considered covered rather than untested. The last
+three rows are all 2026-08-10, covering the reload-race fix and the new Back Yard automation end to
+end, both directions.
 
 ## Investigation: does anything besides a forced reload ever surface a real disable? (2026-08-08)
 
@@ -439,6 +505,279 @@ This closes the gap the investigation above found: both the zone-disabled alert'
 and its 30-minute fallback now have a real source of new information to react to, at worst one hour
 stale.
 
+## The reload race condition, and the fix (2026-08-10)
+
+Found while scoping an unrelated question, whether to fork Home Assistant's `rachio` integration to
+add support for Rachio's `DELTA` webhook category (see `rachio-webhook-responsiveness-plan.md`).
+pde reported being annoyed by frequent false-positive disabled-zone alerts, which turned out to
+have nothing to do with webhooks and everything to do with the periodic reload automation directly
+above.
+
+**The mechanism.** Every hourly reload tears down and rebuilds every Rachio entity, not just the
+one this alert cares about. Entities do not all flip from `unavailable` back to their real state at
+the same instant; they repopulate one at a time over several seconds as the integration re-fetches
+each zone. The zone-disabled alert's state trigger fires on *any* state change on the six watched
+entities, including the transient `unavailable` blip a reload causes, and its baseline
+(`input_text.rachio_known_zone_switches`) gets rewritten to whatever `current_keys` computes to on
+*every single run*, including ones that fire mid-reload before every entity has repopulated.
+
+Pulled `input_text.rachio_known_zone_switches`'s history for 2026-08-10 to confirm this rather than
+inferring it. Every hour, at the top of the hour, the baseline visibly collapses from 6 keys to 1
+across five sequential automation runs within about 40-50 milliseconds, then climbs back to 6 over
+the following several seconds as zones repopulate:
+
+| Reload (UTC) | First drop to last drop | Full recovery | Elapsed |
+|---|---|---|---|
+| 00:00 | :00.283 → :00.354 | :00:16.512 | ~16.2s |
+| 03:00 | :00.300 → :00.346 | :00:23.289 | ~23.0s (worst observed) |
+| 10:00 | :00.400 → :00.437 | :00:07.565 | ~7.2s |
+| 18:00 | :00.404 → :00.447 | :00:07.796 | ~7.4s |
+
+(Full hour-by-hour data covers every reload from 00:00 through 18:00 that day; these four rows
+span the observed range, 7 to 23 seconds.)
+
+Because the automation reads its baseline, computes the diff, and overwrites the baseline in the
+same run, the *first* run of every hourly collapse compares a shrunken `current_keys` (whatever has
+repopulated so far, which can be as low as the trigger's own entity) against the still-full
+baseline from the end of the *previous* hour's recovery. That comparison is guaranteed to show
+something missing. This is not a rare timing coincidence, it is baked into the automation's own
+architecture and fires on every single hourly reload, 24 times a day. Separately, the 30-minute
+`time_pattern` fallback was scheduled at `:00`/`:30`, so its own tick at `:00` lands exactly inside
+the same collapse window.
+
+Recorder history for `persistent_notification.rachio_zone_disabled` itself came back empty for the
+full 2026-08-07 through 2026-08-10 window, which is inconclusive rather than exculpatory:
+`persistent_notification` entities are not tracked by the recorder or queryable via
+`/api/states/<id>` at all (confirmed directly later the same day, see "Reproducing the
+measurements" below), so an empty history proves nothing either way. The mechanism above is
+confirmed from real production data; whether it actually reached pde's phone every time versus only
+some of the time, given the messy multi-entity mixing described next, was not independently
+confirmed.
+
+A second, subtler effect: because a genuinely disabled zone and a transiently-flickering healthy
+zone look identical mid-reload (both momentarily missing their `Zone number` attribute), a real
+disable landing on the same reload as this race would get reported correctly but *mixed in* with
+one or more spurious zone names in the same notification. That is arguably worse than a purely fake
+alert, since it teaches you to distrust a notification that is sometimes right.
+
+**The fix.** Two changes to `rachio_zone_or_valve_disabled_alert`'s triggers, no change to the
+diff logic itself:
+
+- The six-entity state trigger now requires 60 continuous seconds in the new state before firing
+  (`for: {seconds: 60}`), comfortably above the worst observed 23-second settle time. A transient
+  reload blip never holds `unavailable` for 60 seconds, since it always resolves back to a normal
+  state within observed range; a real disable holds it indefinitely, since nothing repopulates it
+  until the zone is re-enabled and reloaded. The same debounce that filters out reload noise
+  therefore does not filter out real disables, it just adds up to 60 seconds of latency to
+  detecting them, negligible against the existing up-to-one-hour reload cadence.
+- The 30-minute fallback moved from `:00`/`:30` to fixed `10` and `40` minutes past the hour
+  (two separate `time_pattern` triggers; a single trigger with `minutes: "10,40"` is rejected by
+  HA's schema, `time_pattern` wants either a wildcard/`/N` pattern or one fixed value per trigger),
+  clear of the reload's collapse window with a comfortable margin.
+
+Verified against a real reload, not just deployed: forced `homeassistant.reload_config_entry` on
+the Rachio entry and watched the trace. Before the fix, this reliably produced a burst of 5-6 runs
+within milliseconds, several with non-empty `missing_keys`. After the fix: the automation did not
+run at all until roughly 60 seconds after the last entity settled, ran once per entity, and every
+run computed `missing_keys: ''`. `input_boolean.rachio_zone_or_valve_disabled`'s history for the
+whole window shows zero transitions, no flicker at all.
+
+**Independent of this fix:** the periodic reload's own hourly cadence was not changed. The original
+plan in `rachio-webhook-responsiveness-plan.md` to tighten it to 15 minutes was motivated partly by
+a hope that more frequent reloads plus the (then-undiagnosed) false-positive risk would balance out;
+that plan is now stale on that point. The debounce above absorbs a reload's blip regardless of how
+often reloads happen, so tightening the cadence is now a pure detection-latency lever (worst case
+one hour down to worst case 15 minutes), fully decoupled from false positives. Still not done, still
+pde's call, no longer entangled with the false-positive problem either way.
+
+The `notify.notify` push step, removed 2026-08-08 pending observation of the state trigger, was
+restored the same day as this fix, now that the actual cause of false pages is understood and
+addressed rather than merely avoided. See "Remaining gaps" below.
+
+## Live current-state indicator, not just a diff (2026-08-10)
+
+The diff logic above answers "did something change since the last check," which is the right
+question for a one-shot notification but the wrong one for a persistent "is anything disabled right
+now" indicator: because the baseline gets overwritten to `current_keys` on every run regardless of
+outcome, a real disable is absorbed into the new "normal" after exactly one cycle. `missing_keys`
+reverts to empty on the very next run even though the zone is still gone, since the baseline no
+longer expects it either. Confirmed this is architectural, not a bug: the diff was never meant to
+answer that question.
+
+pde asked for exactly that indicator, an HA-notification on disable (already covered above) plus a
+red-dot dashboard badge that reflects current state, including a zone Rachio disables on its own
+(leak detection trips a zone off without pde touching the app; the diff logic already can't tell
+that apart from a manual disable and neither can this, by design, since both surface identically as
+a zone's `Zone number` attribute disappearing).
+
+The fix adds a second, independent comparison in the same already-debounced automation run: a
+fixed, hardcoded roster of the six zone/valve keys that should exist when everything is enabled
+(`expected_keys`), diffed against the live `current_keys` computed the same way as before. Unlike
+`missing_keys`, this has no memory and no self-healing: it is simply "is the full roster present
+right now," recomputed fresh every run. That drives `input_boolean.rachio_zone_or_valve_disabled`
+on when something is absent and off when everything is back, and now also dismisses
+`persistent_notification.rachio_zone_disabled` on the same transition back to normal, which nothing
+previously did.
+
+`binary_sensor.main_irrigation_rachio_zone_or_valve_disabled` is a Template helper
+(`device_class: problem`) that just mirrors the input_boolean's state. `problem`-class binary
+sensors render as a red indicator automatically wherever Home Assistant shows them as a badge, no
+dashboard-specific styling needed. Created via the Template integration's config flow
+(`POST /api/config/config_entries/flow`, handler `template`, `next_step_id: binary_sensor`) rather
+than YAML, and attached to the Main Irrigation device (`1a3374a701b62fe0e05e7faae6e19b50`) for
+grouping; it covers Back Yard too even though it's attached to the other device, this is cosmetic
+only.
+
+Both new entities were added as storage-backed helpers rather than YAML, `input_boolean.create` over
+the WebSocket API for the input_boolean (HA's input_* helpers have no
+`/api/config/<domain>/config/<id>` REST surface the way automations do, confirmed by a 404; the
+`GET /api/config/config_entries/entry` / storage-collection WebSocket commands are the only way to
+manage them).
+
+Verified live against a real North-style condition is not what happened here (North was already
+back before this work); instead verified against the real Back Yard offline test below, whose
+`switch.back_yard_irrigation` participates in the same Main Irrigation `current_keys` computation
+via its own automation. The Main Irrigation-specific indicator's red-dot path itself was confirmed
+by pde directly on all three Homie Overview dashboards during that same test window, since Homie's
+existing irrigation status plumbing already surfaces `switch.back_yard_irrigation`'s availability;
+building a dedicated Homie badge wired to the new entities was not needed and was not done.
+
+## Back Yard Hose Timer health alert (2026-08-10)
+
+The Back Yard Smart Hose Timer is a battery-operated valve, not a zone on the hard-wired Main
+Irrigation controller, and pde considers a dead battery a completely different condition from a
+zone being disabled in the Rachio app. It shares the same Rachio config entry as Main Irrigation
+(confirmed: its entities update within seconds of the same `homeassistant.reload_config_entry` call
+that reloads everything else), so it is exposed to the identical reload-blip risk addressed above,
+but it also has something Main Irrigation's zones don't: a real, Rachio-provided low-battery signal,
+`binary_sensor.back_yard_irrigation_battery` (`device_class: battery`, `on` means low), not
+something inferred from connectivity.
+
+New automation, `rachio_back_yard_health_alert`, watches two genuinely different conditions with
+two different mechanisms:
+
+- **Battery low**: direct trigger on `binary_sensor.back_yard_irrigation_battery` going `on`, no
+  debounce. It's a computed value Rachio's cloud already decided, not raw connectivity, so there is
+  no reload-blip risk to filter out.
+- **Offline**: `switch.back_yard_irrigation` going `unavailable` and staying there for 60 continuous
+  seconds, same debounce duration and same rationale as the Main Irrigation fix above.
+
+Each condition also has a recovery branch (`battery_ok` on the sensor going back to `off`,
+`back_online` on the switch leaving `unavailable`, no debounce on either since recovery doesn't
+need protecting from a reload blip the same way), which dismisses the matching notification.
+`mode: queued` rather than `single`, so a battery recovery and a connectivity recovery arriving
+close together both get to run rather than one dropping the other.
+
+```yaml
+id: rachio_back_yard_health_alert
+alias: Rachio Back Yard Hose Timer health alert
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.back_yard_irrigation_battery
+    to: "on"
+    id: battery_low
+  - trigger: state
+    entity_id: binary_sensor.back_yard_irrigation_battery
+    to: "off"
+    id: battery_ok
+  - trigger: state
+    entity_id: switch.back_yard_irrigation
+    to: "unavailable"
+    for:
+      seconds: 60
+    id: offline
+  - trigger: state
+    entity_id: switch.back_yard_irrigation
+    from: "unavailable"
+    id: back_online
+conditions: []
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: battery_low
+        sequence:
+          - action: persistent_notification.create
+            data:
+              notification_id: rachio_back_yard_battery_low
+              title: Back Yard Hose Timer battery low
+              message: >-
+                The Back Yard Smart Hose Timer is reporting low battery. Replace soon; once the
+                battery fully dies the device also drops offline, which triggers a separate alert.
+          - action: notify.notify
+            continue_on_error: true
+            data:
+              title: Back Yard Hose Timer battery low
+              message: "Back Yard Hose Timer battery is low. Replace soon."
+      - conditions:
+          - condition: trigger
+            id: battery_ok
+        sequence:
+          - action: persistent_notification.dismiss
+            continue_on_error: true
+            data:
+              notification_id: rachio_back_yard_battery_low
+      - conditions:
+          - condition: trigger
+            id: offline
+        sequence:
+          - action: persistent_notification.create
+            data:
+              notification_id: rachio_back_yard_offline
+              title: Back Yard Hose Timer offline
+              message: >-
+                The Back Yard Smart Hose Timer has been unreachable for over a minute. Likely a
+                dead battery or a connectivity issue; check the device and the Rachio app.
+          - action: notify.notify
+            continue_on_error: true
+            data:
+              title: Back Yard Hose Timer offline
+              message: "Back Yard Hose Timer is offline. Check batteries/connectivity."
+      - conditions:
+          - condition: trigger
+            id: back_online
+        sequence:
+          - action: persistent_notification.dismiss
+            continue_on_error: true
+            data:
+              notification_id: rachio_back_yard_offline
+mode: queued
+max: 10
+```
+
+**Verified against a real battery pull**, not a synthetic trigger, at pde's offer. Before-state
+captured first: all three Back Yard entities healthy (`off`), no existing notifications, automation
+armed. Timeline, from Home Assistant's own event-driven trace timestamps (a polling watch script
+used to observe this live lagged by tens of seconds due to its own 5-second poll interval and is
+not the source of truth here):
+
+| Time (UTC) | Event |
+|---|---|
+| 19:25:11.687 | `switch.back_yard_irrigation` (and both binary sensors) genuinely go `unavailable`, batteries physically removed |
+| 19:26:11.713 | Automation fires, `offline` branch, exactly 60.0 seconds later |
+| 19:26:11.715 | `persistent_notification.rachio_back_yard_offline` created |
+| (same run) | `notify.notify` called, no error in trace; push confirmed received on phone, correct red-dot indicators confirmed on all three Homie Overviews |
+| 19:31:11.608 | Batteries replaced; `binary_sensor.back_yard_irrigation_battery` leaves `unavailable` for `off`, `battery_ok` branch fires, dismisses `rachio_back_yard_battery_low` (a harmless no-op, that notification never existed since battery never actually went low) |
+| 19:31:11.613 | `switch.back_yard_irrigation` leaves `unavailable`, `back_online` branch fires, dismisses `rachio_back_yard_offline` |
+
+Confirmed the dismiss was real, not just attempted without error, via `persistent_notification/get`
+returning an empty list afterward (see "Reproducing the measurements" below for why `/api/states`
+cannot be used for this).
+
+The battery-low branch itself remains unverified. It cannot be tested synthetically: pulling
+batteries outright skips straight to the offline condition rather than exercising Rachio's gradual
+low-battery reporting, which only happens for real as a battery genuinely runs down over time. That
+one only proves itself whenever it actually happens.
+
+**A known, accepted limitation this does not fix**: `current_keys` in the Main Irrigation diff
+logic above includes `back_yard_irrigation` unconditionally, by registry presence only, with no
+availability check (see "How it works"). That means the *diff-based* alert can never detect Back
+Yard going missing, only the *new* health alert can, via `switch.back_yard_irrigation`'s live
+availability rather than registry diffing. This was already true before 2026-08-10; not introduced
+by this work, and now that the health alert exists to actually cover Back Yard's real failure mode
+(dead battery, connectivity), fixing the diff logic's blind spot for the same device is lower
+priority than it looked before this alert existed.
+
 ## Remaining gaps
 
 - ~~North's re-enablement has not happened yet as of this writing.~~ Resolved 2026-08-08: pde
@@ -460,16 +799,19 @@ stale.
   actually tested against a real zone disablement, so its rejection is reasoned from the docs
   and the event schema, not from an observed false positive on this instance. Worth another look
   now that the periodic reload automation (below) makes registry changes happen on a predictable
-  hourly cadence instead of only at ad hoc manual reloads, but not revisited yet.
+  hourly cadence instead of only at ad hoc manual reloads, but not revisited yet. Lower priority
+  after 2026-08-10: the state-trigger-plus-debounce fix (see "The reload race condition, and the
+  fix") solved the reliability problem this event was originally being considered to solve,
+  without needing a different trigger source at all.
 - No automation clears `rachio_standby_engaged` when standby turns back off, matching the same
   gap already recorded for `fridge_failure_alert`; `notification_id` means a repeat trigger
   overwrites rather than stacks, which is something, not a fix.
-- The zone-disabled alert's `notify.notify` step is currently removed (see Design choices above).
-  pde wants to watch the new state trigger behave for a while, quietly, before deciding whether to
-  add push back. Revisit this; it was explicitly framed as "for now." The specific scenario it
-  was guarding against (a false page from the 3 AM schedule) turns out not to be reachable on this
-  instance at all, per the investigation above, so this is now purely pde's preference, not a
-  precaution against an active risk.
+- ~~The zone-disabled alert's `notify.notify` step is currently removed~~ Resolved 2026-08-10:
+  restored as part of "The reload race condition, and the fix" above. The removal on 2026-08-08
+  was pde watching the new state trigger before trusting it not to page overnight; the actual
+  cause of false pages (the reload race, not the 3 AM schedule this was originally guarding
+  against, which per the investigation above was never actually reachable) is now understood and
+  fixed, not just avoided.
 - ~~**The open decision**: whether to add a periodic `homeassistant.reload_config_entry`
   automation for the Rachio entry~~ Resolved 2026-08-08: built, hourly. See "The periodic reload
   automation" above.
@@ -507,12 +849,32 @@ python3 scripts/haws.py '{"type":"config/entity_registry/list"}' \
   | jq -r '.result[] | select(.platform=="rachio") | [.entity_id, .unique_id] | @tsv'
 ```
 
-Read either automation's current configuration with:
+Read any of the automations' current configuration with:
 
 ```bash
 curl -s -H "$HB" "$U/api/config/automation/config/rachio_zone_disabled_alert"
 curl -s -H "$HB" "$U/api/config/automation/config/rachio_standby_engaged_alert"
+curl -s -H "$HB" "$U/api/config/automation/config/rachio_back_yard_health_alert"
 ```
 
 Inspect a run with `trace/list` then `trace/get` over WebSocket, same as
 `fridge-failure-alert.md`.
+
+**`persistent_notification.<id>` is not queryable via `/api/states/<id>`,** confirmed directly
+2026-08-10: `GET /api/states/persistent_notification.rachio_back_yard_offline` returned "Entity
+not found" even immediately after a trace confirmed `persistent_notification.create` had run
+successfully with matching parameters and no error. The full `/api/states` list has no
+`persistent_notification.*` entries at all. Use the WebSocket command instead, which does show it:
+
+```bash
+python3 scripts/haws.py '{"type":"persistent_notification/get"}'
+```
+
+To reproduce the reload-race baseline-collapse data itself, pull `input_text.rachio_known_zone_switches`'s
+history across a window spanning several hourly reloads and watch the key count at each timestamp:
+
+```bash
+curl -s -H "$HB" \
+  "$U/api/history/period/2026-08-10T00:00:00Z?filter_entity_id=input_text.rachio_known_zone_switches&end_time=2026-08-10T23:59:59Z&minimal_response" \
+  | jq -r '.[0][] | [.last_changed, .state] | @tsv'
+```
