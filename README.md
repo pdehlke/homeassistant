@@ -168,6 +168,15 @@ Notes, planning, and specs for my Home Assistant buildout.
   automation tried first, and the strategy change that replaced it: deriving Overview A/B's status
   pill from battery and cleaning state instead of trusting the fields proven to get stuck.
 
+- [nabucasa-remote-ui-dns-fragility.md](nabucasa-remote-ui-dns-fragility.md)
+
+  Why Home Assistant Cloud's remote UI setup got permanently stuck after one DNS hiccup: a
+  mistyped fallback nameserver (fixed) plus a source-level fragility in `hass_nabucasa`'s
+  certificate handler, which has no retry and no backoff and gives up for good on the first
+  transient failure. Includes the exact file/line locations worth reporting upstream and an
+  independent reproduction that caught real, brief DNS packet loss during Core's own startup
+  burst.
+
 - [mac-mini-migration.md](mac-mini-migration.md)
 
   Moving Home Assistant off the Raspberry Pi and onto a headless Late 2014 Mac mini.
