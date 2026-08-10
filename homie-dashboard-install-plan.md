@@ -1,6 +1,25 @@
 # Homie Dashboard Installation Plan
 
-## Checkpoint: 2026-08-10
+## Checkpoint: 2026-08-10 (Homie font: Bladerunner)
+
+- Latest commit on `main` as of this checkpoint: `1eadcfe`, adding "Bladerunner" (Goudy
+  Bookletter 1911) as the default dashboard font, on top of `26e2dce` below. Not yet pushed to
+  `origin/main`; pushing is a separate ask.
+- Deployed asset release: `20260810.2`
+- Verified 2026-08-10: live `homie-dashboard.html` SHA-256 matches the fork's local `dist/` after
+  deploy (only that file changed; `config.js` and `homie-custom.js` untouched, no token-splicing
+  step needed). Regression suite passes 64/64 (1 new test). Both the Lovelace iframe URL's `?v=`
+  and the nested `HOMIE_ASSET_VERSION` token were bumped together to `.2`. Live-verified via
+  Playwright, authenticated as the Homie Dashboard account, fresh session with no prior
+  `localStorage`: default font on load is Goudy Bookletter 1911 (confirmed via computed
+  `body` `font-family`), Settings → Fonts shows "Bladerunner" checked with only a Regular weight
+  button (it has no Thin/Light variant), and switching to Montserrat and back correctly applies
+  each font's own weight options and generic CSS fallback. Full reasoning, including why the
+  real "Goudy Oldstyle" wasn't used (commercial font, public repo) and the generic-fallback bug
+  fixed along the way, is in the fork's own `docs/pdehlke-customizations.md` under "Default
+  Font: Bladerunner / Goudy Bookletter 1911".
+
+## Checkpoint: 2026-08-10 (Climate idle-target fix)
 
 - Latest commit on `main` as of this checkpoint: `26e2dce`, the Climate overlay idle-target fix
   in [climate-idle-target-fallback.md](climate-idle-target-fallback.md), on top of `91e0e6a`
