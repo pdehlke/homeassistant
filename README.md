@@ -160,6 +160,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   both invisible to normal error handling), the fixes rejected along the way, and two mistakes the
   fix itself made that only live browser verification caught.
 
+- [climate-idle-target-fallback.md](climate-idle-target-fallback.md)
+
+  Why the Climate overlay showed Main House's target as 70°F instead of the real 78°F: a
+  dual-setpoint band with no actively reported bound (hvac_action idle, the normal resting state)
+  fell back to the band's midpoint instead of a real setpoint. The fix (nearest bound to current
+  temperature) and the alternatives rejected, including why the same fallback in the temperature
+  *adjustment* path was deliberately left alone.
+
 - [roborock-status-mqtt-stall.md](roborock-status-mqtt-stall.md)
 
   Why the Q5 Max+'s charging/status entities freeze for hours after the vacuum actually finishes

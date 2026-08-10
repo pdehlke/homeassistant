@@ -1,5 +1,20 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-10
+
+- Latest commit on `main` as of this checkpoint: `26e2dce`, the Climate overlay idle-target fix
+  in [climate-idle-target-fallback.md](climate-idle-target-fallback.md), on top of `91e0e6a`
+  below. Not yet pushed to `origin/main`; pushing is a separate ask.
+- Deployed asset release: `20260810.1`
+- Verified 2026-08-10: live `homie-custom.js` and `homie-dashboard.html` SHA-identical to the
+  fork's local `dist/` after deploy (only those two files changed; `config.js` untouched, no
+  token-splicing step needed). Regression suite passes 63/63. Both the Lovelace iframe URL's
+  `?v=` and the nested `HOMIE_ASSET_VERSION` token were bumped together to `.1`, per the
+  cache-busting convention below. Live-verified via Playwright, authenticated as the Homie
+  Dashboard account: Main House's Climate overlay reads "TARGET 78°" instead of 70°, matching
+  the real entity's `target_temp_high`. Full account in
+  [climate-idle-target-fallback.md](climate-idle-target-fallback.md).
+
 ## Checkpoint: 2026-08-09
 
 The installation and first customization phase are complete. Custom Homie code is now tracked in
