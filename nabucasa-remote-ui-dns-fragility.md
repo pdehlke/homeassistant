@@ -120,6 +120,11 @@ have shifted.
   when none is in flight, or fail with a clear, documented error instead of a raw
   `RemoteNotConnected` traceback. Not yet filed; this document is the prep work for doing so with
   a concrete, reproduced timeline instead of a one-off report.
+
+  Update, 2026-08-10: a fix for points 1 and 2 (the narrow `except` clauses around the DNS
+  challenge create/cleanup calls, and `_certificate_handler` re-raising instead of retrying) was
+  written and committed on branch `fix/remote-ui-dns-fragility` in the `pdehlke/hass-nabucasa`
+  fork. Not pushed or opened as a PR upstream yet.
 - **Identify what runs the hourly full-subnet PTR sweep.** Still unknown. It is not HA's
   `device_tracker` platform (no nmap/ping-based tracker entities exist on this instance) and it
   sources from the HA host itself (`127.0.0.1` and the docker bridge gateway), not from another
