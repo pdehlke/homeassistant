@@ -78,5 +78,5 @@ Persistent credential handoff files live outside both repositories under `/Users
 - `/Users/pde/tmp/homie-dashboard-token`
 
 Never print their contents. SSH/SFTP uses `root@homeassistant.local` on port `2222`. Read
-`homie-dashboard-install-plan.md` in this repository for the current customization ledger,
-deployment procedure, backups, and next-work checkpoint.
+`docs/homie-dashboard/homie-dashboard-install-plan.md` in this repository for the current
+customization ledger, deployment procedure, backups, and next-work checkpoint.

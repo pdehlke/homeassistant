@@ -60,11 +60,24 @@ dotfiles repo at `~/.yadr-private` instead. The default hostname
   stale, so a reader needs to see where the claim came from.
 - Prefer tables when comparing options against shared criteria.
 
+## Repo layout
+
+Topical documents live under `docs/<topic>/`, grouped by subject (`crestron/`,
+`homie-dashboard/`, `rachio/`, and so on). `README.md` and `CLAUDE.md` stay at
+repo root: `README.md` because it is the top-level table of contents, and
+`CLAUDE.md` because Claude Code only auto-loads it from the project root.
+`project-todo.md` also lives at `docs/project-todo.md`, directly under `docs/`
+rather than in a topic subdirectory, since it is a live cross-cutting backlog
+rather than a single topic. When a new document doesn't fit an existing
+subdirectory, create a new one named after the topic rather than adding to an
+unrelated one or leaving it loose at the top of `docs/`.
+
 ## Maintaining the README
 
 `README.md` is a table of contents and nothing else. When adding, renaming, or
-removing a `.md` file, update the contents list in the same commit. Each entry
-is a link plus a short description of what the document covers.
+removing a `.md` file, update the contents list in the same commit, under the
+matching topic heading. Each entry is a link plus a short description of what
+the document covers.
 
 ## Commits
 
@@ -92,12 +105,13 @@ route ambiguity is obsolete. Do not hardcode LAN addresses.
 Exception: the Homie Dashboard fork's `dist/config.js` deliberately hardcodes a literal
 IP for `WS_URL`, because it serves a Fire HD tablet whose FireOS has no mDNS resolver at
 all, a different problem than the dual-stack one above and not fixed by it. Scoped to that
-one file for that one device. See `homie-dashboard-install-plan.md`'s 2026-08-10 checkpoint.
+one file for that one device. See `docs/homie-dashboard/homie-dashboard-install-plan.md`'s
+2026-08-10 checkpoint.
 
 ## Handoff instructions
 
 Read
-/Users/pde/src/github.com/pdehlke/homeassistant/homie-dashboard-install-plan.md
+/Users/pde/src/github.com/pdehlke/homeassistant/docs/homie-dashboard/homie-dashboard-install-plan.md
 completely, then read the project's Home Assistant skill at
 /Users/pde/src/github.com/
 pdehlke/homeassistant/.claude/skills/home-assistant/SKILL.md. Resume Homie work
@@ -118,8 +132,8 @@ to be a Home Assistant chrome problem, not a Homie layout problem:
 `homie-dash`'s Lovelace iframe strategy was losing 56px to HA's own top app bar.
 Fixed with a `kiosk_mode` block on `homie-dash` scoped to the `Homie Dashboard`
 user (`hide_header` + `hide_sidebar`), same pattern as `Tablet` elsewhere. Full
-writeup with measurements in `homie-dashboard-install-plan.md`'s new "Overview C
-vertical overflow" section.
+writeup with measurements in `docs/homie-dashboard/homie-dashboard-install-plan.md`'s new
+"Overview C vertical overflow" section.
 
 Two things intentionally deferred, unrelated to the above:
 
@@ -129,7 +143,7 @@ Two things intentionally deferred, unrelated to the above:
   it. Still open.
 - `.ov3-col3`'s `justify-content: space-between` leaves an ugly gap between the
   security and floors cards when no purifier entity is configured. Cosmetic, not
-  overflow. On `project-todo.md`.
+  overflow. On `docs/project-todo.md`.
 
 No secrets were copied into either repository. The Homie user's password file
 was not touched; the fix used the Homie Dashboard's own long-lived token

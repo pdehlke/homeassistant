@@ -113,10 +113,10 @@ assumed to be the Apex serial interface or disconnected as part of this work.
 - [`crestron-migration.md`](crestron-migration.md)
 - [`crestron-strategy.md`](crestron-strategy.md)
 - [`crestron-apex-control-plane.md`](crestron-apex-control-plane.md)
-- [`crestron-dumps/mc2e-gale-favela-11-14-08.dsc.txt`](crestron-dumps/mc2e-gale-favela-11-14-08.dsc.txt)
-- [`crestron-dumps/aads-favela-v4.dsc.txt`](crestron-dumps/aads-favela-v4.dsc.txt)
-- [`crestron-dumps/aads-favela-v4.dip.txt`](crestron-dumps/aads-favela-v4.dip.txt)
-- [`crestron-dumps/aads-manifest.txt`](crestron-dumps/aads-manifest.txt)
+- [`dumps/mc2e-gale-favela-11-14-08.dsc.txt`](dumps/mc2e-gale-favela-11-14-08.dsc.txt)
+- [`dumps/aads-favela-v4.dsc.txt`](dumps/aads-favela-v4.dsc.txt)
+- [`dumps/aads-favela-v4.dip.txt`](dumps/aads-favela-v4.dip.txt)
+- [`dumps/aads-manifest.txt`](dumps/aads-manifest.txt)
 
 These files establish hardware and topology. They are not substitutes for the
 original SIMPL Windows and VT Pro-e source projects.

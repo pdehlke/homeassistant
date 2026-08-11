@@ -5,7 +5,7 @@ icon) was lighting continuously even though neither Lennox thermostat had anythi
 severity. Not a malfunction: it was the originally agreed threshold doing exactly what it was
 built to do. The threshold itself was revised.
 
-See [lennox-thermostat-alerts.md](lennox-thermostat-alerts.md) for the alert automation and the
+See [lennox-thermostat-alerts.md](../lennox-climate/lennox-thermostat-alerts.md) for the alert automation and the
 original badge design, and [homie-dashboard-install-plan.md](homie-dashboard-install-plan.md) for
 the fork and deployment workflow.
 

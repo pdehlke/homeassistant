@@ -8,7 +8,7 @@ Established 2026-08-04 on Home Assistant 2026.7.4.
 ## The problem
 
 The CLX lighting modules cannot be driven from Home Assistant yet. That work depends on the Path A
-XSIG bridge described in [crestron-strategy.md](crestron-strategy.md), which has not been
+XSIG bridge described in [crestron-strategy.md](../crestron/crestron-strategy.md), which has not been
 commissioned. Until then there is nothing in the `light` domain at all, which makes it impossible to
 lay out or test a lighting dashboard, or to write and try any automation that targets lights.
 
@@ -141,7 +141,7 @@ lights on together at brightness 255, then off together, left off.
 `106 - Garage` in the MC2E program, which records where the hardware is racked and not what it
 controls, so the channel to room mapping cannot be recovered from the console dumps already
 collected. See the open verification checklist in
-[crestron-migration.md](crestron-migration.md#open-verification-checklist). That mapping is a
+[crestron-migration.md](../crestron/crestron-migration.md#open-verification-checklist). That mapping is a
 prerequisite for the rewiring described above.
 
 ## Gotchas

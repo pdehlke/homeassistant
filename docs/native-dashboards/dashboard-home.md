@@ -11,7 +11,7 @@ generator that builds a tab, `scripts/rebuild-home-tab.py`, followed 2026-08-06.
 ## Why tabs instead of a root dashboard
 
 Home is meant to be the self-contained kiosk experience for the eventual wall-mounted touch panel
-(see [crestron-strategy.md](crestron-strategy.md#touch-panels-replacing-the-tsw-752s)), which rules
+(see [crestron-strategy.md](../crestron/crestron-strategy.md#touch-panels-replacing-the-tsw-752s)), which rules
 out leaning on the standalone domain dashboards (`dashboard-lights`, `dashboard-av`,
 `dashboard-lennox-home`, `dashboard-alarm-system`) for navigation the way a level 1 root dashboard
 did. Every `navigate` action inside Home's tabs and leaves targets `/vision-sample/...`, never one
@@ -324,7 +324,7 @@ already has an `av` entry in its `DOMAINS` table (added alongside `lights`); run
 The Alarm tab (`path: alarm`) also exists with an empty `grid` section. Unlike A/V, this one is not
 a matter of running the generator: there are no `alarm_control_panel` entities yet, the DSC panel's
 model is still unidentified (see
-[crestron-strategy.md](crestron-strategy.md#alarm-system-no-recommendation-yet)), and `alarm` is
+[crestron-strategy.md](../crestron/crestron-strategy.md#alarm-system-no-recommendation-yet)), and `alarm` is
 deliberately absent from `DOMAINS` for the same reason it is absent from
 `rebuild-domain-dashboard.py`'s table: generating an area grid with nothing to populate it would
 produce a dashboard where no area is ever tappable.
@@ -379,7 +379,7 @@ removal of `hide_header` from Home's `kiosk_mode` block.
   level 3 leaf rules each tab implements, and the generation approach both scripts share.
 - [dashboard-header-card.md](dashboard-header-card.md) for the card-based header recipe still used
   by the standalone domain dashboards, and the `card_mod` `!important` rule that recipe depends on.
-- [crestron-strategy.md](crestron-strategy.md#touch-panels-replacing-the-tsw-752s) for the physical
+- [crestron-strategy.md](../crestron/crestron-strategy.md#touch-panels-replacing-the-tsw-752s) for the physical
   wall-panel replacement (Shelly Wall Display or Sonoff NSPanel Pro) this dashboard is meant to end
   up running on.
 - [vision-sample-pergola-solar-gauge.md](vision-sample-pergola-solar-gauge.md) and

@@ -1,12 +1,12 @@
 # Lennox iComfort S30: the lennoxs30 integration
 
 What was actually done to bring the two Lennox iComfort S30 thermostats (North and South, see
-[crestron-migration.md](crestron-migration.md#status-as-of-2026-08-04-for-picking-this-back-up)) into
+[crestron-migration.md](../crestron/crestron-migration.md#status-as-of-2026-08-04-for-picking-this-back-up)) into
 Home Assistant, and what to do if the South thermostat's IP address changes before a DHCP reservation
 is in place for it.
 
 This is the concrete record of step 2 in
-[crestron-strategy.md's plan of attack](crestron-strategy.md#plan-of-attack); see that document's
+[crestron-strategy.md's plan of attack](../crestron/crestron-strategy.md#plan-of-attack); see that document's
 "HVAC: independent of Crestron" section for why this integration was chosen over the alternatives.
 
 ## What was installed
@@ -119,7 +119,7 @@ the integration logs a connection error.
 ## Known quirk: `climate.set_temperature` requires both bounds, and silently drops off-step calls
 
 Both zones report `hvac_mode` as `heat_cool` essentially all the time (see
-[homie-thermostat-control-fix.md](homie-thermostat-control-fix.md) for the investigation this was
+[homie-thermostat-control-fix.md](../homie-dashboard/homie-thermostat-control-fix.md) for the investigation this was
 found during), using `target_temp_high`/`target_temp_low` rather than a single `temperature`
 attribute, and both declare `target_temp_step: 1.0`. Any caller of `climate.set_temperature`
 against these entities, not just the Homie dashboard, needs to respect two things Home Assistant

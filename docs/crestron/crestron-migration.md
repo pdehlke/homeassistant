@@ -164,7 +164,7 @@ access can currently reach either console unauthenticated. That is worth fixing 
 everything else in this plan.
 
 The raw `.dsc`/`.dip`/manifest text pulled from both consoles via `TYPE` is saved as-is in
-[`crestron-dumps/`](crestron-dumps/), for reference beyond the excerpts and tables below.
+[`dumps/`](dumps/), for reference beyond the excerpts and tables below.
 
 ### MC2E
 

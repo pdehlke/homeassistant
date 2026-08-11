@@ -29,7 +29,7 @@ Two floors, thirteen areas.
 
 Several areas are deliberately empty. They exist so the structure is in place before the Crestron
 lighting migration lands, since that work will assign a lot of entities at once and it is easier to
-have the rooms already named correctly. See [crestron-strategy.md](crestron-strategy.md).
+have the rooms already named correctly. See [crestron-strategy.md](../crestron/crestron-strategy.md).
 
 The `m3rf:` icon prefix is the Rounded and Filled variant of the
 [Material Symbols](https://github.com/beecho01/material-symbols) icon pack, chosen to match the
@@ -84,7 +84,7 @@ The two mechanical closets share the `m3rf:air` icon so they read as the same cl
 
 ## Areas the Lennox integration created on its own
 
-Installing the `lennoxs30` integration (see [lennoxs30-integration.md](lennoxs30-integration.md))
+Installing the `lennoxs30` integration (see [lennoxs30-integration.md](../lennox-climate/lennoxs30-integration.md))
 auto-created two areas, `basement` and `outside`, from the equipment locations the S30 reports.
 Neither name was chosen by hand, and both needed attention.
 
@@ -110,7 +110,7 @@ even though that area no longer exists, and the entity now lives in the Dining R
 This is deliberate. Home Assistant never rewrites an entity ID when a device changes area, and
 renaming entity IDs by hand is the most breakage-prone operation available: IDs are referenced by
 dashboards, scripts, scenes, and some integrations' stored config entry data, none of which update
-automatically. The [Lennox Home dashboard](lennoxs30-integration.md) hardcodes several of these IDs.
+automatically. The [Lennox Home dashboard](../lennox-climate/lennoxs30-integration.md) hardcodes several of these IDs.
 
 The stale prefixes are cosmetic. Entity IDs are opaque strings, the UI displays friendly names
 instead, and nothing behaves differently. Leave them alone unless there is a concrete reason.

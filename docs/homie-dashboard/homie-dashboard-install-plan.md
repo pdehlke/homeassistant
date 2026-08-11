@@ -100,7 +100,7 @@ the fork below rather than reconstructed from this plan:
   Climate chip activity-count fix in
   [climate-chip-activity-count.md](climate-chip-activity-count.md), on top of `23b774a`, the
   Climate entry-point alert badge in
-  [lennox-thermostat-alerts.md](lennox-thermostat-alerts.md), on top of `5b0386e`, the
+  [lennox-thermostat-alerts.md](../lennox-climate/lennox-thermostat-alerts.md), on top of `5b0386e`, the
   home-green-percentage change in
   [overview-c-solar-home-green-percentage.md](overview-c-solar-home-green-percentage.md). Several
   commits landed between the `71b07e5` checkpoint below and `5b0386e` covering irrigation and
@@ -151,7 +151,7 @@ rounding.
 Fixed on the Home Assistant side: added a `kiosk_mode` block to `homie-dash`'s saved dashboard
 config, scoped to `users: ["Homie Dashboard"]` (display name; username `homie`), setting
 `hide_header` and `hide_sidebar`. Same per-user mechanism already used for `Tablet` on the domain
-dashboards, see [dashboard-home.md](dashboard-home.md). Verified live with Playwright, once as the
+dashboards, see [dashboard-home.md](../native-dashboards/dashboard-home.md). Verified live with Playwright, once as the
 `Homie Dashboard` user (its own long-lived token, not its password) and once as `Pete` (admin): the
 `homie-dash` iframe measures `x:0, y:0, w:1280, h:800` for Homie Dashboard and unchanged
 `x:256, y:56, w:1024, h:744` for Pete, confirming the fix applies only to the intended account and
@@ -529,7 +529,7 @@ HACS updates can overwrite `config.js` and `homie-dashboard.html`, and can omit 
   `.2`, 2026-08-09; threshold narrowed from "anything other than none" to "moderate or critical"
   by `91e0e6a`, release `.6`, see below). Paired with `automation.lennox_thermostat_alert` in Home
   Assistant, forwarding moderate/critical Lennox alerts to a persistent_notification and critical
-  ones to the phone. See [lennox-thermostat-alerts.md](lennox-thermostat-alerts.md), including why
+  ones to the phone. See [lennox-thermostat-alerts.md](../lennox-climate/lennox-thermostat-alerts.md), including why
   the integration's two alert entities can disagree and why the coarse one, not the detailed one,
   is the trigger.
 - The Climate chip's "N on" count on Overview A/B now reflects `hvac_action` (actively heating or

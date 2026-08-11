@@ -31,7 +31,7 @@ The four TSW-752 touch panels are Ethernet devices registered directly with the
 AADS. The AADS descriptor lists them at IP IDs 11 through 14. Its separate
 Cresnet leg contains the ST-IO and two obsolete Crestron thermostat definitions,
 but no touch panels. See
-[`crestron-dumps/aads-favela-v4.dsc.txt`](crestron-dumps/aads-favela-v4.dsc.txt)
+[`dumps/aads-favela-v4.dsc.txt`](dumps/aads-favela-v4.dsc.txt)
 and the AADS findings in [`crestron-migration.md`](crestron-migration.md).
 
 Crestron's official Destiny 6100 SIMPL module confirms the downstream side of

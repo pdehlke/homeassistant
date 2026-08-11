@@ -173,7 +173,7 @@ the generator controls it because nothing needed to yet.
 ### Group presets target a label, for the areas that need a level between area and fixture
 
 Primary Suite holds five lights split across two physical clusters, bedroom and bath, and HA areas
-cannot nest (see [area-floor-layout.md](area-floor-layout.md) on why the Garage is a floor rather
+cannot nest (see [area-floor-layout.md](../areas-and-entities/area-floor-layout.md) on why the Garage is a floor rather
 than a sub-area for the same reason). An area-targeted preset cannot express "just the bath
 fixtures," and naming the two `light.bath_*` entities directly in the button config would have
 broken the same guarantee area-targeting exists for in the first place.
@@ -297,7 +297,7 @@ The Alarm System dashboard exists and carries the standard header, but has no co
 are no `alarm_control_panel` entities yet. The DSC panel's model is still unidentified and that is
 the blocking item, so there is nothing to generate a dashboard from. It is deliberately not in the
 `DOMAINS` table: adding it before the entities exist would produce a grid where no area is ever
-tappable. See [crestron-strategy.md](crestron-strategy.md) for the state of that decision.
+tappable. See [crestron-strategy.md](../crestron/crestron-strategy.md) for the state of that decision.
 
 ## What was verified
 
@@ -316,9 +316,9 @@ Confirmed by driving the real dashboard on 2026-08-04 rather than by reading the
   domain dashboards, though not on Home's own tabs, which keep their native header.
 - [dashboard-header-card.md](dashboard-header-card.md) for the date, time and weather banner the
   level 2 view carries, and the view-type constraint on reusing it elsewhere.
-- [light-entity-strategy.md](light-entity-strategy.md) for how the light entities themselves are
+- [light-entity-strategy.md](../areas-and-entities/light-entity-strategy.md) for how the light entities themselves are
   built and what happens to them when Crestron control arrives.
-- [area-floor-layout.md](area-floor-layout.md) for the area and floor structure the area grid is
+- [area-floor-layout.md](../areas-and-entities/area-floor-layout.md) for the area and floor structure the area grid is
   generated from.
-- [crestron-strategy.md](crestron-strategy.md) for the migration this navigation model is preparing
+- [crestron-strategy.md](../crestron/crestron-strategy.md) for the migration this navigation model is preparing
   for.

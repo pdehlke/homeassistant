@@ -164,7 +164,7 @@ back:
 
 - [dashboard-navigation-model.md](dashboard-navigation-model.md) for the three-level dashboard
   hierarchy this header sits on top of, and for the generator that preserves it.
-- [lennoxs30-integration.md](lennoxs30-integration.md) for the thermostats the Lennox Home dashboard
+- [lennoxs30-integration.md](../lennox-climate/lennoxs30-integration.md) for the thermostats the Lennox Home dashboard
   displays.
-- [homeii-music-flow.md](homeii-music-flow.md) for another case where the view type, rather than the
+- [homeii-music-flow.md](../music-assistant/homeii-music-flow.md) for another case where the view type, rather than the
   card, was the thing that had to change.

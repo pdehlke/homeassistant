@@ -4,7 +4,7 @@ Why the Homie dashboard's thermostat launcher and overlay looked right but did n
 control the real thermostats, and what it took to find out. See
 [homie-dashboard-install-plan.md](homie-dashboard-install-plan.md) for the fork location and
 deployment workflow this fix went through, and
-[lennoxs30-integration.md](lennoxs30-integration.md#known-quirk-climatesettemperature-requires-both-bounds-and-silently-drops-off-step-calls)
+[lennoxs30-integration.md](../lennox-climate/lennoxs30-integration.md#known-quirk-climatesettemperature-requires-both-bounds-and-silently-drops-off-step-calls)
 for the reusable integration-level facts this investigation turned up.
 
 ## Symptom

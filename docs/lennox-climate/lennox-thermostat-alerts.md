@@ -8,7 +8,7 @@ table) with nothing in Home Assistant surfacing it.
 
 See [lennoxs30-integration.md](lennoxs30-integration.md) for how the two thermostats were brought
 into Home Assistant in the first place, and
-[homie-dashboard-install-plan.md](homie-dashboard-install-plan.md) for the fork and deployment
+[homie-dashboard-install-plan.md](../homie-dashboard/homie-dashboard-install-plan.md) for the fork and deployment
 workflow the dashboard half of this change went through.
 
 ## Two alert signals, and why only one of them is trustworthy right now
@@ -67,7 +67,7 @@ interruption worth a persistent record are different bars.
 **Revised 2026-08-09**: with both real thermostats spending most of their time at `info`, the
 permissive threshold meant the dot stayed lit almost continuously for conditions nobody intended to
 act on. The dashboard badge now uses the same "moderate or worse" bar as the notification above.
-See [climate-alert-dashboard-threshold.md](climate-alert-dashboard-threshold.md) for the change and
+See [climate-alert-dashboard-threshold.md](../homie-dashboard/climate-alert-dashboard-threshold.md) for the change and
 what was rejected. The rest of this section, including the severity mapping table above, is
 unchanged and still describes the current automation.
 
@@ -221,7 +221,7 @@ existing elements and helper pattern rather than duplicating it. 57/57 passing.
 being untouched this time and `config.js` gaining the `alertEntity` fields. `HOMIE_ASSET_VERSION`
 was bumped `20260809.1` → `20260809.2`, and the `homie-dash` Lovelace iframe strategy's `?v=` was
 bumped to match, same two-boundary requirement recorded in
-[overview-c-solar-home-green-percentage.md](overview-c-solar-home-green-percentage.md). A test
+[overview-c-solar-home-green-percentage.md](../homie-dashboard/overview-c-solar-home-green-percentage.md). A test
 (`"Homie HTML loads config and helpers with one release token"`) asserts the literal version
 string, which is what caught that the previous session's version bump had gone out without updating
 this test's expectation; fixed as part of this change.
@@ -239,7 +239,7 @@ specific code rather than a severity level: Lennox code 312, "Reduced Airflow-In
 Cutback," Lennox's own shorthand for "the blower can't move the air it wants to, most commonly
 because the filter needs changing." Both South and North have sat at `info` severity for a while
 (see "Two alert signals" above), which the severity-based automation and dashboard badge correctly
-ignore now that [climate-alert-dashboard-threshold.md](climate-alert-dashboard-threshold.md)
+ignore now that [climate-alert-dashboard-threshold.md](../homie-dashboard/climate-alert-dashboard-threshold.md)
 narrowed their threshold to moderate/critical. Code 312 needed its own path because it is
 actionable at `info` severity specifically: "change the filter" is a real, useful thing to tell pde
 even though it never rises to a level either the phone push or the dashboard dot cares about.

@@ -17,7 +17,7 @@ Checked every entity the live dashboard config referenced against `/api/states` 
 assuming the whole card set was fake. Most of it turned out to already be real, either because
 pde had built it directly (`light.primary_suite_lights`, a native HA Light Group helper
 aggregating the five Primary Suite lights, added through the UI after the [light entity
-strategy](light-entity-strategy.md) work) or because it was a genuine integration
+strategy](../areas-and-entities/light-entity-strategy.md) work) or because it was a genuine integration
 (`binary_sensor.garage_ev_charger_vehicle_connected`, `vacuum.q5_max`,
 `climate.casasolar_north_zone_1` / `south_zone_1`, `media_player.gym`, `todo.shopping_list`,
 `weather.openweathermap` and its sensors). Only seven entities were genuinely missing:
@@ -36,7 +36,7 @@ Three ways to get demo-shaped entities were on the table:
 | Hand-written `template:` YAML for just the gap | Rejected for now |
 
 **The real `demo:` integration** was rejected for the same reason [light entity
-strategy](light-entity-strategy.md#why-this-and-not-something-simpler) rejected it the first
+strategy](../areas-and-entities/light-entity-strategy.md#why-this-and-not-something-simpler) rejected it the first
 time: no config flow, YAML-only, and it seeds a fixed set of names across nearly every domain
 (`climate.hvac`, `lock.front_door`, `cover.garage_door`, and dozens more) that this dashboard
 does not use. It would also mean editing `configuration.yaml`, which this instance currently has
@@ -60,7 +60,7 @@ unsandboxed read/write across `/config`. Flagged that distinction to pde directl
 just using it. Not used for this pass.
 
 **Template Helper via the config-flow API** is exactly the pattern used for every light in
-[light entity strategy](light-entity-strategy.md), generalized to whatever domain the flow's
+[light entity strategy](../areas-and-entities/light-entity-strategy.md), generalized to whatever domain the flow's
 menu step offers. Confirmed live by walking the flow: `alarm_control_panel`, `binary_sensor`,
 `button`, `cover`, `device_tracker`, `event`, `fan`, `image`, `light`, `lock`, `number`,
 `select`, `sensor`, `switch`, `update`, `vacuum`, `weather`. Six of the seven missing entities

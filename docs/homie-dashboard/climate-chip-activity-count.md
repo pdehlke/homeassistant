@@ -7,7 +7,7 @@ moment now reads "1 on."
 ## The problem
 
 Both real thermostats run in `heat_cool` mode nearly all the time (see
-[lennoxs30-integration.md](lennoxs30-integration.md)'s "Known quirk" section and
+[lennoxs30-integration.md](../lennox-climate/lennoxs30-integration.md)'s "Known quirk" section and
 [homie-thermostat-control-fix.md](homie-thermostat-control-fix.md)), so their `climate.*` entity
 state is essentially never `"off"`. The chip's on-count, in `refreshControls()`, was using the
 generic `entityIsOn(state, entity)` helper, whose climate branch is `state !== "off"`. Against

@@ -217,7 +217,7 @@ Both loaded successfully on the first try and immediately surfaced real, live en
 placeholders. This is the first Crestron-adjacent subsystem actually running through Home Assistant
 rather than just planned. Full detail, including the exact config used and the recovery steps for
 South's still-unreserved DHCP lease, is in
-[lennoxs30-integration.md](lennoxs30-integration.md).
+[lennoxs30-integration.md](../lennox-climate/lennoxs30-integration.md).
 
 ## Plan of attack
 
