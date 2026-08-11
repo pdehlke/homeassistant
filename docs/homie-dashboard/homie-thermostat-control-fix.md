@@ -10,7 +10,7 @@ for the reusable integration-level facts this investigation turned up.
 ## Symptom
 
 On Overview C, the bottom-right Main House launcher card showed the AC's mode as "Unavailable".
-Opening the thermostat overlay (from that card, or from Overview A's unfiltered Climate pill)
+Opening the thermostat overlay (from that card, or from Overview A's unfiltered Climate chip)
 showed a target temperature of "—" until the first tap on plus or minus, at which point a number
 appeared and moved in half-degree steps on screen. The number never reflected on the physical
 Lennox thermostat. ChatGPT/Codex had already spent time on this without resolving it.
@@ -110,7 +110,7 @@ the way to an actual tap through the deployed dashboard in a real browser:
   `target_temp_high`/`target_temp_low`, before any browser was involved.
 - An actual Playwright tap through the deployed dashboard (release `20260807.13`) moved the real
   entity's `target_temp_high` from 78 to 79, confirmed by `last_updated` advancing. Verified both
-  entry points: Overview C's launcher (filtered to South only) and Overview A's Climate pill
+  entry points: Overview C's launcher (filtered to South only) and Overview A's Climate chip
   (unfiltered, both South and North tabs present).
 - The thermostat was returned to its original 78/62 setpoint after testing. Live
   `homie-dashboard.html` and `homie-custom.js` were confirmed byte-for-byte identical to the fork's
