@@ -1,5 +1,58 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-11 (Climate overlay rebuilt to match native dialog)
+
+The Climate chip's overlay kept its Main House / Office Wing room tabs, but everything below
+them is rebuilt to match the content and functionality of Home Assistant's native climate
+more-info dialog, reached by tapping "Show more information" on either `thermostat` card on
+the `Lennox Home` dashboard or the `Home` dashboard's Climate tab (both covered in
+[dashboard-header-card.md](../native-dashboards/dashboard-header-card.md) and
+[dashboard-home.md](../native-dashboards/dashboard-home.md)), styled to Homie's existing
+dark/glow aesthetic rather than HA's own chrome. Added: a current temperature/humidity readout row,
+mode buttons built from the entity's own `hvac_modes` instead of a static list, a
+temperature/humidity dial toggle with a working humidity target control, a preset control
+showing the entity's raw `preset_modes` verbatim in a tap-to-expand list, and a fan mode
+button row. Every new control calls the matching real `climate.*` service
+(`set_humidity`, `set_preset_mode`, `set_fan_mode`), debounced or optimistic-then-reconciled
+the same way the existing temperature +/- and mode buttons already were.
+
+Two real bugs found live, not just missing content:
+
+- The dial's centre badge showed `hvac_mode` ("Auto" for `heat_cool`, the mode both real
+  Lennox zones are in almost always) instead of `hvac_action` (`Cooling`/`Heating`/`Idle`,
+  what the equipment is actually doing), so it was both wrong and redundant with the Mode
+  button row below it. Fixed to key off `hvac_action`, the same preference `climateIsActive()`
+  already established for the Climate chip's "N on" count; see
+  [climate-chip-activity-count.md](climate-chip-activity-count.md). The overlay's ambient tint
+  follows the same signal, so it no longer glows while idle.
+- `.therm-dial-svg` is a 360x360 element rotated 45deg, so its hit-test area is a ~509px
+  diagonal bounding box well outside its own layout box. Harmless until the new dial-mode
+  toggle row landed inside that overflow and silently ate its clicks; found live via
+  Playwright ("element intercepts pointer events"), fixed with `pointer-events: none` since
+  the dial is decorative and every real control on it is a separate `<button>`.
+
+Deferred: a temperature/humidity history graph matching the native dialog's history-graph
+icon, tracked as item 1 on `project-todo.md` (new charting surface, real scope beyond this
+session).
+
+Commit `b38a3c8` on `main` (not pushed), bundled with the `hass.ehlke.net` hostname migration
+below since both landed in the same working tree and neither had been committed yet. Deployed
+release `20260811.6`; releases `.4` and `.5` were intermediate (`.5` was the pointer-events
+fix, verified live before the action-badge fix in `.6` needed its own pass). Verified live via
+Playwright, authenticated as the Homie Dashboard account, against both real thermostats:
+room-tab switching, humidity adjust (`climate.set_humidity` confirmed via
+`GET /api/states`), fan mode change, preset expand and selection, and the action badge reading
+"Cooling" on both zones (both were actively cooling at verification time). One live-only
+lesson from restoring state afterward: once the Lennox integration enters `schedule hold`
+(here, triggered by the fan mode change), re-selecting the prior named preset does not clear
+it -- only the `cancel hold` preset does. The equivalent UI click was flaky under Playwright
+(repeated "element intercepts pointer events" retries against a shifting ancestor, cause not
+fully diagnosed), so the restoration itself was done directly via
+`POST /api/services/climate/set_preset_mode` rather than through the dashboard UI.
+Confirmed both zones back to their pre-verification values
+(`heat_cool`/`auto`/`summer`/`45%`/`78°·62°` and `74°·62°`) before finishing. 72/72 tests pass
+(`node --test test/screen-a.test.cjs`).
+
 ## Checkpoint: 2026-08-11 (literal-IP workaround retired for real DNS)
 
 The cross-origin gap flagged as a known non-issue in the 2026-08-10 checkpoint below turned out
