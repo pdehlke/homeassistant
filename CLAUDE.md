@@ -89,6 +89,11 @@ endpoints, and use `mass.local` for direct Music Assistant endpoints. IPv6 is
 disabled, so earlier advice to use a literal IPv4 address to avoid dual-stack
 route ambiguity is obsolete. Do not hardcode LAN addresses.
 
+Exception: the Homie Dashboard fork's `dist/config.js` deliberately hardcodes a literal
+IP for `WS_URL`, because it serves a Fire HD tablet whose FireOS has no mDNS resolver at
+all, a different problem than the dual-stack one above and not fixed by it. Scoped to that
+one file for that one device. See `homie-dashboard-install-plan.md`'s 2026-08-10 checkpoint.
+
 ## Handoff instructions
 
 Read

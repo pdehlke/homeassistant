@@ -1,5 +1,50 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-10 (Fire HD tablet: literal IP, no mDNS on FireOS)
+
+A Fire HD tablet joined the house for `homie-dash`. FireOS ships without an mDNS resolver, so
+`homeassistant.local` never resolves there at all, regardless of the IPv6 dual-stack issue that was
+fixed earlier (see the note below). `dist/config.js`'s `WS_URL` now points at the literal LAN address
+`192.168.4.125` instead of the hostname, with a comment in the file explaining why. `BASE` (used for
+Homie's REST-fallback calls: calendar events, the states list) derives from `WS_URL`, so it moved to
+the IP automatically.
+
+- Latest commit on `main` as of this checkpoint: `1eadcfe` (Bladerunner font). Working tree has three
+  **uncommitted** changes on top of it: the `WS_URL` host fix and its explanatory comment in
+  `dist/config.js`, the matching `HOMIE_ASSET_VERSION` bump in `dist/homie-dashboard.html`
+  (`20260810.2` → `20260810.3`), and two `test/screen-a.test.cjs` updates (the config-host regression
+  test now asserts the IP and forbids the hostname in `WS_URL` specifically, rather than the reverse;
+  the release-token test's expected version bumped to match). Not committed; committing is a separate
+  ask.
+- Deployed asset release: `20260810.3`
+- Verified 2026-08-10: regression suite passes 64/64. Live `config.js` and `homie-dashboard.html`
+  uploaded via SFTP (temp name, atomic rename), live `config.js` has the real Homie Dashboard token
+  spliced in (fork keeps the placeholder), `config.js.gz` was already absent so no stale gzip to
+  delete. `homie-dash`'s Lovelace `strategy.url` `?v=` bumped to `.3` to match over WebSocket, backup
+  of the prior Lovelace config saved to `/Users/pde/tmp/homie-dash-lovelace.bak-20260810-165443.json`.
+  Live-verified via Playwright, authenticated as the Homie Dashboard account: navigating to
+  `http://192.168.4.125:8123/homie-dash/0` (matching how the Fire tablet will actually load it, IP
+  for both the outer HA chrome and the Homie iframe) rendered real live data (weather, Main House
+  77°F, Solar wattage updating between screenshots) with no CORS or auth errors.
+
+  **Found along the way, not a regression:** loading the outer dashboard from `homeassistant.local`
+  while `config.js` points Homie's own fetch calls at the IP creates a cross-origin mismatch. The
+  browser then blocks Homie's REST-fallback calls (calendar events, the states list) with a CORS
+  preflight failure, because HA's default CORS config has no `Access-Control-Allow-Origin` for that
+  origin pair. The WebSocket-driven state updates still work in that mixed-origin case (confirmed:
+  Screen A's status grid populated), only the fetch-based fallback calls break. This only matters if
+  something other than the Fire tablet opens `homie-dash` via `homeassistant.local` on a desktop for
+  testing; the tablet itself will load the outer HA page via the same IP FireOS is bookmarked to, so
+  outer and inner origins always match there and this does not come up. Worth remembering before
+  concluding a future Homie bug is unrelated to this change.
+
+  This is unrelated to the earlier dual-stack IPv4/IPv6 login-flow bug in the "former dual-stack login
+  failure" note below and in the HA skill's `references/api-access.md`: that one was fixed by disabling
+  IPv6 on the instance, and `homeassistant.local` remains the right choice for REST/WebSocket/browser
+  work done *from a machine that can resolve mDNS*, SSH included. This tablet's problem is that it has
+  no mDNS resolver at all, so no IPv6 fix reaches it. The exception is scoped to this one file for this
+  one device, not a general reversion of that fix.
+
 ## Checkpoint: 2026-08-10 (Homie font: Bladerunner)
 
 - Latest commit on `main` as of this checkpoint: `1eadcfe`, adding "Bladerunner" (Goudy
