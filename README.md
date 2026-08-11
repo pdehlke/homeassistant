@@ -238,6 +238,16 @@ Notes, planning, and specs for my Home Assistant buildout.
   independent reproduction that caught real, brief DNS packet loss during Core's own startup
   burst.
 
+### Networking
+
+- [hostname-migration-to-ehlke-net.md](docs/networking/hostname-migration-to-ehlke-net.md)
+
+  Retiring `homeassistant.local`/`mass.local` (mDNS) for `hass.ehlke.net`/`mass.ehlke.net` (real
+  DNS to the same LAN address), after a literal-IP workaround for a Fire HD tablet's missing mDNS
+  resolver caused a cross-origin CORS bug that broke Overview C's Solar card, and Music Assistant
+  image proxying, for any client other than that one tablet. The wrong first diagnosis, the
+  screenshot that corrected it, and what's still open.
+
 ### Hardware
 
 - [mac-mini-migration.md](docs/hardware/mac-mini-migration.md)

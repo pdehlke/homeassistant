@@ -43,8 +43,9 @@ Internal IP addresses (LAN addresses like `192.168.x.x`) are fine to write down.
 They are not useful to anyone without existing access to the network.
 
 Assume this repo may become public. Anything sensitive belongs in the private
-dotfiles repo at `~/.yadr-private` instead. The default hostname
-`homeassistant.local` is fine to write down.
+dotfiles repo at `~/.yadr-private` instead. `hass.ehlke.net` and `mass.ehlke.net`
+are fine to write down: both resolve via DNS to an internal LAN address, the
+same not-useful-without-network-access exception as the IP addresses above.
 
 ## Conventions
 
@@ -106,16 +107,17 @@ Music Assistant runs as a Home Assistant add-on. Several documents depend on the
 Supervisor and its ingress proxy existing, so any change to the installation
 method has knock-on effects worth checking before it is recommended.
 
-Use `homeassistant.local` for Home Assistant browser, HTTP API, and WebSocket
-endpoints, and use `mass.local` for direct Music Assistant endpoints. IPv6 is
-disabled, so earlier advice to use a literal IPv4 address to avoid dual-stack
-route ambiguity is obsolete. Do not hardcode LAN addresses.
-
-Exception: the Homie Dashboard fork's `dist/config.js` deliberately hardcodes a literal
-IP for `WS_URL`, because it serves a Fire HD tablet whose FireOS has no mDNS resolver at
-all, a different problem than the dual-stack one above and not fixed by it. Scoped to that
-one file for that one device. See `docs/homie-dashboard/homie-dashboard-install-plan.md`'s
-2026-08-10 checkpoint.
+Use `hass.ehlke.net` for Home Assistant browser, HTTP API, and WebSocket endpoints,
+and use `mass.ehlke.net` for direct Music Assistant endpoints. Both are real DNS
+names (not `.local`/mDNS) resolving to the instance's internal LAN address, so they
+work identically on every client, including the Fire HD tablet, whose FireOS has no
+mDNS resolver and could never reach the old `homeassistant.local`/`mass.local`
+hostnames. IPv6 is disabled, so earlier advice to use a literal IPv4 address to avoid
+dual-stack route ambiguity is obsolete. Do not hardcode LAN addresses or use the old
+`.local` hostnames; both were retired 2026-08-11 in favor of the DNS names above. See
+`docs/homie-dashboard/homie-dashboard-install-plan.md`'s 2026-08-10 and 2026-08-11
+checkpoints for the literal-IP workaround this replaced and the CORS bug it caused for
+any client other than the tablet.
 
 ## Handoff instructions
 

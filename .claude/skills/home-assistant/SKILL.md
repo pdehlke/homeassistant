@@ -1,18 +1,23 @@
 ---
 name: home-assistant
-description: Work with pde's Home Assistant at http://homeassistant.local:8123 and the Music Assistant server at http://mass.local:8095. Use when asked to inspect or change Home Assistant - entities, states, automations, scripts, scenes, helpers, integrations, Lovelace dashboards and cards, energy or Sense data, calendars, weather, or media playback. Tells you which of the three access paths (HA MCP tools, REST API, WebSocket API) can actually do a given job, and records this instance's quirks. Skip for other smart-home platforms.
+description: Work with pde's Home Assistant at http://hass.ehlke.net:8123 and the Music Assistant server at http://mass.ehlke.net:8095. Use when asked to inspect or change Home Assistant - entities, states, automations, scripts, scenes, helpers, integrations, Lovelace dashboards and cards, energy or Sense data, calendars, weather, or media playback. Tells you which of the three access paths (HA MCP tools, REST API, WebSocket API) can actually do a given job, and records this instance's quirks. Skip for other smart-home platforms.
 ---
 
 # Home Assistant (pde's instance)
 
 ## Facts that do not change
 
-- Base URL `http://homeassistant.local:8123`. Local network only.
+- Base URL `http://hass.ehlke.net:8123`. Local network only.
 - `$HA_TOKEN` is always a valid long-lived access token with **full admin rights**. Read it from the environment. Never echo, log, or paste it. See [Never leak the token](#never-leak-the-token).
 - Runs on a Raspberry Pi. Config dir is `/config`, not reachable from this machine.
-- Music Assistant runs as an HA add-on at `http://mass.local:8095`. Drive it through the HA-side `music_assistant.*` services; its own API rejects `$HA_TOKEN` and needs separate credentials we do not have. **Pandora and SiriusXM are both connected.** Pandora surfaces as 36 library radio stations; SiriusXM is reachable only via `search`, never `get_library`. Artist/album/track counts are 0 because both are station services, not because nothing is configured. Never judge provider presence from `get_library`. Read [references/music-assistant.md](references/music-assistant.md) before touching it.
-- IPv6 is disabled. Use `homeassistant.local` for HA and `mass.local` for Music Assistant. Do not
-  revive the obsolete literal-IP workaround for multi-request login flows or browser requests.
+- Music Assistant runs as an HA add-on at `http://mass.ehlke.net:8095`. Drive it through the HA-side `music_assistant.*` services; its own API rejects `$HA_TOKEN` and needs separate credentials we do not have. **Pandora and SiriusXM are both connected.** Pandora surfaces as 36 library radio stations; SiriusXM is reachable only via `search`, never `get_library`. Artist/album/track counts are 0 because both are station services, not because nothing is configured. Never judge provider presence from `get_library`. Read [references/music-assistant.md](references/music-assistant.md) before touching it.
+- IPv6 is disabled. Use `hass.ehlke.net` for HA and `mass.ehlke.net` for Music Assistant, real DNS
+  names resolving to the internal LAN address, not the old `.local`/mDNS hostnames, retired
+  2026-08-11 because FireOS has no mDNS resolver at all and couldn't reach them. Do not hardcode a
+  literal IP either; that was a temporary workaround for the same problem and caused a CORS bug for
+  any client other than the device it was targeting. See
+  [homie-dashboard-install-plan.md](../../../docs/homie-dashboard/homie-dashboard-install-plan.md)'s
+  2026-08-10 and 2026-08-11 checkpoints.
 
 ## Pick the right access path
 
@@ -77,6 +82,6 @@ Persistent credential handoff files live outside both repositories under `/Users
 - `/Users/pde/tmp/homie-dashboard-password`
 - `/Users/pde/tmp/homie-dashboard-token`
 
-Never print their contents. SSH/SFTP uses `root@homeassistant.local` on port `2222`. Read
+Never print their contents. SSH/SFTP uses `root@hass.ehlke.net` on port `2222`. Read
 `docs/homie-dashboard/homie-dashboard-install-plan.md` in this repository for the current
 customization ledger, deployment procedure, backups, and next-work checkpoint.

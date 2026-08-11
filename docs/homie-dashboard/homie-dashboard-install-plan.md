@@ -1,5 +1,16 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-11 (literal-IP workaround retired for real DNS)
+
+The cross-origin gap flagged as a known non-issue in the 2026-08-10 checkpoint below turned out
+to be a real, live bug: it broke Overview C's Solar card for any client other than the Fire HD
+tablet, since the tablet was the only client whose outer-page origin and Homie's own `BASE`
+constant ever matched. `dist/config.js`'s `WS_URL` now points at `hass.ehlke.net`, a real DNS
+name pde added that resolves to the same LAN IP without needing mDNS, so every client shares one
+origin and the mismatch can't recur. Release `20260811.3`. Full account, including the wrong
+first diagnosis and how it was corrected, in
+[hostname-migration-to-ehlke-net.md](../networking/hostname-migration-to-ehlke-net.md).
+
 ## Checkpoint: 2026-08-10 (Fire HD tablet: literal IP, no mDNS on FireOS)
 
 A Fire HD tablet joined the house for `homie-dash`. FireOS ships without an mDNS resolver, so

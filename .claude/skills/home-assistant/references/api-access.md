@@ -3,7 +3,7 @@
 All examples assume:
 
 ```bash
-HB="Authorization: Bearer $HA_TOKEN"; U=http://homeassistant.local:8123
+HB="Authorization: Bearer $HA_TOKEN"; U=http://hass.ehlke.net:8123
 ```
 
 ## REST
@@ -43,8 +43,8 @@ Also note the API may return a series whose data starts later than the requested
 
 A multi-request login flow once failed with `{"message": "IP address changed"}` because consecutive
 requests could take different IPv4 and IPv6 routes. IPv6 is now disabled for this installation, so
-the literal-IP workaround is obsolete. Use `homeassistant.local` consistently for login flows,
-REST, WebSocket, browser, and SSH access. Use `mass.local` for direct Music Assistant access.
+the literal-IP workaround is obsolete. Use `hass.ehlke.net` consistently for login flows,
+REST, WebSocket, browser, and SSH access. Use `mass.ehlke.net` for direct Music Assistant access.
 
 ### Install an integration via config flow
 
@@ -175,7 +175,7 @@ jq -r '[.result.response.items[] | keys] | flatten | unique' out.json   # every 
 Required for Lovelace, registries, and HACS. Use the bundled client:
 
 ```bash
-export HA_URL=http://homeassistant.local:8123
+export HA_URL=http://hass.ehlke.net:8123
 python3 scripts/haws.py '{"type":"lovelace/dashboards/list"}'
 python3 scripts/haws.py '{"type":"lovelace/config","url_path":"dashboard-sound"}'
 python3 scripts/haws.py '{"type":"hacs/repositories/list","categories":["plugin"]}'
@@ -203,7 +203,7 @@ Safe pattern. Generate a storage-state file in Python so the token never appears
 
 ```python
 import os, json, pathlib
-url = "http://homeassistant.local:8123"
+url = "http://hass.ehlke.net:8123"
 tokens = {
     "access_token": os.environ["HA_TOKEN"], "token_type": "Bearer",
     "expires_in": 315360000, "hassUrl": url, "clientId": None,

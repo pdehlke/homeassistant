@@ -60,7 +60,7 @@ language: auto
 theme_mode: auto
 phone_display_mode: auto
 active_player_helper_entity: input_text.homeii_flow_active_player
-ma_url: "http://mass.local:8095"
+ma_url: "http://mass.ehlke.net:8095"
 ma_token: "<redacted>"
 ```
 
@@ -78,7 +78,7 @@ Music Assistant on this instance runs 2.9.10, schema 31, and authentication has 
 there since schema 28. The login provider used was `homeassistant` (OAuth through HA), which the
 server also exposes alongside `builtin` username and password, queried live via
 `auth/providers`. Token creation was done by hand in Music Assistant's web UI at
-`http://mass.local:8095` under Settings, Profile, since it is a one-time interactive step with no
+`http://mass.ehlke.net:8095` under Settings, Profile, since it is a one-time interactive step with no
 REST equivalent worth scripting. See the [Music Assistant reference in the `home-assistant`
 skill](https://www.music-assistant.io/first-run/) for the general shape of first-run auth if this
 needs repeating for another integration.
@@ -87,10 +87,10 @@ That token does not currently work from a browser. Chrome, Edge, and Chromium-ba
 WebViews refuse the connection outright:
 
 ```
-WebSocket connection to 'ws://mass.local:8095/ws' failed:
+WebSocket connection to 'ws://mass.ehlke.net:8095/ws' failed:
 net::ERR_BLOCKED_BY_LOCAL_NETWORK_ACCESS_CHECKS
 
-Access to image at 'http://mass.local:8095/imageproxy?...' blocked by CORS policy:
+Access to image at 'http://mass.ehlke.net:8095/imageproxy?...' blocked by CORS policy:
 The request client is not a secure context and the resource is in more-private
 address space `local`.
 ```
@@ -99,15 +99,15 @@ Music Assistant is not misconfigured. It returns `Access-Control-Allow-Origin: *
 response, confirmed with a direct `curl`. The block is Chrome's [Local Network
 Access](https://developer.chrome.com/blog/local-network-access) restriction: a page must be a
 secure context (HTTPS, or `localhost`) before Chrome will let it reach an address in local
-network space at all, permission prompt included. `http://homeassistant.local:8123` is plain
+network space at all, permission prompt included. `http://hass.ehlke.net:8123` is plain
 HTTP, so the request is refused before it reaches Music Assistant.
 
 This breaks two things specifically:
-- Sendspin's own WebSocket to `mass.local:8095`, so "This device" playback cannot connect.
+- Sendspin's own WebSocket to `mass.ehlke.net:8095`, so "This device" playback cannot connect.
 - Playlist and library artwork, since Music Assistant serves cover art through its own
   `imageproxy` endpoint on the same host and port. This half breaks independently of Sendspin:
   the library metadata HOMEii Flow reads through Home Assistant already carries
-  `mass.local:8095/imageproxy/...` URLs (Music Assistant's `base_url` config entry, confirmed via
+  `mass.ehlke.net:8095/imageproxy/...` URLs (Music Assistant's `base_url` config entry, confirmed via
   `/info`), so thumbnails come back blank even for playback that has nothing to do with
   Sendspin.
 
@@ -119,7 +119,7 @@ Local Network Access blog post](https://developer.chrome.com/blog/local-network-
 [WICG explainer](https://github.com/WICG/local-network-access/blob/main/explainer.md)), so both
 Sendspin and artwork should work unmodified in either. Not verified directly here; only Chromium
 was available to test against. The durable fix for Chrome is putting Home Assistant behind
-HTTPS, which makes `homeassistant.local` a secure context and turns the outright block into a
+HTTPS, which makes `hass.ehlke.net` a secure context and turns the outright block into a
 one-time permission prompt instead.
 
 ## Installing HOMEii Flow via the HACS WebSocket API
@@ -166,20 +166,20 @@ Confirm the helper is live:
 
 ```bash
 curl -s -H "Authorization: Bearer $HA_TOKEN" \
-  "http://homeassistant.local:8123/api/states/input_text.homeii_flow_active_player"
+  "http://hass.ehlke.net:8123/api/states/input_text.homeii_flow_active_player"
 ```
 
 Confirm Music Assistant's CORS headers directly, bypassing the browser:
 
 ```bash
-curl -s -o /dev/null -D - -H "Origin: http://homeassistant.local:8123" \
-  "http://mass.local:8095/info" | grep -i access-control
+curl -s -o /dev/null -D - -H "Origin: http://hass.ehlke.net:8123" \
+  "http://mass.ehlke.net:8095/info" | grep -i access-control
 ```
 
 Query Music Assistant's own auth setup:
 
 ```bash
-curl -s -X POST http://mass.local:8095/api \
+curl -s -X POST http://mass.ehlke.net:8095/api \
   -H 'Content-Type: application/json' \
   -d '{"message_id":"1","command":"auth/providers"}'
 ```

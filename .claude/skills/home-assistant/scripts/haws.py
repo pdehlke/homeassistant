@@ -16,7 +16,7 @@ import sys
 
 import aiohttp
 
-URL = os.environ.get("HA_URL", "http://homeassistant.local:8123")
+URL = os.environ.get("HA_URL", "http://hass.ehlke.net:8123")
 TOKEN = os.environ["HA_TOKEN"]
 WS = URL.replace("http://", "ws://").replace("https://", "wss://") + "/api/websocket"
 

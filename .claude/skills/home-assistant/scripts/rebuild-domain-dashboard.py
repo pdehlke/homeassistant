@@ -22,7 +22,7 @@ media_player, so area_control is optional and area_card() skips the inline toggl
 when it is None.
 
 Usage:
-    export HA_URL=http://homeassistant.local:8123   # optional, this is the default
+    export HA_URL=http://hass.ehlke.net:8123   # optional, this is the default
     export HA_TOKEN=...                             # required
     export HA_BACKUP_DIR=/path/to/scratchpad        # optional, defaults to cwd
     python3 rebuild-domain-dashboard.py lights --dry-run
@@ -38,7 +38,7 @@ import sys
 
 import aiohttp
 
-URL = os.environ.get("HA_URL", "http://homeassistant.local:8123")
+URL = os.environ.get("HA_URL", "http://hass.ehlke.net:8123")
 TOKEN = os.environ["HA_TOKEN"]
 WS = URL.replace("http://", "ws://").replace("https://", "wss://") + "/api/websocket"
 BACKUP_DIR = pathlib.Path(os.environ.get("HA_BACKUP_DIR", "."))

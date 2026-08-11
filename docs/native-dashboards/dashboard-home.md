@@ -83,9 +83,10 @@ created and rejects a later step if that address differs. The client was able to
 over both IPv4 and IPv6, so separate requests could appear to originate from different addresses.
 
 IPv6 has since been disabled for this installation, eliminating that route ambiguity. The literal
-IPv4 workaround is obsolete. Use `homeassistant.local` for Home Assistant browser, HTTP API, and
-WebSocket connections. Use `mass.local` for direct Music Assistant connections. Do not hardcode a
-LAN address for either service.
+IPv4 workaround is obsolete. Use `hass.ehlke.net` for Home Assistant browser, HTTP API, and
+WebSocket connections. Use `mass.ehlke.net` for direct Music Assistant connections. Both are real
+DNS names retired the old `.local`/mDNS hostnames on 2026-08-11; do not hardcode a LAN address or
+use `homeassistant.local`/`mass.local` for either service.
 
 ### `default_panel`: retargeted from `tablet-home` to `vision-sample`
 
