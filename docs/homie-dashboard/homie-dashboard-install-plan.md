@@ -1,5 +1,32 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-11 (TV chip: volume/mute controls)
+
+The TV chip's overlay (Harmony Hub control) gained a second `tv-action-row`: VOL DOWN, MUTE,
+VOL UP, below the existing Watch TV / Watch a Movie / All Off row. Each button calls
+`remote.send_command` against the Integra AV Receiver, the one Harmony-driven device that
+carries audio in both configured activities. Greys out (native `disabled`) whenever
+`current_activity` is `PowerOff`. Full design reasoning, the options rejected, and the
+capability question that started it in
+[homie-tv-volume-mute-controls.md](../harmony-hub/homie-tv-volume-mute-controls.md).
+
+pde confirmed the underlying capability live, by ear, before any UI was built: raw
+`remote.send_command` calls with `device: "Integra AV Receiver"` moved the real receiver from
+volume 50 to 55 across 5x `VolumeUp`, and `Mute` toggled cleanly both directions. Only after
+that did implementation start.
+
+Commit `2077296` on `main` (not pushed) in the fork. Deployed release `20260811.7`: uploaded by
+temporary name, checksum-verified, atomically renamed; `homie-dash`'s Lovelace iframe `?v=`
+bumped alongside the nested `HOMIE_ASSET_VERSION` token, both files backed up first. Verified
+live via Playwright directly against the deployed page (no HA login needed; Homie authenticates
+over its own WebSocket connection with the token embedded in `config.js`, not the browser's HA
+session): screenshot confirmed the row renders correctly and reads enabled while "Watch TV" was
+the real active activity. Separately exercised `refreshTVControlUI("PowerOff")` directly in that
+same live page, no `haService` calls involved, and confirmed all three buttons report
+`disabled === true` with the badge reading "OFF". pde then confirmed live on the real chip that
+VOL DOWN, MUTE, and VOL UP each produced the expected audible result. 75/75 tests pass
+(`node --test test/screen-a.test.cjs`, 3 new).
+
 ## Checkpoint: 2026-08-11 (Climate overlay rebuilt to match native dialog)
 
 The Climate chip's overlay kept its Main House / Office Wing room tabs, but everything below

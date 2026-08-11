@@ -41,7 +41,10 @@ send a specific button press to one of the six devices.
   standard `remote` domain actions.
 - `remote.send_command`, targeting one of the six `devices_list` names with a raw
   button command (volume, channel, transport, whatever the physical remote could send
-  to that device). Not used anywhere in this instance yet.
+  to that device). Homie Dash's TV chip uses this for volume up/down and mute against
+  the Integra AV Receiver; see
+  [homie-tv-volume-mute-controls.md](homie-tv-volume-mute-controls.md). Every other
+  device and command on this list is still unused.
 - Two commands specific to this integration, not part of the generic `remote` domain:
   `harmony.change_channel` (send a channel number directly, rather than simulating
   individual digit presses) and `harmony.sync`, which re-pulls the hub's activity and
@@ -50,8 +53,12 @@ send a specific button press to one of the six devices.
 
 ## Interesting capabilities not used in Homie Dash
 
-Homie Dash has zero references to this device, verified against its live Lovelace
-config, not just against this archive's other docs.
+As of 2026-08-11, Homie Dash's TV chip uses two of this integration's capabilities: activity
+switching (`remote.turn_on`/`turn_off` with an `activity` field, the chip's original build) and
+volume/mute via `remote.send_command` against the Integra receiver, see
+[homie-tv-volume-mute-controls.md](homie-tv-volume-mute-controls.md). Everything below this line
+remains unused, verified against Homie's live Lovelace config, not just against this archive's
+other docs.
 
 - **A real media-player card instead of a raw remote entity.** Home Assistant's
   `universal` media player platform can wrap `remote.harmony_hub` (mapping
@@ -68,11 +75,12 @@ config, not just against this archive's other docs.
   `current_activity` flips to a given value or to `PowerOff`, the same "something
   changed, react to it" shape already used elsewhere in this archive for Rachio and
   Lennox alerts.
-- **Direct device control beyond activities.** `devices_list` exposes six individually
-  addressable devices. `remote.send_command` can drive any of them directly (say,
-  muting the Integra receiver, or a transport command to the Xfinity DVR) without going
-  through an activity at all, useful for a quick dashboard button that a full
-  activity-switch would be overkill for.
+- **Direct device control beyond activities, for the other five devices.** `devices_list`
+  exposes six individually addressable devices; volume/mute against the Integra receiver is
+  now built (above), but the other five, Apple TV, Sony Blu-ray Player, Xfinity DVR, Bedroom,
+  Samsung TV, remain untouched. A transport command to the Xfinity DVR is the obvious next
+  candidate, useful for a quick dashboard button that a full activity-switch would be
+  overkill for.
 - **`harmony.change_channel`.** A one-shot "go to channel N" action with no equivalent
   elsewhere in this instance's A/V setup. Would slot naturally into a Homie Dash A/V
   tab if one gets built; see `dashboard-av` in the domain-dashboard set documented in

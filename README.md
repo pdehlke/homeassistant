@@ -281,8 +281,13 @@ Notes, planning, and specs for my Home Assistant buildout.
 
   Inventory of the Living Room Logitech Harmony Hub's `harmony` integration: the two-entity
   activity/remote setup actually live, and capabilities like a Universal media player wrapper,
-  direct per-device commands, and the `harmony.change_channel`/`harmony.sync` actions that
-  nothing in this instance uses yet.
+  direct per-device commands to the five devices other than the Integra receiver, and the
+  `harmony.change_channel`/`harmony.sync` actions that nothing in this instance uses yet.
+- [homie-tv-volume-mute-controls.md](docs/harmony-hub/homie-tv-volume-mute-controls.md)
+
+  How Homie Dash's TV chip got volume up/down and mute buttons: the live capability check that
+  confirmed `remote.send_command` reaches the Integra receiver's volume before any UI was
+  written, the layout/feedback/off-state decisions made and rejected, and how it was verified.
 
 ### Meta
 
