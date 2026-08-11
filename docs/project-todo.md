@@ -13,9 +13,14 @@ removing an item for any reason other than completing it.
 1. Add a temperature/humidity history graph to the Climate chip's thermostat
    overlay, matching the history-graph icon on Home Assistant's native climate
    more-info dialog. Deferred out of the 2026-08-11 native-parity overlay
-   rebuild (see `homie-dashboard-install-plan.md`'s checkpoint of that date once
-   recorded): needs either a charting library or a hand-rolled sparkline against
-   the recorder API, real scope and risk beyond that session.
+   rebuild (see `homie-dashboard-install-plan.md`'s checkpoint of that date).
+   Narrower than first scoped: no charting library needed, and not a
+   from-scratch hand-rolled sparkline either. Combine two hand-rolled SVG
+   charts Overview C already has (the Weather card's line renderer, the Solar
+   card's `recorder/statistics_during_period` fetch), pointed at the Lennox
+   integration's per-zone temperature/humidity sensors, plus new true-dual-axis
+   rendering, the one piece that doesn't already exist. Full analysis in
+   `climate-history-graph-feasibility.md`.
 2. Fix the A/V speaker selection dropdown
 3. Fix nabucasa fragility: `hass_nabucasa`'s remote-UI/ACME certificate handler
    has effectively no tolerance for a single transient DNS failure and no

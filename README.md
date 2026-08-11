@@ -227,6 +227,16 @@ Notes, planning, and specs for my Home Assistant buildout.
   temperature) and the alternatives rejected, including why the same fallback in the temperature
   *adjustment* path was deliberately left alone.
 
+- [climate-history-graph-feasibility.md](docs/homie-dashboard/climate-history-graph-feasibility.md)
+
+  Feasibility analysis for project-todo item 1's temperature/humidity history graph: confirms no
+  charting library is needed, since Overview C's Weather and Solar cards already have two proven
+  hand-rolled SVG charts to combine. Why the Weather chart's rendering is reusable but its data
+  source is not, why the Solar chart's `recorder/statistics_during_period` fetch pattern is,
+  live confirmation that the Lennox integration exposes statistics-eligible temperature/humidity
+  sensors per zone, the dual-axis rendering approach chosen over two rejected alternatives, and
+  why borrowing HA's own native history-graph component isn't practical here.
+
 ### Cloud and Remote Access
 
 - [nabucasa-remote-ui-dns-fragility.md](docs/nabucasa-remote-access/nabucasa-remote-ui-dns-fragility.md)
