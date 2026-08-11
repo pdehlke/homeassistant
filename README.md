@@ -246,6 +246,24 @@ Notes, planning, and specs for my Home Assistant buildout.
   Installation method, storage and SSD choices, external boot persistence, and the migration
   sequence.
 
+### EV Charger
+
+- [ev-charger-integration.md](docs/ev-charger/ev-charger-integration.md)
+
+  Inventory of the garage OpenEVSE charger's `openevse` integration: what's live, the 22
+  disabled-by-default diagnostic and load-shaper entities, and capabilities like solar-aware
+  divert charging and peak-rate throttling that the integration supports but nothing in this
+  instance uses yet.
+
+### Harmony Hub
+
+- [harmony-hub-integration.md](docs/harmony-hub/harmony-hub-integration.md)
+
+  Inventory of the Living Room Logitech Harmony Hub's `harmony` integration: the two-entity
+  activity/remote setup actually live, and capabilities like a Universal media player wrapper,
+  direct per-device commands, and the `harmony.change_channel`/`harmony.sync` actions that
+  nothing in this instance uses yet.
+
 ### Meta
 
 - [CLAUDE.md](CLAUDE.md)
