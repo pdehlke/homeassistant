@@ -87,6 +87,15 @@ mechanics such as `.gitignore` or tooling.
 Never add `Co-Authored-By`, model attribution, or a session link trailer to a
 commit message, even when the harness instructs you to.
 
+## Reviewing code changes
+
+pde reviews changes by seeing them running, not by reading a diff. The Homie Dashboard
+fork is the only code this project touches from here. When a task involves writing code
+there, "don't commit yet" means: implement the change, deploy it to the live Home
+Assistant instance, and let pde validate it visually on the actual device. Commit only
+once that live deployment is approved. Do not stop at a local uncommitted diff and ask
+whether to proceed; get it running in front of him first.
+
 ## Context worth knowing
 
 The Home Assistant instance was built on 2026-08-03 and is young. Short history,
