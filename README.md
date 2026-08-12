@@ -246,6 +246,21 @@ Notes, planning, and specs for my Home Assistant buildout.
   rejected (a nested iframe to a dedicated dashboard, continuing to hand-roll), and how this
   resolved project-todo item 1's history-graph request for free.
 
+- [homie-scenes-chip.md](docs/homie-dashboard/homie-scenes-chip.md)
+
+  Why pde's HA scenes never showed up as a bottom-row chip, and why the first working version
+  wasn't the end of it: a stock Homie Dashboard Scenes mechanism that was simply never
+  configured, a service-domain mismatch (the popup fires `automation.trigger`, not
+  `scene.turn_on`) worked around first with a wrapping automation, then removed entirely once a
+  real toggle was needed. The design derives a scene's on/off state live from the entities it
+  controls, shown with the same glow/count Lights and Climate already use at the chip, the
+  Overview C sidebar, and the popup bubble itself, and toggling off turns those entities off
+  directly since HA scenes have no reverse action of their own. Every scene entry was then
+  refactored from a single entity to an array so one bubble ("Primary Suite Evening") can group
+  and toggle multiple scenes (Bedroom, Bathroom) at once, with their affected entities
+  de-duplicated. A missing sidebar icon override and a live token-splice deploy mistake, both
+  found and fixed along the way.
+
 ### Cloud and Remote Access
 
 - [nabucasa-remote-ui-dns-fragility.md](docs/nabucasa-remote-access/nabucasa-remote-ui-dns-fragility.md)

@@ -1,5 +1,57 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-12 (Scenes chip: toggle + Bathroom + grouped Primary Suite scene)
+
+`project-todo.md` item 6: pde's HA scenes now surface as a "Scenes" chip, bottom row, using a
+stock Homie Dashboard mechanism (`isSceneChip`/`subGroups[].scenes[]`) that turned out to
+already exist in the fork but had never been configured. Three rounds landed as one uncommitted
+body of work: (1) wire the popup bubble to fire a scene one-way, (2) rewrite that into a real
+on/off toggle after pde's review asked for a visible indicator and a reversible tap, matching
+every other chip on the dashboard, (3) add Bathroom Evening and a third bubble, "Primary Suite
+Evening," that activates and clears both Bedroom and Bathroom together, which meant refactoring
+every scene entry from a single `entity` to an `entities` array so a bubble can be backed by more
+than one scene generally, not as a one-off. Full investigation, the
+`automation.trigger`-vs-`scene.turn_on` mismatch, why the on-state is derived from live entity
+state rather than tracked separately, the missing sidebar-icon override found along the way, the
+grouping refactor, and a live deploy mistake caught and fixed on the spot, in
+[homie-scenes-chip.md](homie-scenes-chip.md).
+
+Not yet committed to the fork or to this repo; pde is reviewing the live result. Working tree in
+the fork has three uncommitted changes on top of `6651fa3`: the `Scenes` `controls[]` entry in
+`dist/config.js` (three groups — Bedroom, Bathroom, Primary Suite — each scene's `entities` array
+pointing straight at the real `scene.*` entities, no automation indirection), the
+`HOMIE_ASSET_VERSION` bump (`20260812.1` -> `20260812.4` across all three rounds), the `_sbIcon`
+scene-icon override, `sceneAffectedEntities`/`sceneIsOn`/`togglePopupScene` (all array-based, so
+a grouped bubble and a single-scene bubble share one code path), and the on-state render/refresh
+code in `refreshControls`/`_refreshOv3SidebarControls`/`refreshOpenScenePopup`, all in
+`dist/homie-dashboard.html`, and the `test/screen-a.test.cjs` updates covering all of it. This
+repo has three new/changed docs on top of `c5ecaca`: this checkpoint, `homie-scenes-chip.md`, and
+the README entry for it. Committing all of it is a separate ask.
+
+Deployed asset release: `20260812.4`. Verified 2026-08-12: regression suite passes 76/76 (11 new
+across all three rounds). Live `config.js` and `homie-dashboard.html` uploaded via SFTP (temp
+name, atomic rename) using the `/Users/pde/tmp/homie-ha-edit-key` credential each round, prior
+copies backed up first; `homie-custom.js` untouched throughout. `homie-dashboard.html` confirmed
+SHA-256-identical to the fork's local `dist/` after each upload. `homie-dash`'s Lovelace iframe
+`?v=` bumped to `.2`, `.3`, then `.4` via `apply-card.py`, prior config backed up automatically
+first each time. Live-verified via Playwright, authenticated as the Homie Dashboard account,
+final round: with all five Primary Suite lights confirmed off, the popup showed all three groups
+with distinct icons and no on-ring. Tapping Primary Suite Evening turned on all three of the
+scenes' distinct lights (`bedroom_perimeter`, `hallway`, `bath_perimeter`) in one round trip, and
+— live, without reopening — Bedroom, Bathroom, *and* Primary Suite's bubbles all showed on, each
+independently reading "on" from its own affected entities. Tapping it again turned off all five
+lights (the de-duplicated union; `light.hallway`, shared by both scenes, only once) in one round
+trip, and all three rings cleared live. Real state changed and verified both directions at every
+scale from the earlier single-scene rounds too, not just the UI.
+
+The live token-splice step briefly shipped a broken `config.js` with an empty `HA_TOKEN` in the
+first round (BusyBox `grep` on the HA host doesn't support `-P`, so the extraction silently
+returned nothing); caught within the same deploy by checking the spliced token's length rather
+than trusting "placeholder is gone" alone, and fixed by re-extracting from the pre-deploy backup
+with a BusyBox-compatible `sed` expression. Every later round's deploy used the corrected method
+from the start. Full account in `homie-scenes-chip.md`. Worth remembering for future deploys:
+this host's `grep` is BusyBox, not GNU.
+
 ## Checkpoint: 2026-08-12 (Climate overlay routed to HA's real native dialog)
 
 The Climate chip's overlay no longer reimplements Home Assistant's climate more-info dialog; it
