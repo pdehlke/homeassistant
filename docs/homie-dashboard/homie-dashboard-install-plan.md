@@ -1,5 +1,30 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-12 (Music chip: six radio presets on Crestron)
+
+A new "Music" chip, bottom row between A/V and TV: six bubbles, one per pre-configured radio
+station (Jazz: Hiromi, 80s/90s, Dinner Party, The Jam, 1st Wave, Blues), each playing through
+Music Assistant on `media_player.crestron` and toggling back off (stop) on a second tap. Built as
+the Scenes chip's shape adapted for playback (`isMusicChip`/`subGroups[].stations[]` vs
+`isSceneChip`/`subGroups[].scenes[]`), with the same live-derived on-state principle: no separate
+tracked boolean, `musicStationIsOn()` reads the player's real `state`/`media_content_id` directly.
+Full design writeup, including the grilled decisions (off means stop not pause; volume only resets
+from idle, not on a hot-switch between stations; no count badge; `library://` URI choice for the
+two SiriusXM-backed stations) and both deploy rounds' verification, in
+[homie-music-chip.md](homie-music-chip.md).
+
+Committed to both repos. Deployed asset release: `20260812.6` (shipped at `.5`, then a same-day
+follow-up round at `.6` lowered the reset volume from 50% to 40% and shortened five of six station
+labels per pde's review). Regression suite: 83/83 (7 new tests). Live `config.js` and
+`homie-dashboard.html` uploaded via SFTP each round using the `/Users/pde/tmp/homie-ha-edit-key`
+credential, prior copies backed up first, real `HA_TOKEN` spliced into the placeholder-bearing
+`config.js` entirely on the HA host so it was never captured or printed locally.
+`homie-dashboard.html` confirmed SHA-256-identical to the fork's local `dist/` after each upload.
+`homie-dash`'s Lovelace iframe `?v=` bumped to `.5` then `.6` via `apply-card.py`. Live-verified via
+Playwright against real `/api/states` reads, not just screenshots: idle-start volume reset,
+hot-switch volume preservation (manually set to `0.72`, survived a station switch), stop-not-pause
+on a second tap of the active bubble, and the chip glow/popup ring both reflecting real state.
+
 ## Checkpoint: 2026-08-12 (Scenes chip: toggle + Bathroom + grouped Primary Suite scene)
 
 `project-todo.md` item 6: pde's HA scenes now surface as a "Scenes" chip, bottom row, using a

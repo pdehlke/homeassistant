@@ -261,6 +261,18 @@ Notes, planning, and specs for my Home Assistant buildout.
   de-duplicated. A missing sidebar icon override and a live token-splice deploy mistake, both
   found and fixed along the way.
 
+- [homie-music-chip.md](docs/homie-dashboard/homie-music-chip.md)
+
+  A "Music" chip parallel to the Scenes chip above, but for radio listening: six pre-configured
+  station bubbles that play through Music Assistant on the Crestron media player and toggle back
+  off (stop) on a second tap. On-state is derived live from the player's own state and
+  `media_content_id`, the same no-separate-tracking principle Scenes established. Decisions from
+  grilling before any code was written: off means stop, not pause; volume only resets when the
+  player wasn't already playing, so switching directly between two stations leaves the volume
+  alone; no "N on" count badge, since at most one station can ever be on; and why every station
+  uses its `library://` URI rather than mixing in the native SiriusXM form for two of them. Includes
+  a same-day follow-up round lowering the reset volume and shortening five of six station labels.
+
 ### Cloud and Remote Access
 
 - [nabucasa-remote-ui-dns-fragility.md](docs/nabucasa-remote-access/nabucasa-remote-ui-dns-fragility.md)
