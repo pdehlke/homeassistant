@@ -1,5 +1,11 @@
 # Climate History Graph Feasibility (Item 1)
 
+**Superseded 2026-08-12**: item 1 turned out not to need building at all. See
+[homie-climate-native-dialog.md](homie-climate-native-dialog.md): the Climate overlay now opens
+Home Assistant's own native more-info dialog instead of a Homie-drawn reimplementation, and that
+dialog already has a real, recorder-backed history graph built in. The analysis below is kept as
+the record of what this would have taken under the approach that was in place at the time.
+
 Feasibility analysis for `project-todo.md` item 1: adding a temperature/humidity history
 graph to the Climate chip's thermostat overlay, matching the history-graph icon on Home
 Assistant's native climate more-info dialog. The item was deferred out of the 2026-08-11

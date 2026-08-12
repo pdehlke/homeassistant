@@ -1,5 +1,34 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-12 (Climate overlay routed to HA's real native dialog)
+
+The Climate chip's overlay no longer reimplements Home Assistant's climate more-info dialog; it
+opens the real one. Homie's iframe is same-origin with the parent HA frontend (since the
+2026-08-11 hostname migration below), so it dispatches the same `hass-more-info` event HA's own
+cards use internally, on the parent frame's `<home-assistant>` element. Floors-card faces
+(Main House, Office Wing) go straight to the real dialog, one tap, since each is already
+filtered to one entity; the unfiltered Overview A/B Climate chip still shows the existing
+Main House/Office Wing picker first, then opens the real dialog for whichever is picked. The
+entire hand-rolled dial/+-/mode/preset/fan/humidity-toggle overlay (~940 lines of
+markup/CSS/JS) is deleted, not just unused.
+
+This was the second silent break of the same +/- control in five days (first post-mortem:
+[homie-thermostat-control-fix.md](homie-thermostat-control-fix.md), 2026-08-07; the
+2026-08-11 native-parity rebuild below broke it again by the next morning). Full account,
+including the live spike that proved the cross-frame approach before any implementation code
+was written, the options rejected, and the side effect of resolving `project-todo.md` item 1's
+history-graph request for free, in
+[homie-climate-native-dialog.md](homie-climate-native-dialog.md).
+
+Commit `6651fa3` on `main` (not pushed). Deployed release `20260812.1`: uploaded by temporary
+name, checksum-verified, atomically renamed; `homie-dash`'s Lovelace iframe `?v=` bumped via
+`apply-card.py`, prior config backed up automatically first. Verified live via Playwright,
+authenticated as the Homie Dashboard account: all three entry points (both floors-card faces,
+the Overview A/B picker) open the real dialog for the right entity, a real tap on the dialog's
+own + button moved `climate.casasolar_north_zone_1`'s actual `target_temp_low` (confirmed via
+`GET /api/states`, then restored), and the dialog's History icon rendered a real recorder-backed
+chart. 68/68 tests pass (`node --test test/screen-a.test.cjs`).
+
 ## Checkpoint: 2026-08-11 (TV chip: volume/mute controls)
 
 The TV chip's overlay (Harmony Hub control) gained a second `tv-action-row`: VOL DOWN, MUTE,

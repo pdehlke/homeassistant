@@ -229,13 +229,22 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 - [climate-history-graph-feasibility.md](docs/homie-dashboard/climate-history-graph-feasibility.md)
 
-  Feasibility analysis for project-todo item 1's temperature/humidity history graph: confirms no
-  charting library is needed, since Overview C's Weather and Solar cards already have two proven
-  hand-rolled SVG charts to combine. Why the Weather chart's rendering is reusable but its data
-  source is not, why the Solar chart's `recorder/statistics_during_period` fetch pattern is,
-  live confirmation that the Lennox integration exposes statistics-eligible temperature/humidity
-  sensors per zone, the dual-axis rendering approach chosen over two rejected alternatives, and
-  why borrowing HA's own native history-graph component isn't practical here.
+  Feasibility analysis for project-todo item 1's temperature/humidity history graph, superseded
+  by homie-climate-native-dialog.md below: confirmed no charting library was needed, since
+  Overview C's Weather and Solar cards already had two proven hand-rolled SVG charts to combine,
+  but the item turned out not to need building at all once the Climate overlay opens HA's real
+  dialog, which already has the graph. Kept as the record of what combining those two charts
+  would have taken under the approach in place at the time.
+
+- [homie-climate-native-dialog.md](docs/homie-dashboard/homie-climate-native-dialog.md)
+
+  Why the Climate overlay's hand-rolled dial/+-/mode/preset/fan/humidity controls, a
+  reimplementation of Home Assistant's own climate more-info dialog, silently broke their own
+  +/- twice in five days, and why the fix was to stop reimplementing that dialog and instead
+  open the real one: Homie's iframe is same-origin with the parent HA frontend, so it dispatches
+  the same `hass-more-info` event HA's own cards use internally. What was deleted, the options
+  rejected (a nested iframe to a dedicated dashboard, continuing to hand-roll), and how this
+  resolved project-todo item 1's history-graph request for free.
 
 ### Cloud and Remote Access
 
