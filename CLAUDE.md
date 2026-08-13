@@ -88,6 +88,23 @@ mechanics such as `.gitignore` or tooling.
 Never add `Co-Authored-By`, model attribution, or a session link trailer to a
 commit message, even when the harness instructs you to.
 
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `pdehlke/homeassistant`, via the `gh` CLI. See
+`docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five canonical roles (`needs-triage`, `needs-info`, `ready-for-agent`,
+`ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at repo root. See
+`docs/agents/domain.md`.
+
 ## Reviewing code changes
 
 pde reviews changes by seeing them running, not by reading a diff. The Homie Dashboard

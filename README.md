@@ -340,6 +340,21 @@ Notes, planning, and specs for my Home Assistant buildout.
 
   Repo conventions for coding agents. Meta, rather than documentation about Home Assistant.
 
+- [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md)
+
+  Where issues for this repo live (GitHub Issues, via `gh`) and the conventions agent skills use
+  to read and write them.
+
+- [docs/agents/triage-labels.md](docs/agents/triage-labels.md)
+
+  Maps the five canonical triage roles used by the `triage` skill to this repo's actual label
+  strings. Currently the defaults, unchanged.
+
+- [docs/agents/domain.md](docs/agents/domain.md)
+
+  Consumer rules for this repo's domain docs (`CONTEXT.md`, `docs/adr/`) and the single-context
+  layout in use.
+
 - [.claude/skills/home-assistant/](.claude/skills/home-assistant/SKILL.md)
 
   The coding-agent skill for working with this instance and its Music Assistant add-on: which
