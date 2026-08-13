@@ -261,6 +261,15 @@ Notes, planning, and specs for my Home Assistant buildout.
   de-duplicated. A missing sidebar icon override and a live token-splice deploy mistake, both
   found and fixed along the way.
 
+- [overview-c-calendar-google-sync.md](docs/homie-dashboard/overview-c-calendar-google-sync.md)
+
+  Plan for adding pde's Google Calendar to Overview C's calendar card alongside Rachio's
+  schedule: the OAuth consent-screen setup for his legacy free Google Workspace account
+  (Internal vs. External, and the 7-day refresh-token trap in Testing status), the config-only
+  deploy once entities exist, and why the Wahoo SYSTM workout calendar was investigated and
+  deferred rather than built, since every route found relies on reverse engineering that Wahoo's
+  API Agreement prohibits.
+
 - [homie-music-chip.md](docs/homie-dashboard/homie-music-chip.md)
 
   A "Music" chip parallel to the Scenes chip above, but for radio listening: six pre-configured
