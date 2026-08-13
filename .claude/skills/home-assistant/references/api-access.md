@@ -197,6 +197,30 @@ To write a dashboard, use `scripts/apply-card.py` rather than hand-rolling a sav
 
 ## Never leak the token
 
+Two separate leaks so far, both forcing a rotation. `playwright-cli` printing generated code was
+the first. The second was a plain Bash command meant to just report whether `$HA_TOKEN` was set:
+
+```bash
+# LEAKS THE TOKEN. Do not use this pattern.
+echo "HA_TOKEN set: ${HA_TOKEN:+yes}${HA_TOKEN:-no}"
+```
+
+`${VAR:-fallback}` substitutes `fallback` only when `VAR` is unset or empty. When it *is* set,
+which is the normal case, that expansion is the literal value, not the word "no". The safe way to
+check presence without ever interpolating the value into anything printed is a test expression:
+
+```bash
+if [ -n "$HA_TOKEN" ]; then echo "HA_TOKEN is set"; else echo "HA_TOKEN is NOT set"; fi
+```
+
+`${HA_TOKEN:+set}` alone (no paired `:-`) is also safe. The general rule: before running any Bash
+command that references `$HA_TOKEN`, check whether the value could reach stdout/stderr — string
+interpolation into an echoed literal, a heredoc, `set -x`, or a redaction pipe applied after the
+fact — not just whether the command "looks like" a print. Piping through `curl -H "$HB" ...` is
+fine, since curl doesn't echo its own headers back unless `-v`/`--trace` is added; the danger is
+specifically building a string that contains the token and displaying it, which redaction can only
+catch after the fact and imperfectly, as both incidents showed.
+
 `playwright-cli` prints the code it generates. Passing the token through `run-code` or `localstorage-set` puts it in the transcript verbatim. It happened once and the token had to be rotated.
 
 Safe pattern. Generate a storage-state file in Python so the token never appears on a command line, where `ps` could see it either:
