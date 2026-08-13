@@ -206,6 +206,21 @@ The raw `.dsc`/`.dip`/manifest text pulled from both consoles via `TYPE` is save
   confirmed CLX-4HSW4) is labeled **106 - Garage**. All lighting control hardware is centralized in one
   physical location, which matters directly for Path B: there is one place to go to tap the bus, not a
   run through the whole house.
+
+  **Revised (2026-08-13):** centralization in the Garage turned out to be a poor place to actually
+  bus-tap, even though the modules themselves stay there. The only available RS-485 port in the CLX
+  chain sits at the top of the rack, about 9 feet up, and taps directly onto a live CLX module the
+  homeowner is wary of splicing into while it's actively driving real lighting. The Garage is also a
+  long way from the Great Room, where the [issue #1](https://github.com/pdehlke/homeassistant/issues/1)
+  spike's target keypad button lives, which would need a second person to coordinate button presses
+  with whoever is watching the capture. Since Cresnet's Y/Z lines are a shared multidrop bus (any
+  accessible point on the same electrical segment sees identical traffic), the spike now taps at the
+  Great Room CNX-B8 keypad itself (Cresnet ID 6A) instead: same bus, no helper needed, and it avoids
+  landing the splice at MC2E's own NET terminal block, which is where the Cresnet brick's power feeds
+  in and, per the homeowner, where MC2E draws its own operating power from too. See issue #1's
+  Implementation Decisions for the full reasoning, including the still-open question of whether the
+  keypad's own terminal block is physically accessible for a tap (no keypad wallbox has been opened
+  yet).
 - The same descriptor also defines an XPanel (Crestron's software/virtual touch panel) assigned to
   IP-ID 3 and the Kitchen, currently `OFFLINE` per the live IP table. It exists as a defined option, not
   a live one.
