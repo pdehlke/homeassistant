@@ -1,5 +1,16 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-13 (Music chip routes receiver through Harmony Airplay)
+
+The Music chip now starts the Harmony Hub's `Airplay` activity before setting the Crestron player
+to the idle-start volume and playing the selected Music Assistant station. Tapping the active
+station stops Music Assistant playback and turns off Harmony. Release `20260813.1` passed the full
+85/85 regression suite. The live HTML checksum matches the fork's local `dist/` file, and the
+`homie-dash` Lovelace iframe points to `/local/community/homie-dashboard/homie-dashboard.html?v=20260813.1`.
+The live Homie asset backup is under `/config/backups/homie-dashboard-20260813-070019`; the
+Lovelace backup is `/tmp/backup-homie-dash-20260813-070101.json`. No commit was made; interactive
+browser verification remains pending pde's approval.
+
 ## Checkpoint: 2026-08-12 (Music chip: six radio presets on Crestron)
 
 A new "Music" chip, bottom row between A/V and TV: six bubbles, one per pre-configured radio

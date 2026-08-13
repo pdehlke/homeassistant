@@ -43,10 +43,14 @@ open-popup live refresh) call the same two helpers, the same discipline Scenes' 
 and tested for.
 
 **Toggle logic**, `togglePopupMusic(entity, uri, bubbleId)`: checks `musicStationIsOn` at the
-moment of the tap. Off → on: play the station via `music_assistant.play_media`
+moment of the tap. Off → on: first start the Harmony Hub's `Airplay` activity with
+`remote.turn_on` on `remote.harmony_hub`, then play the station via `music_assistant.play_media`
 (`media_id`/`media_type: "radio"`, the pattern already confirmed working for radio content on this
-instance — see the `home-assistant` skill's `music-assistant.md`), and only if the player wasn't
-already `"playing"`, also call `media_player.volume_set` first. On → off: `media_player.media_stop`.
+instance — see the `home-assistant` skill's `music-assistant.md`). Only if the player wasn't
+already `"playing"`, call `media_player.volume_set` first, after Harmony has started the activity.
+On → off: call `media_player.media_stop`, then turn off the Harmony Hub with `remote.turn_off`.
+The two systems are intentionally sequenced so the receiver is ready for the AirPlay stream before
+Music Assistant begins playback, and stopping playback also releases the receiver activity.
 
 **Sidebar icon.** Unlike a Scenes chip, a Music chip does carry a top-level `entity`
 (`media_player.crestron`), but `_sbIcon()`'s generic domain-to-icon map has no `media_player` key,
@@ -60,10 +64,12 @@ bubble's own inline SVG too.
 Resolved by grilling before any code was written:
 
 - **What tapping the active station's own bubble does (the "off" direction).** Chosen: an explicit
-  `media_player.media_stop`. Considered and rejected: pause (resumable, but adds a second implicit
-  state — "paused on what" — that Scenes never had to reason about, since HA scenes have no pause
-  concept at all); no off state at all, bubbles as pure launchers (loses the toggle behavior pde
-  explicitly wanted, and the visible on-ring would then never mean anything reversible).
+  `media_player.media_stop` followed by `remote.turn_off` for the Harmony Hub's `Airplay`
+  activity. Considered and rejected: pause (resumable, but adds a second implicit state — "paused
+  on what" — that Scenes never had to reason about, since HA scenes have no pause concept at all);
+  stopping Music Assistant without turning off Harmony (leaves the receiver running); no off state
+  at all, bubbles as pure launchers (loses the toggle behavior pde explicitly wanted, and the
+  visible on-ring would then never mean anything reversible).
 
 - **Volume reset scope.** The literal first ask ("volume pre-set to X%") would reset volume on
   every tap, including a direct switch between two already-playing stations — the common case once
@@ -150,3 +156,13 @@ version bump): volume reset target lowered from 50% to 40% (not re-tested live p
 instruction — he'll tune further later if needed), and five of six labels shortened as in the table
 above. Regression suite re-run at 83/83 after both edits. New labels confirmed live via a fresh
 Playwright screenshot of the popup.
+
+**Harmony routing round**, 2026-08-13, release `20260813.1`: every station start now turns on the
+Harmony Hub's `Airplay` activity before the existing Crestron volume/play actions; tapping the
+active station stops Music Assistant playback and turns the Harmony activity off. Regression suite
+passed 85/85, including idle start, hot-switch, and active-station stop ordering. The updated
+`homie-dashboard.html` was backed up and deployed atomically to
+`/config/www/community/homie-dashboard/`; its live SHA-256 matched the fork's local `dist/` file,
+and `homie-dash`'s iframe URL was updated to `?v=20260813.1`. The Lovelace configuration backup is
+`/tmp/backup-homie-dash-20260813-070101.json`. Deployment integrity was verified; interactive
+browser approval was intentionally left for pde after deployment.
