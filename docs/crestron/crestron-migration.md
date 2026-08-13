@@ -218,9 +218,28 @@ The raw `.dsc`/`.dip`/manifest text pulled from both consoles via `TYPE` is save
   Great Room CNX-B8 keypad itself (Cresnet ID 6A) instead: same bus, no helper needed, and it avoids
   landing the splice at MC2E's own NET terminal block, which is where the Cresnet brick's power feeds
   in and, per the homeowner, where MC2E draws its own operating power from too. See issue #1's
-  Implementation Decisions for the full reasoning, including the still-open question of whether the
-  keypad's own terminal block is physically accessible for a tap (no keypad wallbox has been opened
-  yet).
+  Implementation Decisions for the full reasoning.
+
+  **Confirmed (2026-08-13, physical inspection):** the Great Room keypad wallbox is open and
+  photographed. The Cresnet connection is a 4-position pluggable screw-clamp terminal block (a
+  removable green Phoenix-style plug, not fixed screw terminals wired directly to the keypad's board),
+  fed by a 4-conductor cable. Three conductors are clearly visible landing in it: blue, white, and red;
+  the fourth (expected black, per the standard Cresnet color code below) isn't clearly visible in the
+  photos taken so far. This is a better tap point than plain fixed terminals: the plug unclips from its
+  header, so a tap can land on the plug's own screws, or on a short pigtail spliced between the plug and
+  its header, without touching the keypad's board and without needing to disturb the run beyond this one
+  drop.
+
+  Crestron's own Cresnet wiring guide
+  ([docs.crestron.com](https://docs.crestron.com/en-us/9272/Content/Topics/Cresnet-Wiring.htm)) specifies
+  the cable as two twisted pairs: an 18 AWG red/black pair for 24VDC power and ground, and a 22 AWG
+  blue/white pair for the Y/Z data lines, with red/white/blue/black as the typical insertion order at a
+  NET port. That confirms which pair is data (blue/white) versus power (red/black) but not which
+  individual wire is Y versus Z, or red versus black for that matter, since Crestron's own guide doesn't
+  commit to that mapping either. **Open before any tap:** identify the 4th conductor and confirm the
+  exact pin order on this specific plug (checking for a silkscreen legend on the board header, or
+  tracing continuity) before landing anything, so the RS-485 adapter's data pins don't end up shorted
+  against the 24V/ground pair.
 - The same descriptor also defines an XPanel (Crestron's software/virtual touch panel) assigned to
   IP-ID 3 and the Kitchen, currently `OFFLINE` per the live IP table. It exists as a defined option, not
   a live one.
