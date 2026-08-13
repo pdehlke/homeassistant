@@ -234,12 +234,18 @@ The raw `.dsc`/`.dip`/manifest text pulled from both consoles via `TYPE` is save
   ([docs.crestron.com](https://docs.crestron.com/en-us/9272/Content/Topics/Cresnet-Wiring.htm)) specifies
   the cable as two twisted pairs: an 18 AWG red/black pair for 24VDC power and ground, and a 22 AWG
   blue/white pair for the Y/Z data lines, with red/white/blue/black as the typical insertion order at a
-  NET port. That confirms which pair is data (blue/white) versus power (red/black) but not which
-  individual wire is Y versus Z, or red versus black for that matter, since Crestron's own guide doesn't
-  commit to that mapping either. **Open before any tap:** identify the 4th conductor and confirm the
-  exact pin order on this specific plug (checking for a silkscreen legend on the board header, or
-  tracing continuity) before landing anything, so the RS-485 adapter's data pins don't end up shorted
-  against the 24V/ground pair.
+  NET port, matching red = +24VDC, white = Y (data), blue = Z (data), black = ground.
+
+  **Confirmed (2026-08-13, homeowner verified against the physical plug):** pin order on this specific
+  plug is red, white, blue, black, matching Crestron's documented NET port order exactly, so this plug
+  follows the standard rather than a custom wiring job. Final pin identification: **red = +24VDC, white
+  = Y (data, positive), blue = Z (data, negative), black = ground.**
+
+  Dongle confirmed as a DSD TECH SH-U14 USB-to-RS-485 adapter, terminal block labeled GND, B-, A+, plus
+  one unused position. Tap wiring is three connections: keypad white (Y) to dongle A+, keypad blue (Z)
+  to dongle B-, keypad black (ground) to dongle GND for a common reference. Keypad red (+24VDC) connects
+  to nothing on the dongle and stays untouched by the tap; the dongle has no pin meant to take bus
+  power, and that wire is the one that must not be shorted to anything else during the splice.
 - The same descriptor also defines an XPanel (Crestron's software/virtual touch panel) assigned to
   IP-ID 3 and the Kitchen, currently `OFFLINE` per the live IP table. It exists as a defined option, not
   a live one.
