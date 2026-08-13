@@ -26,13 +26,5 @@ removing an item for any reason other than pde saying it's done or cancelled.
    into it unattended with no visible way out. Startup was fixed; Screensaver
    rotation was explicitly left out of scope at the time. See the fork's
    `docs/pdehlke-customizations.md`.
-5. Investigate lighting scenes. I have two scenes defined but I don't see them
-   anywhere in homie.
-6. Water meter monitoring: https://github.com/gunnaraas/watermeter.git
-7. Build a remotely accessible Homie Dashboard.
-8. `Tablet`'s native more-info dialogs (e.g. from Home's own Lennox thermostat
-   cards) have a flat, unblurred backdrop, same root cause as the Pete/Homie
-   Dashboard difference documented in `homie-climate-native-dialog.md`:
-   `Tablet` is on the `visionos` theme, which sets
-   `--ha-dialog-scrim-backdrop-filter: none`. Left alone for now; fix either
-   by correcting that theme variable or switching `Tablet`'s theme.
+5. Water meter monitoring: https://github.com/gunnaraas/watermeter.git
+6. Build a remotely accessible Homie Dashboard.
