@@ -159,6 +159,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   design the anti-flicker delay actually required once the Template helper UI turned out to have no
   `delay_off` field, and two `mini-media-player` behaviors missing from its published docs.
 
+- [office-news-ticker.md](docs/native-dashboards/office-news-ticker.md)
+
+  An auto-scrolling News card on `dashboard-office` for a display nobody can touch. Why a
+  `card-mod` CSS bolt-on turned out to be impossible once discrete pause-and-advance was chosen
+  (variable article-row heights defeat pure-CSS timed scrolling), why the fix is a small wrapper
+  custom card rather than a hand-patched fork of `rss-news-card` itself, and the Playwright
+  verification that watched it advance and wrap.
+
 ### Music Assistant
 
 - [homeii-music-flow.md](docs/music-assistant/homeii-music-flow.md)
