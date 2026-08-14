@@ -167,6 +167,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   custom card rather than a hand-patched fork of `rss-news-card` itself, and the Playwright
   verification that watched it advance and wrap.
 
+- [office-thermostat-overlay-cards.md](docs/native-dashboards/office-thermostat-overlay-cards.md)
+
+  Replacing `dashboard-office`'s two `thermostat` cards with `custom:more-info-card`, so the
+  dial-plus-humidity-plus-chips overlay a `thermostat` card's top-right icon normally hides behind
+  a click renders inline instead. Why no native card combination reproduces that layout, the HACS
+  install, and the one cosmetic wart (a duplicated state-summary row) left unfixed because
+  `card-mod` is confirmed broken instance-wide right now.
+
 ### Music Assistant
 
 - [homeii-music-flow.md](docs/music-assistant/homeii-music-flow.md)
