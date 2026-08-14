@@ -8,7 +8,11 @@ REST cannot read or write dashboards. Use WebSocket:
 - `{"type":"lovelace/config","url_path":"dashboard-sound"}`
 - `{"type":"lovelace/config/save","url_path":"dashboard-sound","config":{...}}`
 
-**A save replaces the entire dashboard config.** There is no partial update. Always read the live config, write a timestamped backup, modify in memory, then save. `scripts/apply-card.py` implements exactly this and refuses to write unless it matched exactly one target card. Extend its matcher rather than writing a new save path.
+**A save replaces the entire dashboard config.** There is no partial update. Always read the live config, write a timestamped backup, modify in memory, then save. Three scripts share that read-backup-modify-save discipline, one per shape of edit; extend the matching one rather than writing a new save path:
+
+- `scripts/apply-card.py` swaps a single card matching a `type` (and optional `entity`), refuses to write unless it matched exactly one.
+- `scripts/append_section.py` adds one new section to a view, refuses to write unless the existing section count matches what you told it to expect.
+- `scripts/replace_section.py` overwrites one section by index, for iterating on a section you just added without duplicating it.
 
 ```bash
 export HA_URL=http://hass.ehlke.net:8123
@@ -16,6 +20,13 @@ export HA_BACKUP_DIR=/path/to/scratchpad   # defaults to cwd; never let it defau
 export HA_DASHBOARD=dashboard-sound        # defaults to dashboard-sound
 python3 scripts/apply-card.py new-card.json --dry-run   # always dry-run first
 python3 scripts/apply-card.py new-card.json
+
+export HA_EXPECT_SECTIONS=3                # append_section.py: sanity check, not the new count
+python3 scripts/append_section.py new-section.json --dry-run
+python3 scripts/append_section.py new-section.json
+
+python3 scripts/replace_section.py 3 revised-section.json --dry-run   # index is 0-based
+python3 scripts/replace_section.py 3 revised-section.json
 ```
 
 ## Sections grid math
@@ -194,6 +205,37 @@ selector to reach FullCalendar's own classes:
 Verified only for the default `dayGridMonth` view. The list/week/day FullCalendar views use
 different `.fc-list-*` / `.fc-timegrid-*` classes and were not tested; expect the same problem
 there if anyone switches views on a themed instance and hits an unstyled white panel again.
+
+## mini-media-player (kalkih/mini-media-player v1.16.12): two undocumented config keys
+
+Confirmed 2026-08-14 building the Office dashboard's now-playing footer (see
+[office-now-playing-footer.md](../../../../docs/native-dashboards/office-now-playing-footer.md) in the
+`pdehlke/homeassistant` repo for the full build). The published docs Context7 serves for this card
+are stale relative to the installed version; both facts below only surfaced by fetching
+`/hacsfiles/mini-media-player/mini-media-player-bundle.js` from the live instance and reading it
+directly.
+
+- **`hide.power: true`** hides the power toggle button entirely. This key isn't in the documented
+  `hide` object at all. The documented `hide.power_state` only hides the button's colored
+  active/inactive indicator, not the button itself, `showPowerButton` in the bundle checks
+  `!this.config.hide.power` specifically. Needed for any non-interactive/kiosk use, otherwise a
+  clickable-looking power icon renders regardless of every other `hide.*` flag.
+- **`artwork` mode naming is a trap.** `cover`, `full-cover`, and `full-cover-fit` are all the same
+  full-bleed-background family (`ha-card.--has-artwork[artwork*='cover']` in the card's own CSS).
+  `default` is the actual small-thumbnail-plus-text layout. Picking `artwork: cover` expecting a
+  compact thumbnail produces a full-bleed background image instead, which will bury any translucent
+  theme (Frosted Glass included) the card sits on.
+
+## Also confirmed 2026-08-14: config-flow Template helpers have no delay_on/delay_off
+
+The UI/API-driven Template helper (`config_entries/flow`, handler `template`, step `binary_sensor`)
+exposes `name`, `state`, `device_class`, `device_id`, and `availability`, nothing else, confirmed by
+reading its live `data_schema`. `delay_on`/`delay_off` only exist on the legacy YAML `template:`
+platform, which isn't reachable from this machine (no filesystem access to the Pi's `/config`, no
+API for editing `configuration.yaml`). Any hysteresis/anti-flicker delay on a template-derived
+helper needs an automation instead: two state triggers (`to`/`from` the target state(s)) branching
+on `trigger.id` via `choose`, with `mode: restart` so a value flipping back before the delay elapses
+cancels the pending change cleanly, no extra guard condition needed.
 
 ## wall-clock-card (rkotulan/ha-wall-clock-card v3.4.0)
 
