@@ -356,10 +356,19 @@ diagnostic entities.
 
 ### Hardware & hosting
 
+**Raspberry Pi 4**:
+The current, live host for this Home Assistant instance, running HAOS.
+_Avoid_: don't read any Mac mini reference as the current host — see below.
+
+**Mac mini migration**:
+A planned, not yet implemented move of this instance from the Raspberry Pi 4 to a surplus Late
+2014 Mac mini. `docs/hardware/mac-mini-migration.md` is the plan, not a record of a completed
+move.
+
 **HAOS**:
-Home Assistant OS, the bare-metal install this instance runs on the Mac mini — chosen over
-Container or Supervised installs specifically to keep the Supervisor and its add-on ingress, which
-Music Assistant depends on.
+Home Assistant OS, the bare-metal install this instance runs today on the Pi and would continue
+running on the Mac mini if that migration happens — chosen for the target machine specifically to
+keep the Supervisor and its add-on ingress, which Music Assistant depends on.
 
 ### Networking & remote access
 

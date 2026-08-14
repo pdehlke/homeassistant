@@ -1,5 +1,8 @@
 # Migrating Home Assistant from Raspberry Pi to a Late 2014 Mac mini
 
+**Status: planned, not yet implemented.** Home Assistant currently runs on a Raspberry Pi 4. This
+document is the plan for moving it to a surplus Mac mini; nothing below has happened yet.
+
 Target hardware: Mac mini Late 2014 (Macmini7,1), Haswell, 8 GB RAM, 1 TB SATA drive.
 Intended deployment: headless, no monitor or keyboard, in a location that is annoying to
 reach.

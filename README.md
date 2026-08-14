@@ -307,9 +307,9 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 - [mac-mini-migration.md](docs/hardware/mac-mini-migration.md)
 
-  Moving Home Assistant off the Raspberry Pi and onto a headless Late 2014 Mac mini.
-  Installation method, storage and SSD choices, external boot persistence, and the migration
-  sequence.
+  Plan, not yet implemented, for moving Home Assistant off its current Raspberry Pi 4 and onto a
+  surplus headless Late 2014 Mac mini. Installation method, storage and SSD choices, external boot
+  persistence, and the migration sequence.
 
 ### EV Charger
 
