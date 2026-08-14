@@ -336,6 +336,14 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 ### Meta
 
+- [CONTEXT.md](CONTEXT.md)
+
+  The domain glossary for this instance: canonical terms for the native dashboards, the Homie
+  Dashboard fork, and the Crestron, Lennox, Rachio, Music Assistant, Harmony Hub, EV charger, and
+  networking subsystems, with explicit `Avoid` entries where two documents used the same word
+  differently. Built via a `/grill-with-docs` session; see `docs/agents/domain.md` for how agent
+  skills are expected to consume it.
+
 - [CLAUDE.md](CLAUDE.md)
 
   Repo conventions for coding agents. Meta, rather than documentation about Home Assistant.
