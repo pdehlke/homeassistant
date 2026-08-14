@@ -151,6 +151,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   the unnamed `sense_287516` node is actually the mains meter, and why the second gauge reads
   gross daily export rather than a net figure that doesn't exist as its own sensor.
 
+- [office-now-playing-footer.md](docs/native-dashboards/office-now-playing-footer.md)
+
+  A now-playing footer on `dashboard-office` that mirrors Homie Dashboard's Overview A/B widget:
+  appears when a Music Assistant player is active, disappears 10s after it stops. Why Homie's
+  version can't be copied (compiled app logic, not config), the eight-player-independent-helper
+  design the anti-flicker delay actually required once the Template helper UI turned out to have no
+  `delay_off` field, and two `mini-media-player` behaviors missing from its published docs.
+
 ### Music Assistant
 
 - [homeii-music-flow.md](docs/music-assistant/homeii-music-flow.md)
