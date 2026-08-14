@@ -169,6 +169,32 @@ icon-size cap as the combination that actually works.
 
 The `light` view strategy lays lights out as a grid *and* still regenerates live, so it looks like the way to get both. The catch: it emits a section only for an area holding at least one `light` entity with `entity_category: none`, and skips every area with none. On an instance with no light entities yet it renders a completely empty view. That is why the Lights dashboard here runs `areas-overview` (which lists areas regardless of contents) rather than `light`. Revisit once real lights are assigned to areas.
 
+## The built-in `calendar` card ignores its own `theme:` key
+
+Confirmed 2026-08-14 on `dashboard-office`. Setting `theme: "Frosted Glass"` directly on a
+`type: calendar` card config does nothing for its month-grid view, while the identical `theme:`
+line on a `weather-forecast` card right next to it works fine. The card renders inside its own
+`ha-full-calendar` custom element (a second shadow root nested inside `hui-calendar-card`'s own),
+and FullCalendar's root `.fc` div paints its own near-opaque `--card-background-color` background
+directly, on top of the outer `ha-card` shell. The outer shell *does* pick up the theme (and, for
+Frosted Glass specifically, the theme's global `card-mod-theme` glass overlay) correctly; FullCalendar's
+internal DOM just paints over it and hides it.
+
+Fix with `card_mod` (already installed here), piercing the extra shadow boundary with the `$`
+selector to reach FullCalendar's own classes:
+
+```json
+"card_mod": {
+  "style": {
+    "ha-full-calendar$": ".fc { background: var(--ha-card-glass-tint, rgba(255,255,255,0.08)) !important; }\n.fc-scrollgrid, .fc-scrollgrid table, .fc-scrollgrid td, .fc-scrollgrid th { border-color: var(--divider-color) !important; }\n.fc-col-header-cell { background: rgba(255,255,255,0.06) !important; }\n.fc-daygrid-day-number { color: var(--primary-text-color) !important; }\n.fc-daygrid-day-frame:hover { background: rgba(255,255,255,0.10) !important; }\na.fc-col-header-cell-cushion { color: var(--secondary-text-color) !important; }\n.fc-day-today { background: rgba(255,255,255,0.08) !important; }\n"
+  }
+}
+```
+
+Verified only for the default `dayGridMonth` view. The list/week/day FullCalendar views use
+different `.fc-list-*` / `.fc-timegrid-*` classes and were not tested; expect the same problem
+there if anyone switches views on a themed instance and hits an unstyled white panel again.
+
 ## wall-clock-card (rkotulan/ha-wall-clock-card v3.4.0)
 
 Docs live in the repo under `docs/`, not just the README. Fetch them at the installed tag:
