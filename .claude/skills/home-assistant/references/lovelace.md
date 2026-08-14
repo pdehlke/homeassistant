@@ -275,6 +275,51 @@ For a roughly 430px square, these values fit without overflow:
 
 `appearance.size: small`, `layout.spacing: compact`, `clockSize: 4rem`, `dateSize: 0.95rem`, weather `labelSize: 0.6rem` / `valueSize: 0.75rem` / `forecastDays: 3`, sensors `iconSize: 0.85rem` / `labelSize: 0.55rem` / `valueSize: 0.75rem` / `itemGap: 4px`, calendar `calendarDateSize: 0.6em` / `eventTitleSize: 0.65em` / `eventDetailSize: 0.55em` / `maxEvents: 2`, and no action bar.
 
+## card-mod (thomasloven/lovelace-card-mod v4.2.1) is not applying, as of 2026-08-14
+
+Found while adding a `card_mod` icon/color override to a new `type: gauge` card on
+`dashboard-office`. The resource is registered (`lovelace/resources` lists
+`/hacsfiles/lovelace-card-mod/card-mod.js`) and the console logs `CARD-MOD 4.2.1 IS
+INSTALLED` with no errors on load, so it looks healthy at a glance. It is not doing
+anything.
+
+Confirmed two ways, both on a live browser session via Playwright:
+
+- A trivial `card_mod: {style: "ha-card { border: 4px solid red !important; }"}` added to
+  an existing `weather-forecast` card rendered with no border at all after a full page
+  reload. `getComputedStyle` on the card's `ha-card` confirmed `border: 0px solid ...`
+  and `content: none` for a test `::after` rule, not just "hard to see in a screenshot."
+- `vision-sample`'s A/V tab has three `button` cards with a `card_mod` style
+  (`blur(22px) saturate(140%)`, a translucent white background) that visually looked
+  correct in a screenshot (a lighter glass panel next to flatter sibling cards), but
+  `getComputedStyle(...).backdropFilter` on every `ha-card` in that view read a uniform
+  `blur(8px)` — the theme's own default card blur, not card-mod's `22px`. The visual
+  difference that looked like confirmation was coincidental card-content contrast, not
+  card-mod.
+
+Deep-searching every shadow root on the page (`document` and recursively into every
+`el.shadowRoot`) for a `<style>` tag containing either test string found zero matches in
+both cases. Whatever card-mod v4.2.1 is supposed to do to inject styles, it is not
+happening on this instance right now, on either a `sections`-view dashboard with no prior
+card-mod usage (`dashboard-office`) or one with 40 existing `card_mod` blocks
+(`vision-sample`). Since this reproduces on a dashboard where `card_mod` was previously
+recorded as working (the calendar `$`-piercing fix earlier in this file, verified
+2026-08-14 the same day), this reads as a regression during that day, not a
+config mistake in any one card.
+
+**Practical consequence:** every `card_mod` block across every dashboard here (40+ in
+`vision-sample` alone) is likely a no-op right now, silently. Any card that looks
+"plain" when it was designed to have a card-mod border/blur/color override is not
+necessarily misconfigured; check whether card-mod itself is working again before
+debugging the card's own `style` string. Not yet root-caused (frontend version bump,
+HACS update, resource load order) or reported upstream.
+
+**Workaround used:** for the new solar-production gauge, dropped card_mod entirely and
+used only native `type: gauge` config — `severity: {green: 0, yellow: <above max>, red:
+<above max>}` forces the whole arc green without a threshold ever firing, and a leaf
+emoji (🍃) directly in the `name` string stands in for an icon badge, since the built-in
+gauge card has no icon slot. Both are card-mod-free and confirmed rendering correctly.
+
 ## Verify visually
 
 The whole point of a dashboard is how it looks, so screenshot it. See the Playwright section of [api-access.md](api-access.md) for the auth pattern and its token-safety requirements.
