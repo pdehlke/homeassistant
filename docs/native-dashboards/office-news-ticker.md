@@ -142,3 +142,21 @@ Not verified: behavior over a real multi-hour sensor refresh (the restart-on-ref
 built and reasoned through, but not watched live against an actual feed update, since that would
 have meant waiting for `sensor.cnn_top_news` et al. to refresh on their own schedule rather than on
 demand).
+
+## 2026-08-15: CNN source swapped for NPR
+
+CNN retired the `http://rss.cnn.com/rss/cnn_topstories.rss` feed the ticker relied on; the
+`command_line` sensor behind it (defined in `/config/configuration.yaml`, not tracked in this repo)
+had been silently serving a stale cached response dated April 2023 rather than erroring, which is
+why the break went unnoticed until the card was checked directly. Its cached response is what
+`rss-news-fetch.sh`'s `fallback()` returns whenever the live `curl` fails, so a dead feed degrades
+to frozen old content instead of an empty card or a visible error.
+
+Replaced with NPR's top-stories feed, `https://feeds.npr.org/1001/rss.xml`, confirmed to parse
+cleanly through the same `rss-news-fetch.sh` (10 articles, no format changes needed; NPR's feed just
+doesn't carry an `<enclosure>` or `<media:content>` image, so those items render with no thumbnail).
+The entity's `unique_id` and entity ID (`sensor.cnn_top_news`) were left unchanged to avoid entity
+registry churn; only its `name` (now "NPR News"), fetch command, and on-disk cache filename
+(`npr-news.json`) changed. The dashboard card's matching `sources` entry was updated the same way:
+label to "NPR News", color to NPR's brand orange `#F15B1C` in place of CNN's red, everything else in
+the card config untouched.
