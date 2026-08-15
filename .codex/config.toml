@@ -1,0 +1,5 @@
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"
+additional_directories = [
+  "/Users/pde/src/github.com/pdehlke/homie-dashboard",
+]
