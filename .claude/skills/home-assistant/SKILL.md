@@ -100,6 +100,17 @@ Full entity inventory, the Sense dead list, installed custom cards, and dashboar
 
 Dashboard editing, the sections grid math, and hard-won lessons about the `wall-clock-card` are in [references/lovelace.md](references/lovelace.md). Read it before resizing or laying out any card.
 
+### Styling policy
+
+`card-mod` is deprecated and no longer supported on this instance. Do not reach for it, attempt a
+backward fix, or recommend changing its version. Home Assistant 2026.8 broke card-mod 4.2.1's
+frontend integration path; see [upstream issue #606](https://github.com/thomasloven/lovelace-card-mod/issues/606).
+UI eXtension (UIX) is the supported drop-in replacement. Use `uix:` for card styling and
+`uix-*` theme keys in all new or edited configuration. Existing card-mod keys are retained only by
+UIX compatibility, not as a reason to keep using card-mod. Liquid Glass is development-only for
+the dedicated Office user; do not generalize its theme-specific behavior to users who will return
+to Noctis.
+
 ## Homie Dashboard fork
 
 - Working copy: `/Users/pde/src/github.com/pdehlke/homie-dashboard`

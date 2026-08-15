@@ -95,6 +95,17 @@ commit message, even when the harness instructs you to.
 GitHub Issues on `pdehlke/homeassistant`, via the `gh` CLI. See
 `docs/agents/issue-tracker.md`.
 
+### Lovelace styling policy
+
+`card-mod` is deprecated for this instance and must not be restored, upgraded, downgraded,
+debugged, or used in new work. Home Assistant 2026.8 broke the card-mod 4.2.1 integration path;
+upstream tracks that incompatibility as [card-mod issue #606](https://github.com/thomasloven/lovelace-card-mod/issues/606).
+UI eXtension (UIX) is the supported replacement and is a drop-in replacement for the existing
+card-mod card and theme configuration. Use `uix:` and `uix-*` keys for all new or edited
+configuration. Do not spend future work on backward fixes for card-mod. Liquid Glass is currently
+development-only for the dedicated Office user; other users, including the development user when
+Office work is complete, use Noctis.
+
 ### Triage labels
 
 Default five canonical roles (`needs-triage`, `needs-info`, `ready-for-agent`,

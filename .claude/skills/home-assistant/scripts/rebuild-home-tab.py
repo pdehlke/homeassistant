@@ -152,15 +152,15 @@ LEAF_TILE_ROWS = 2
 # src/panels/lovelace/cards/hui-button-card.ts) hardcodes min_rows: 2 whenever
 # a button shows both an icon and a name or state, with no config override,
 # so the card's outer grid cell is pinned to 2 row-tracks (~120px measured
-# live) no matter what rows/grid_options says. A card_mod that shrinks the
+# live) no matter what rows/grid_options says. A UIX rule that shrinks the
 # button's own rendered height (tried first) only shrinks the content inside
 # that still-120px cell, confirmed by inspecting the wrapper element's own
-# `grid-row` directly (`span 2`, unaffected by any card_mod height): it looks
+# `grid-row` directly (`span 2`, unaffected by any UIX height): it looks
 # smaller but leaves the same dead space behind, which is the "wasted space
 # between rows" pde flagged after the first pass. The only way to actually
 # reach the smaller getGridOptions() branch (min_rows: 1) is show_name: false,
 # which is set on the card itself below, not something CSS can do from
-# outside the card. card_mod stays as a supplementary cap on the icon, which
+# outside the card. UIX stays as a supplementary cap on the icon, which
 # still defaults to `--mdc-icon-size: 100%` of whatever box it ends up with.
 PRESET_BUTTON_HEIGHT = 56
 PRESET_ICON_SIZE = 24
@@ -304,7 +304,7 @@ def preset_card(preset, target):
         "show_name": False,
         "show_state": False,
         "tap_action": tap,
-        "card_mod": {
+        "uix": {
             "style": (
                 f":host {{ height: {PRESET_BUTTON_HEIGHT}px !important; }}\n"
                 f"ha-card {{ height: {PRESET_BUTTON_HEIGHT}px !important; "

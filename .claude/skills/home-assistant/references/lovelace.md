@@ -167,13 +167,13 @@ return { rows: 1, columns: 3, min_columns: 2, min_rows: 1 };     // icon only
 
 Any button showing both an icon and a name or state gets `min_rows: 2` regardless of what
 `grid_options.rows` in its own config says. The outer grid wrapper (a plain `<div>` inside the
-section's own shadow root, one level above anything a card's own `card_mod` can reach) is pinned to
-that span; a `card_mod` shrinking the card's own rendered height only shrinks the content inside an
+section's own shadow root, one level above anything a card's own UIX rule can reach) is pinned to
+that span; a UIX rule shrinking the card's own rendered height only shrinks the content inside an
 unchanged wrapper cell, leaving dead space behind, not a smaller footprint. Confirmed by walking
 every shadow root to the wrapper `<div>` directly and reading its computed `grid-row`: `span 2`,
 unmoved by forcing the inner card down to 30px live. The only way to reach the smaller
 `min_rows: 1` branch is `show_name: false` or `show_icon: false`; there is no `grid_options`
-override for it. `rebuild-home-tab.py`'s `preset_card()` uses `show_name: false` plus a `card_mod`
+override for it. `rebuild-home-tab.py`'s `preset_card()` uses `show_name: false` plus a UIX
 icon-size cap as the combination that actually works.
 
 ### `strategy: {type: light}` is the auto-discovering grid, once lights exist
@@ -191,11 +191,11 @@ directly, on top of the outer `ha-card` shell. The outer shell *does* pick up th
 Frosted Glass specifically, the theme's global `card-mod-theme` glass overlay) correctly; FullCalendar's
 internal DOM just paints over it and hides it.
 
-Fix with `card_mod` (already installed here), piercing the extra shadow boundary with the `$`
+Fix with UIX, piercing the extra shadow boundary with the `$`
 selector to reach FullCalendar's own classes:
 
 ```json
-"card_mod": {
+"uix": {
   "style": {
     "ha-full-calendar$": ".fc { background: var(--ha-card-glass-tint, rgba(255,255,255,0.08)) !important; }\n.fc-scrollgrid, .fc-scrollgrid table, .fc-scrollgrid td, .fc-scrollgrid th { border-color: var(--divider-color) !important; }\n.fc-col-header-cell { background: rgba(255,255,255,0.06) !important; }\n.fc-daygrid-day-number { color: var(--primary-text-color) !important; }\n.fc-daygrid-day-frame:hover { background: rgba(255,255,255,0.10) !important; }\na.fc-col-header-cell-cushion { color: var(--secondary-text-color) !important; }\n.fc-day-today { background: rgba(255,255,255,0.08) !important; }\n"
   }
@@ -275,50 +275,35 @@ For a roughly 430px square, these values fit without overflow:
 
 `appearance.size: small`, `layout.spacing: compact`, `clockSize: 4rem`, `dateSize: 0.95rem`, weather `labelSize: 0.6rem` / `valueSize: 0.75rem` / `forecastDays: 3`, sensors `iconSize: 0.85rem` / `labelSize: 0.55rem` / `valueSize: 0.75rem` / `itemGap: 4px`, calendar `calendarDateSize: 0.6em` / `eventTitleSize: 0.65em` / `eventDetailSize: 0.55em` / `maxEvents: 2`, and no action bar.
 
-## card-mod (thomasloven/lovelace-card-mod v4.2.1) is not applying, as of 2026-08-14
+## UIX replaces deprecated card-mod
 
-Found while adding a `card_mod` icon/color override to a new `type: gauge` card on
-`dashboard-office`. The resource is registered (`lovelace/resources` lists
-`/hacsfiles/lovelace-card-mod/card-mod.js`) and the console logs `CARD-MOD 4.2.1 IS
-INSTALLED` with no errors on load, so it looks healthy at a glance. It is not doing
-anything.
+`card-mod` 4.2.1 is permanently deprecated for this instance. Home Assistant 2026.8 renamed
+the frontend `developer-tools` route to `tools`, which breaks card-mod's frontend integration
+path. The upstream compatibility report is [card-mod issue #606](https://github.com/thomasloven/lovelace-card-mod/issues/606).
+Do not restore, pin, downgrade, upgrade, or otherwise backward-fix card-mod.
 
-Confirmed two ways, both on a live browser session via Playwright:
+UI eXtension (UIX) replaced it live with resource `/uix/uix.js?v=8.0.1`. The [UIX migration
+FAQ](https://uix.lf.technology/faq/) documents it as a drop-in replacement through card-mod
+4.2.1, so existing `card_mod` card and theme keys remain compatible during the transition. All
+new or edited configuration must use `uix:` and `uix-*` theme keys instead. Do not use the
+compatibility layer as a reason to add new card-mod syntax.
 
-- A trivial `card_mod: {style: "ha-card { border: 4px solid red !important; }"}` added to
-  an existing `weather-forecast` card rendered with no border at all after a full page
-  reload. `getComputedStyle` on the card's `ha-card` confirmed `border: 0px solid ...`
-  and `content: none` for a test `::after` rule, not just "hard to see in a screenshot."
-- `vision-sample`'s A/V tab has three `button` cards with a `card_mod` style
-  (`blur(22px) saturate(140%)`, a translucent white background) that visually looked
-  correct in a screenshot (a lighter glass panel next to flatter sibling cards), but
-  `getComputedStyle(...).backdropFilter` on every `ha-card` in that view read a uniform
-  `blur(8px)` — the theme's own default card blur, not card-mod's `22px`. The visual
-  difference that looked like confirmation was coincidental card-content contrast, not
-  card-mod.
+The replacement was verified in a fresh Playwright CLI session on 2026-08-15:
 
-Deep-searching every shadow root on the page (`document` and recursively into every
-`el.shadowRoot`) for a `<style>` tag containing either test string found zero matches in
-both cases. Whatever card-mod v4.2.1 is supposed to do to inject styles, it is not
-happening on this instance right now, on either a `sections`-view dashboard with no prior
-card-mod usage (`dashboard-office`) or one with 40 existing `card_mod` blocks
-(`vision-sample`). Since this reproduces on a dashboard where `card_mod` was previously
-recorded as working (the calendar `$`-piercing fix earlier in this file, verified
-2026-08-14 the same day), this reads as a regression during that day, not a
-config mistake in any one card.
+- The `vision-sample` A/V view rendered 14 cards and 44 `uix-node` elements.
+- The three existing A/V overrides emitted their configured `blur(22px) saturate(140%)`,
+  translucent background, border, and shadow rules through UIX.
+- Computed background, border, and box-shadow values matched the per-card configuration.
+- Liquid Glass's theme-level `ha-card { backdrop-filter: unset !important; }` still wins over
+  the per-card blur declaration, leaving the theme's `::before` blur at `blur(8px)`. This is a
+  Liquid Glass cascade decision, not a UIX loading failure, and it is relevant only to the
+  development-only Office theme.
+- The Office control dashboard rendered 10 cards and 19 `uix-node` elements.
+- The only console errors were the pre-existing duplicate `rss-news-card` registration and its
+  related 404, with no UIX errors.
 
-**Practical consequence:** every `card_mod` block across every dashboard here (40+ in
-`vision-sample` alone) is likely a no-op right now, silently. Any card that looks
-"plain" when it was designed to have a card-mod border/blur/color override is not
-necessarily misconfigured; check whether card-mod itself is working again before
-debugging the card's own `style` string. Not yet root-caused (frontend version bump,
-HACS update, resource load order) or reported upstream.
-
-**Workaround used:** for the new solar-production gauge, dropped card_mod entirely and
-used only native `type: gauge` config — `severity: {green: 0, yellow: <above max>, red:
-<above max>}` forces the whole arc green without a threshold ever firing, and a leaf
-emoji (🍃) directly in the `name` string stands in for an icon badge, since the built-in
-gauge card has no icon slot. Both are card-mod-free and confirmed rendering correctly.
+For styling work, use UIX and verify the computed property that matters. Do not reopen the closed
+card-mod investigation for a backward fix.
 
 ## Verify visually
 

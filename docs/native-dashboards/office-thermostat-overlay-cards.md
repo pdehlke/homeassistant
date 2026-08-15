@@ -81,7 +81,5 @@ its own summary row above the dial (`icon, entity name, "Idle (Heat/Cool) - summ
 "Currently: 78°F / 49%"`), duplicating the current-temperature/current-humidity numbers shown again
 just below. The popup version doesn't show this line; it's `ha-dialog`'s own header framing that
 takes its place there. The community thread that pointed at this card also documents the fix,
-hiding `state-card-content` via `card_mod` — not applied here, because `card_mod` is confirmed
-not applying anything instance-wide as of 2026-08-14 (see the entry in
-[references/lovelace.md](../../.claude/skills/home-assistant/references/lovelace.md#card-mod-thomaslovenlovelace-card-mod-v421-is-not-applying-as-of-2026-08-14)
-in the Home Assistant skill). Revisit this cosmetic fix once card-mod is confirmed working again.
+hiding `state-card-content` via CSS. It was not applied here. If this wart is revisited, use UIX,
+not the deprecated card-mod mechanism, and verify the result from computed style.

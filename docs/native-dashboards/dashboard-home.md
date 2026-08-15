@@ -268,14 +268,14 @@ every shadow root to reach inside `hui-button-card`) to find out why: a `rows: 1
 behavior of scaling its icon to fill whatever box it's handed rather than sizing to content.
 `grid_options` never had a lever for that.
 
-The first fix, `card_mod` pinning `:host` and `ha-card` to `56px` and capping the icon at `24px`
+The first styling fix, now expressed through UIX, pinned `:host` and `ha-card` to `56px` and capped the icon at `24px`
 (`PRESET_BUTTON_HEIGHT`, `PRESET_ICON_SIZE`), looked right when screenshotted: each button row
 dropped from roughly 130px to roughly 90px. It turned out to be shrinking the wrong thing. Real
 leftover whitespace between rows led to re-inspecting the DOM properly: the button's outer grid
 wrapper, a plain `<div>` inside `hui-grid-section`'s own shadow root, one level up from anything a
-card's own `card_mod` can reach, reported `grid-row: span 2` and a `120px` computed height,
+card's own UIX rule can reach, reported `grid-row: span 2` and a `120px` computed height,
 completely unaffected by shrinking the card inside it. Forcing the inner card down to `30px` live
-left the wrapper at exactly `120px`. The `card_mod` fix was real and the button visibly got smaller,
+left the wrapper at exactly `120px`. The UIX fix was real and the button visibly got smaller,
 but it was shrinking inside an unchanged 120px cell, not shrinking the cell itself.
 
 The actual cause, found by reading
@@ -293,7 +293,7 @@ Every preset button showed an icon and a name, so every one landed on `min_rows:
 the `rows: 1` the script asked for. The only way to reach the smaller branch is dropping icon or
 name. Given the choice (icon-only vs. keep both and accept the floor vs. both plus merging the
 group-preset rows into fewer sections), icon-only was chosen. Added `show_name: False` to
-`preset_card()`; the `card_mod` height/icon cap was kept as a supplementary constraint, since the
+`preset_card()`; the UIX height/icon cap was kept as a supplementary constraint, since the
 icon still defaults to filling 100% of whatever smaller box it now gets.
 
 Re-screenshotted both leaves as Tablet: Primary Suite's three preset rows visibly shrank (not just
@@ -379,7 +379,7 @@ removal of `hide_header` from Home's `kiosk_mode` block.
 - [dashboard-navigation-model.md](dashboard-navigation-model.md) for the level 2 area-grid and
   level 3 leaf rules each tab implements, and the generation approach both scripts share.
 - [dashboard-header-card.md](dashboard-header-card.md) for the card-based header recipe still used
-  by the standalone domain dashboards, and the `card_mod` `!important` rule that recipe depends on.
+  by the standalone domain dashboards, and the UIX `!important` rule that recipe depends on.
 - [crestron-strategy.md](../crestron/crestron-strategy.md#touch-panels-replacing-the-tsw-752s) for the physical
   wall-panel replacement (Shelly Wall Display or Sonoff NSPanel Pro) this dashboard is meant to end
   up running on.

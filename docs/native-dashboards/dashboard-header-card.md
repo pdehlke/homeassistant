@@ -23,13 +23,13 @@ header:
             time_format: "12"
             show_seconds: false
             clock_size: medium
-            card_mod:
+            uix:
               style: |
                 ha-card { height: 56px !important; }
                 .time-wrapper.size-medium { padding: 6px 8px !important; height: calc(100% - 12px) !important; }
           - type: markdown
             content: "{{ now().strftime('%B %-d, %Y') }}"
-            card_mod:
+            uix:
               style: |
                 ha-markdown { padding: 5px 8px !important; font-size: 12px; }
       - type: weather-forecast
@@ -94,13 +94,13 @@ strategy does not set `header` itself, so the stored one survives the merge. Tha
 property of the current merge order rather than a supported combination, and a future frontend
 rewrite could silently drop it.
 
-### card-mod loses ties against a card's own stylesheet
+### UIX loses ties against a card's own stylesheet
 
-`ha-card { height: 56px; }` on the clock card was injected correctly and had no effect. The rule was
+`ha-card { height: 56px; }` on the clock card was injected correctly by UIX and had no effect. The rule was
 visible in the card's shadow root and the computed height was still 67.59px.
 
 The cause is cascade order. `hui-clock-card` sets `ha-card { height: 100%; }` in its own stylesheet,
-which the frontend attaches through `adoptedStyleSheets`, while card-mod injects a `<style>` element
+which the frontend attaches through `adoptedStyleSheets`, while UIX injects a `<style>` element
 into the same shadow root. The CSSOM specification defines a shadow root's
 [final CSS style sheets](https://drafts.csswg.org/cssom/#dom-documentorshadowroot-adoptedstylesheets)
 as the tree-order sheets followed by the contents of `adoptedStyleSheets`, so the component's own
@@ -111,8 +111,8 @@ The same applies to the padding override, because `.time-wrapper.size-medium` ca
 a `height` from the same stylesheet. The default medium padding of 16px would have made the content
 box too short once the card was pinned to 56px, which is why both properties are overridden together.
 
-This is worth remembering because the failure mode is silent and looks like card-mod not working at
-all. It is working; it is losing.
+This is worth remembering because the failure mode is silent and can look like UIX is not working at
+all. Check the computed style and the cascade before changing the rule.
 
 ## Where the header is used
 

@@ -126,7 +126,7 @@ Notes, planning, and specs for my Home Assistant buildout.
 
   The date, time and weather banner shared by the domain dashboards. Why the clock and date swapped
   places without the slots changing size, why a view header renders only on `sections` views and is
-  silently ignored by `masonry`, and why card-mod rules need `!important` to beat a card's own
+  silently ignored by `masonry`, and why UIX rules need `!important` to beat a card's own
   stylesheet.
 
 - [dashboard-home.md](docs/native-dashboards/dashboard-home.md)
@@ -162,7 +162,7 @@ Notes, planning, and specs for my Home Assistant buildout.
 - [office-news-ticker.md](docs/native-dashboards/office-news-ticker.md)
 
   An auto-scrolling News card on `dashboard-office` for a display nobody can touch. Why a
-  `card-mod` CSS bolt-on turned out to be impossible once discrete pause-and-advance was chosen
+  CSS-only styling turned out to be impossible once discrete pause-and-advance was chosen
   (variable article-row heights defeat pure-CSS timed scrolling), why the fix is a small wrapper
   custom card rather than a hand-patched fork of `rss-news-card` itself, and the Playwright
   verification that watched it advance and wrap.
@@ -172,8 +172,8 @@ Notes, planning, and specs for my Home Assistant buildout.
   Replacing `dashboard-office`'s two `thermostat` cards with `custom:more-info-card`, so the
   dial-plus-humidity-plus-chips overlay a `thermostat` card's top-right icon normally hides behind
   a click renders inline instead. Why no native card combination reproduces that layout, the HACS
-  install, and the one cosmetic wart (a duplicated state-summary row) left unfixed because
-  `card-mod` is confirmed broken instance-wide right now.
+  install, and the one cosmetic wart (a duplicated state-summary row) left unfixed because it was
+  outside the scope of the UIX migration.
 
 ### Music Assistant
 

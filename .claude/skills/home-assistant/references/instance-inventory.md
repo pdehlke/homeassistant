@@ -82,7 +82,7 @@ Current as of 2026-08-11 (re-check with `lovelace/dashboards/list`, this list gr
 
 ## HACS frontend plugins installed
 
-As of 2026-08-11, stale before that: `thomasloven/lovelace-card-mod` v4.2.1, `rkotulan/ha-wall-clock-card` v3.4.0, `punxaphil/custom-sonos-card` v10.7.1, `r11a/homeii-music-flow` v5.9.3, `NemesisRE/kiosk-mode` v14.0.2, `pkissling/clock-weather-card` v2.9.4, and now `Big-Edge2297/homie-dashboard` v4.1.1 (the Homie Dashboard fork's upstream, tracked here as a HACS repository even though the deployed copy is pde's own fork, see `docs/homie-dashboard/homie-dashboard-install-plan.md`). Re-check via `hacs/repositories/list` rather than trusting this list either; it will go stale the same way the previous one did.
+As of 2026-08-15, the deprecated `thomasloven/lovelace-card-mod` v4.2.1 resource has been replaced by UIX v8.0.1 and must not be reinstalled. The remaining HACS inventory is `rkotulan/ha-wall-clock-card` v3.4.0, `punxaphil/custom-sonos-card` v10.7.1, `r11a/homeii-music-flow` v5.9.3, `NemesisRE/kiosk-mode` v14.0.2, `pkissling/clock-weather-card` v2.9.4, and `Big-Edge2297/homie-dashboard` v4.1.1 (the Homie Dashboard fork's upstream, tracked here as a HACS repository even though the deployed copy is pde's own fork, see `docs/homie-dashboard/homie-dashboard-install-plan.md`). Re-check via `hacs/repositories/list` rather than trusting this list; it will go stale.
 
 ## Things previously created here
 
