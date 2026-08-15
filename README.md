@@ -172,8 +172,8 @@ Notes, planning, and specs for my Home Assistant buildout.
   Replacing `dashboard-office`'s two `thermostat` cards with `custom:more-info-card`, so the
   dial-plus-humidity-plus-chips overlay a `thermostat` card's top-right icon normally hides behind
   a click renders inline instead. Why no native card combination reproduces that layout, the HACS
-  install, and the one cosmetic wart (a duplicated state-summary row) left unfixed because it was
-  outside the scope of the UIX migration.
+  install, and the cosmetic wart (a duplicated state-summary row) later fixed with a UIX rule
+  hiding `state-card-content`.
 
 ### Music Assistant
 

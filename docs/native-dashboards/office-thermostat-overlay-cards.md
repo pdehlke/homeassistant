@@ -83,3 +83,59 @@ just below. The popup version doesn't show this line; it's `ha-dialog`'s own hea
 takes its place there. The community thread that pointed at this card also documents the fix,
 hiding `state-card-content` via CSS. It was not applied here. If this wart is revisited, use UIX,
 not the deprecated card-mod mechanism, and verify the result from computed style.
+
+## Fixed 2026-08-15: duplicate summary row hidden with UIX
+
+Filed as [#5](https://github.com/pdehlke/homeassistant/issues/5), closed the same day. The wart
+above stands as the original build note; this section records the fix on top of it rather than
+rewriting it away.
+
+Confirmed live via Playwright before writing any selector, per the issue's own requirement: each
+`more-info-card`'s own shadow root (no nested shadow boundary to pierce) contains
+
+```html
+<ha-card>
+  <div class="card-content">
+    <state-card-content></state-card-content>
+    <more-info-content></more-info-content>
+  </div>
+</ha-card>
+```
+
+`state-card-content` is the whole redundant block (icon, entity name, hvac-action text, and the
+`Currently: X / Y` line); `more-info-content` is everything else (current temperature/humidity
+readout, dial, +/- buttons, hvac-mode icon toggles, Mode/Preset/Fan chip row). Hiding
+`state-card-content` outright, rather than trying to isolate just the literally-duplicated
+`Currently:` half, was a deliberate choice: the row also carries the hvac-action word ("Idle") and
+the preset's numeric range ("62-78°F"), neither shown elsewhere on the card, but the issue asked
+for the whole row gone and the entity name is already redundant with the card's own `title`.
+
+Verified live with a temporary unsaved DOM style injection before touching the saved config, then
+applied for real with a `uix` key added to each card, flat-string form since the target is in the
+card's own top-level shadow root (no `$`-piercing selector needed, unlike the FullCalendar fix
+elsewhere in this repo):
+
+```json
+{
+  "type": "custom:more-info-card",
+  "entity": "climate.casasolar_south_zone_1",
+  "title": "Main House",
+  "theme": "Liquid Glass",
+  "uix": {
+    "style": "state-card-content { display: none !important; }"
+  }
+}
+```
+
+Same `uix` block added to the North card (`climate.casasolar_north_zone_1`, "Office Wing"), no
+`theme` key, matching its pre-existing asymmetry with South. Applied with `scripts/apply-card.py`,
+one save per card, matched on `type: custom:more-info-card` plus `entity`, dry-run before each
+real save.
+
+Confirmed by screenshot: both cards keep current temperature, current humidity, the dial, +/-
+buttons, hvac-mode icon toggles, and the Mode/Preset/Fan chip row, with the redundant row gone and
+each card correspondingly shorter. Spot-checked the `dashboard-office` calendar card (the
+FullCalendar `$`-piercing UIX fix recorded in `references/lovelace.md`) on the same page load; its
+tinted background was still applying, so this change did not destabilize UIX elsewhere on the
+dashboard. The only browser console errors on reload were the pre-existing duplicate
+`rss-news-card` registration and its related 404, both already on record as unrelated.
