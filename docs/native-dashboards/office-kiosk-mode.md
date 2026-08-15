@@ -33,6 +33,38 @@ navigation for a hidden header to break). It is a single-screen kiosk display, t
 `homie-dash`, so it gets the same both-flags treatment `homie-dash` uses rather than Home's
 sidebar-only carve-out.
 
+## Recurrence: the block was silently dropped by the Lovelace UI editor
+
+Confirmed gone about seven minutes after the "Verification" read-back below, with no
+`lovelace/config/save` call from this skill's scripts in between; the only thing that happened to
+`dashboard-office` in that window was pde opening it in the Lovelace UI to look at the clock-card
+change from [office-clock-card.md](office-clock-card.md). Confirmed by pde directly: that's what
+happened.
+
+`kiosk_mode` lives at the root of the saved config, a sibling of `views`, and `NemesisRE/kiosk-mode`
+is the only thing that reads it; nothing in Home Assistant's own dashboard schema knows the key
+exists. The Lovelace UI editor's save path evidently doesn't round-trip arbitrary top-level keys the
+way the WebSocket `lovelace/config/save` command does when driven directly: opening the dashboard in
+the graphical editor and working in there, even to look at an unrelated card rather than to change
+`kiosk_mode` itself, was enough to trigger a save that reconstructs the config from the editor's own
+model, and that model has no slot for `kiosk_mode`, so it isn't in the object that gets written back.
+Exactly which editor action inside that session triggered the save (opening edit mode itself, versus
+some specific interaction within it) wasn't narrowed down further.
+
+This isn't unique to `dashboard-office`. `homie-dash` and the standalone domain dashboards
+(`dashboard-home.md`) carry the same kind of root-level `kiosk_mode` block, added the same way, and
+are exposed to the same risk: any of them can lose their kiosk chrome silently the next time someone
+opens them in the graphical editor, without touching YAML mode at all. Recorded as
+[ADR-0061](../adr/0061-kiosk-mode-lost-on-gui-edit-reapply-dont-prevent.md), since the practical
+mitigation is procedural (re-check and reapply after any GUI edit to a kiosk_mode-bearing dashboard)
+rather than something fixable in the block's own config.
+
+Re-applied with the same script used originally, now promoted from a scratch one-off into
+`scripts/add-kiosk-mode.py` in this skill, since ADR-0061's mitigation is exactly "reapply after
+every GUI edit" and that deserves a real tool rather than a rewritten one-liner each time. Reverified
+present in the same read that confirmed the clock and Upcoming Events changes from the same session
+were untouched by the loss.
+
 ## Verification
 
 Confirmed by reading `dashboard-office`'s saved config back over the WebSocket API immediately

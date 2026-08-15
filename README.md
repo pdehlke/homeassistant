@@ -178,8 +178,9 @@ Notes, planning, and specs for my Home Assistant buildout.
 - [office-kiosk-mode.md](docs/native-dashboards/office-kiosk-mode.md)
 
   A `kiosk_mode` block on `dashboard-office`, scoped to the `office` user, hiding the native header
-  and sidebar. The same fix already applied to `homie-dash` for the Homie Dashboard user, and why
-  it gets both `hide_header` and `hide_sidebar` rather than Home's sidebar-only carve-out.
+  and sidebar. The same fix already applied to `homie-dash` for the Homie Dashboard user, why it
+  gets both `hide_header` and `hide_sidebar` rather than Home's sidebar-only carve-out, and how it
+  was silently dropped by the Lovelace UI editor and had to be reapplied (see ADR-0061).
 
 - [office-clock-card.md](docs/native-dashboards/office-clock-card.md)
 
@@ -187,6 +188,12 @@ Notes, planning, and specs for my Home Assistant buildout.
   to get text bigger than the native card's capped `large` size. Why a UIX font-size override was
   rejected in favor of the swap, the sizing chosen by eye against a live screenshot, and a
   console-noise quirk in the installed card version that isn't a real bug.
+
+- [office-upcoming-events-font.md](docs/native-dashboards/office-upcoming-events-font.md)
+
+  Enlarging the event rows on `dashboard-office`'s Upcoming Events card via a UIX rule targeting
+  `.single-event-container`, a class found by reading the card's live shadow DOM rather than
+  guessed from its docs, and why it grows the event text without touching the card's own header.
 
 ### Music Assistant
 

@@ -13,6 +13,11 @@ REST cannot read or write dashboards. Use WebSocket:
 - `scripts/apply-card.py` swaps a single card matching a `type` (and optional `entity`), refuses to write unless it matched exactly one.
 - `scripts/append_section.py` adds one new section to a view, refuses to write unless the existing section count matches what you told it to expect.
 - `scripts/replace_section.py` overwrites one section by index, for iterating on a section you just added without duplicating it.
+- `scripts/add-kiosk-mode.py` adds a root-level `kiosk_mode` block scoped to one user's display
+  name, refuses to write if one is already present. Also the reapply tool for
+  [ADR-0061](../../../docs/adr/0061-kiosk-mode-lost-on-gui-edit-reapply-dont-prevent.md): the
+  Lovelace UI editor doesn't round-trip this key, so any GUI edit to a kiosk_mode-bearing dashboard
+  can silently drop it. Re-run with the same arguments to restore it.
 
 ```bash
 export HA_URL=http://hass.ehlke.net:8123
@@ -27,6 +32,9 @@ python3 scripts/append_section.py new-section.json
 
 python3 scripts/replace_section.py 3 revised-section.json --dry-run   # index is 0-based
 python3 scripts/replace_section.py 3 revised-section.json
+
+python3 scripts/add-kiosk-mode.py dashboard-office Office --dry-run
+python3 scripts/add-kiosk-mode.py dashboard-office Office
 ```
 
 ## Sections grid math
