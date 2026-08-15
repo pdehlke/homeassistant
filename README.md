@@ -181,6 +181,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   and sidebar. The same fix already applied to `homie-dash` for the Homie Dashboard user, and why
   it gets both `hide_header` and `hide_sidebar` rather than Home's sidebar-only carve-out.
 
+- [office-clock-card.md](docs/native-dashboards/office-clock-card.md)
+
+  Swapping `dashboard-office`'s clock from the native `type: clock` card to `custom:wall-clock-card`
+  to get text bigger than the native card's capped `large` size. Why a UIX font-size override was
+  rejected in favor of the swap, the sizing chosen by eye against a live screenshot, and a
+  console-noise quirk in the installed card version that isn't a real bug.
+
 ### Music Assistant
 
 - [homeii-music-flow.md](docs/music-assistant/homeii-music-flow.md)
