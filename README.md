@@ -368,6 +368,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   differently. Built via a `/grill-with-docs` session; see `docs/agents/domain.md` for how agent
   skills are expected to consume it.
 
+- [docs/adr/](docs/adr/)
+
+  Architecture decision records: short, sequentially numbered writeups of individual hard-to-reverse
+  decisions from across every subsystem, each citing the fuller topic document it was drawn from.
+  Backfilled from a `CONTEXT.md` domain-modeling session; genuinely open questions are deliberately
+  left out rather than recorded as settled.
+
 - [CLAUDE.md](CLAUDE.md)
 
   Repo conventions for coding agents. Meta, rather than documentation about Home Assistant.
