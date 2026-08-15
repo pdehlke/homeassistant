@@ -1,5 +1,41 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-15 (Music chip: unavailable-entity handling shipped)
+
+Follow-up to the outage checkpoint directly below: even though that outage turned out to be
+transient and not a chip code bug, the underlying gap it exposed was real and permanent.
+`togglePopupMusic` always ended with an unconditional optimistic
+`bubble.classList.toggle("on", !wasOn)`, regardless of whether any of the service calls above it
+could have done anything. `haService()` swallows fetch errors by design, so whenever the target
+`media_player` is `unavailable`, every one of those calls was a silent no-op and the bubble still
+flashed "on" before reverting once the real state synced back — the precise "plays for a few
+seconds then reverts" symptom, and it will happen again on any future outage unless the target is
+unreachable for some other reason next time.
+
+Fixed by checking the target's live cached state before doing anything: `unavailable` (or no
+cached state at all) now skips every service call and the optimistic toggle entirely, with a light
+haptic tick so the tap doesn't feel dead. Both render paths (`openPopup`'s initial bubble HTML and
+`refreshOpenMusicPopup`'s live sync) also toggle a `.disabled` class on the same check, reusing the
+app's existing muted-red "can't use this right now" language from `.popup-item.disabled` and
+`.ov3-garden-irr-btn.disabled`, so an unreachable station reads as visibly inert before it's even
+tapped, not just after. Scoped to the Music chip's station-bubble flow only — the A/V chip's Music
+Assistant browser/player-picker is a structurally different flow and wasn't touched.
+
+TDD'd: 5 new tests (90/90 passing), against the existing `loadMusicToggle` harness plus the
+established source-slice/regex pattern already used elsewhere in this file for `openPopup` and
+`refreshOpenMusicPopup`. Deployed as `20260815.1`, checksum-verified against the live host.
+Verified two ways as the `homie` user via Playwright: visually, by forcing Crestron's client-side
+cached state to `unavailable` (no real device touched) and confirming the bubbles show the disabled
+treatment; and behaviorally, by calling the tap handler directly against that state and confirming
+zero `/api/services/*` calls fire and the bubble never gets the `on` class. Committed to the fork
+(`1843315`).
+
+A separate automation, `automation.recover_stuck_media_players_after_restart`, was also built the
+same session to auto-recover integrations that stay `unavailable` after a restart rather than
+merely reconnecting on their own. Full writeup, including a `continue_on_error` dead end that
+looked right and wasn't, in
+[media-player-restart-recovery.md](../device-alerts/media-player-restart-recovery.md).
+
 ## Checkpoint: 2026-08-15 (Music/A/V chip outage traced to an unclean host restart, not a code bug)
 
 pde reported that, as the `homie` user, the Music and A/V chips stopped working sometime between

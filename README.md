@@ -69,6 +69,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   automation tried first, and the strategy change that replaced it: deriving Overview A/B's status
   pill from battery and cleaning state instead of trusting the fields proven to get stuck.
 
+- [media-player-restart-recovery.md](docs/device-alerts/media-player-restart-recovery.md)
+
+  Automation and helper script that reload any `media_player` left `unavailable` after an HA
+  restart and notify in-app if that doesn't fix it. Covers the 2026-08-15 outage that prompted it,
+  and a `continue_on_error` dead end that looked right and wasn't: some integrations reject reload
+  in a way that flag doesn't catch, fixed with a fire-and-forget helper script instead.
+
 ### Rachio
 
 - [rachio-zone-disabled-alert.md](docs/rachio/rachio-zone-disabled-alert.md)
