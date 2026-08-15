@@ -175,6 +175,12 @@ Notes, planning, and specs for my Home Assistant buildout.
   install, and the cosmetic wart (a duplicated state-summary row) later fixed with a UIX rule
   hiding `state-card-content`.
 
+- [office-kiosk-mode.md](docs/native-dashboards/office-kiosk-mode.md)
+
+  A `kiosk_mode` block on `dashboard-office`, scoped to the `office` user, hiding the native header
+  and sidebar. The same fix already applied to `homie-dash` for the Homie Dashboard user, and why
+  it gets both `hide_header` and `hide_sidebar` rather than Home's sidebar-only carve-out.
+
 ### Music Assistant
 
 - [homeii-music-flow.md](docs/music-assistant/homeii-music-flow.md)
