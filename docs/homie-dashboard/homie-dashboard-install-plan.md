@@ -1,5 +1,61 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-15 (Music/A/V chip outage traced to an unclean host restart, not a code bug)
+
+pde reported that, as the `homie` user, the Music and A/V chips stopped working sometime between
+dinner the previous evening and the next morning: tapping a station bubble showed its "playing"
+form for a few seconds, then reverted to "off," no audio ever started, and the Music Assistant web
+UI showed nothing playing either.
+
+Root cause: the HA host underwent an unclean restart around 08:46 local on 2026-08-15. The
+recorder log shows `Ended unfinished session (id=21 from 2026-08-14 18:07:18)` and a warning that
+`home-assistant_v2.db` "could not validate... was shutdown cleanly," both signatures of a hard
+restart rather than a graceful `ha core restart`. `core/info` reports `watchdog: true` and no
+Core or OS update was actually applied (Core stayed on `2026.8.1`, OS on `18.2`, no completed
+Supervisor jobs), so this reads as a watchdog-triggered restart rather than an update reboot.
+
+At 08:47:15 local, `music_assistant_client.connection` logged `Failed to connect to
+ws://d5369777-music-assistant:8094/ws`: first a DNS timeout resolving the add-on's internal
+hostname, then a refused connect to its cached IP. `media_player.crestron`, `.carol`, `.carol_2`,
+and `.gymnasium` all flipped to `unavailable` in the same second. Supervisor's Resolution Center
+independently reports `dns_server_failed` for both configured upstream resolvers (`9.9.9.9`,
+`149.112.112.112`) plus IPv6 DNS errors for both, consistent with the DNS timeout in that log line.
+Both of pde's own attempts that morning landed inside this recovery window: `carol_2` at 08:42
+(played 8 seconds, reverted), and the Music chip's Crestron target at 09:13 (played 24 seconds,
+paused, then idle). In both cases Music Assistant accepted the play call and briefly reported
+"playing," but the underlying stream never actually established, so the entity reverted within
+seconds. That is the exact symptom pde described.
+
+By the time this was investigated (~09:30 local), the system had already recovered on its own.
+Verified two ways:
+
+- Direct `music_assistant.play_media` and `get_queue` calls against `media_player.crestron`
+  sustained real playback: `elapsed_time` advanced correctly and the track title changed as the
+  station progressed.
+- A full cold-start reproduction through the live UI, logged in as `homie` via Playwright with a
+  fresh browser session (no prior state carried over): Harmony Hub powered off first to match the
+  failure precondition, then the actual "Jazz: Hiromi" station bubble under the Music chip was
+  clicked. Harmony's Airplay activity switched cold, volume set, and playback started and held for
+  36+ seconds of real, advancing audio. Same result on the A/V chip's Music Assistant browser path.
+
+No defect found in `togglePopupMusic` or the Harmony-then-play sequence added in `43831a9`
+(2026-08-13). The chip code does not wait for Harmony's activity to finish before calling
+`play_media`, which is a latent race in principle, but it did not reproduce here even from a cold
+Harmony state; the actual failure window lines up with the connection outage, not with chip
+timing. No fork changes were made; this is a documentation-only checkpoint.
+
+Two things noticed along the way, left open rather than acted on:
+
+- `media_player.carol` and `media_player.carol_2` (bedroom Sonos-side and MA-side) and
+  `media_player.gymnasium` (Apple TV) were still `unavailable` as of this investigation, stuck
+  since the 08:47 restart while `crestron` and the LSX recovered within about a minute. These may
+  need a manual integration/device reload rather than more waiting.
+- Supervisor's `dns_server_failed`/`dns_server_ipv6_error` issues were still listed in the
+  Resolution Center at investigation time, but the MA and Core update-channel checks were
+  returning fresh version numbers, meaning outbound DNS is not currently broken. This looks like a
+  latched issue from the reboot rather than a live outage, but it is the same failure class that
+  caused this morning's break and is worth a look if the chips misbehave again after a restart.
+
 ## Checkpoint: 2026-08-13 (Music chip routes receiver through Harmony Airplay)
 
 The Music chip now starts the Harmony Hub's `Airplay` activity before setting the Crestron player
