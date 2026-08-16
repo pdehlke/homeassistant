@@ -302,9 +302,11 @@ and never sets a scrim color at all, even though `visionos` already blurs cards 
 its own `--ha-card-backdrop-filter` elsewhere in the same theme, so the dialog scrim reads like an
 unfinished variable in that theme rather than an intentional choice. Nothing about this is
 Homie-specific: any account on `visionos` would see the same flat, unblurred dialog backdrop
-anywhere in Home Assistant, not just from Homie's Climate chip. That includes the `Tablet` kiosk
-account (see `dashboard-home.md`), which is also on `visionos` and opens native more-info dialogs
-of its own from Home's native Lennox thermostat cards, not just from Homie Dash.
+anywhere in Home Assistant, not just from Homie's Climate chip. That included the `Tablet` kiosk
+account, which was also on `visionos` and opened native more-info dialogs of its own from the
+now-retired Home dashboard's native Lennox thermostat cards (see
+[native-dashboards-retired.md](../native-dashboards/native-dashboards-retired.md)), not just from
+Homie Dash.
 
 Given the choice between fixing `visionos`'s theme definition (fixes every dialog on that theme
 everywhere), scoping a CSS override to just Homie's own dialog-open flow (fixes only what Homie

@@ -83,10 +83,7 @@ other docs.
   overkill for.
 - **`harmony.change_channel`.** A one-shot "go to channel N" action with no equivalent
   elsewhere in this instance's A/V setup. Would slot naturally into a Homie Dash A/V
-  tab if one gets built; see `dashboard-av` in the domain-dashboard set documented in
-  [dashboard-navigation-model.md](../native-dashboards/dashboard-navigation-model.md),
-  though that dashboard is generator-built from native HA entities and doesn't
-  currently include this device either.
+  chip if one gets built there.
 
 ## Sources
 

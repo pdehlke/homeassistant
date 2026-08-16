@@ -122,41 +122,12 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 ### Native Dashboards
 
-- [dashboard-navigation-model.md](docs/native-dashboards/dashboard-navigation-model.md)
+- [native-dashboards-retired.md](docs/native-dashboards/native-dashboards-retired.md)
 
-  How dashboards are organised: a three-level hierarchy copied from the Crestron touch panels,
-  domain then area then a single domain in a single area. Why every area gets a card but only
-  populated ones are tappable, why presets target areas rather than entities, how the generator is
-  parameterised per subsystem, and what A/V needed that the parameterisation could not express.
-
-- [dashboard-header-card.md](docs/native-dashboards/dashboard-header-card.md)
-
-  The date, time and weather banner shared by the domain dashboards. Why the clock and date swapped
-  places without the slots changing size, why a view header renders only on `sections` views and is
-  silently ignored by `masonry`, and why UIX rules need `!important` to beat a card's own
-  stylesheet.
-
-- [dashboard-home.md](docs/native-dashboards/dashboard-home.md)
-
-  Home, the tabbed dashboard the Tablet kiosk user actually lands on: why a native tab strip
-  replaced the short-lived Tablet Home root dashboard, the session dance needed to set another
-  user's default dashboard and theme, why Home hides only the sidebar and not the header, and the
-  build status of each tab (Lights self-contained and generator-built, Climate hand-copied and
-  generator-pending, A/V and Alarm not yet built).
-
-- [vision-sample-demo-entities.md](docs/native-dashboards/vision-sample-demo-entities.md)
-
-  Populating the Vision Sample dashboard's placeholder entities so its cards show live controls
-  instead of the theme's demo-integration stand-ins. Which entities were actually missing, why
-  the real `demo` integration and the newly-installed Blueprint Studio HACS integration were
-  both set aside, and the tilt-support gap in config-flow template covers.
-
-- [vision-sample-pergola-solar-gauge.md](docs/native-dashboards/vision-sample-pergola-solar-gauge.md)
-
-  Replacing the Vision Sample dashboard's Pergola Roof placeholder with a live solar/grid-export
-  gauge sourced from the Sense energy monitor. Other real entities considered for the spot, why
-  the unnamed `sense_287516` node is actually the mains meter, and why the second gauge reads
-  gross daily export rather than a net figure that doesn't exist as its own sensor.
+  Retrospective on Home (`vision-sample`) and the standalone domain dashboards (`dashboard-lights`,
+  `dashboard-av`, `dashboard-lennox-home`, `dashboard-alarm-system`): the Crestron-mirrored
+  three-level hierarchy they implemented, the presets/scenes/labels/generator design behind them,
+  and why the whole pattern was retired in favor of Homie Dashboard. See ADR-0062.
 
 - [office-now-playing-footer.md](docs/native-dashboards/office-now-playing-footer.md)
 

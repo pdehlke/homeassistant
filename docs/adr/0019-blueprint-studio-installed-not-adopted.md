@@ -6,4 +6,4 @@ adopted for that purpose: unlike every other custom component here (card-mod/UIX
 kiosk-mode, sonos-card, music-flow), all of which are frontend-only, browser-side Lovelace code,
 Blueprint Studio is a server-side integration with unsandboxed read/write access across the whole
 `/config` directory — a different risk class, flagged to pde directly rather than used
-unilaterally. See `docs/native-dashboards/vision-sample-demo-entities.md`.
+unilaterally. See `docs/native-dashboards/native-dashboards-retired.md`.

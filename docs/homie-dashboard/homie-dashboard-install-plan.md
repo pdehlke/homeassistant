@@ -260,10 +260,10 @@ VOL DOWN, MUTE, and VOL UP each produced the expected audible result. 75/75 test
 The Climate chip's overlay kept its Main House / Office Wing room tabs, but everything below
 them is rebuilt to match the content and functionality of Home Assistant's native climate
 more-info dialog, reached by tapping "Show more information" on either `thermostat` card on
-the `Lennox Home` dashboard or the `Home` dashboard's Climate tab (both covered in
-[dashboard-header-card.md](../native-dashboards/dashboard-header-card.md) and
-[dashboard-home.md](../native-dashboards/dashboard-home.md)), styled to Homie's existing
-dark/glow aesthetic rather than HA's own chrome. Added: a current temperature/humidity readout row,
+the now-retired `Lennox Home` dashboard or the also-retired `Home` dashboard's Climate tab (see
+[native-dashboards-retired.md](../native-dashboards/native-dashboards-retired.md)), styled to
+Homie's existing dark/glow aesthetic rather than HA's own chrome. Added: a current
+temperature/humidity readout row,
 mode buttons built from the entity's own `hvac_modes` instead of a static list, a
 temperature/humidity dial toggle with a working humidity target control, a preset control
 showing the entity's raw `preset_modes` verbatim in a tap-to-expand list, and a fan mode
@@ -469,8 +469,10 @@ rounding.
 
 Fixed on the Home Assistant side: added a `kiosk_mode` block to `homie-dash`'s saved dashboard
 config, scoped to `users: ["Homie Dashboard"]` (display name; username `homie`), setting
-`hide_header` and `hide_sidebar`. Same per-user mechanism already used for `Tablet` on the domain
-dashboards, see [dashboard-home.md](../native-dashboards/dashboard-home.md). Verified live with Playwright, once as the
+`hide_header` and `hide_sidebar`. Same per-user mechanism already used for `Tablet` on the
+now-retired domain dashboards, see
+[native-dashboards-retired.md](../native-dashboards/native-dashboards-retired.md). Verified live
+with Playwright, once as the
 `Homie Dashboard` user (its own long-lived token, not its password) and once as `Pete` (admin): the
 `homie-dash` iframe measures `x:0, y:0, w:1280, h:800` for Homie Dashboard and unchanged
 `x:256, y:56, w:1024, h:744` for Pete, confirming the fix applies only to the intended account and

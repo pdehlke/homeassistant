@@ -8,7 +8,7 @@ Server add-on), and `demo:` is YAML-only besides, with a fixed entity set that d
 room names. `switch_as_x` was also rejected for lights specifically: its entity selector is hard
 filtered to `domain: ["switch"]`, so an `input_boolean` can't feed it. See
 `docs/areas-and-entities/light-entity-strategy.md` and
-`docs/native-dashboards/vision-sample-demo-entities.md`.
+`docs/native-dashboards/native-dashboards-retired.md`.
 
 ## Consequences
 

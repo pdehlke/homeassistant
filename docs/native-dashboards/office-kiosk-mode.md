@@ -16,17 +16,18 @@ kiosk_mode:
 
 Added at the root of `dashboard-office`'s saved config, a sibling of `views`, matching where the
 `NemesisRE/kiosk-mode` plugin expects it (per dashboard, not global) and how it matches accounts
-(display name, not username; see [dashboard-home.md](dashboard-home.md)'s "Kiosk chrome" section
-for the plugin background). This is the same fix already applied to `homie-dash` for the `Homie
-Dashboard` user, see
+(display name, not username; see [native-dashboards-retired.md](native-dashboards-retired.md) for
+the plugin background, first established on the now-retired standalone domain dashboards). This is
+the same fix already applied to `homie-dash` for the `Homie Dashboard` user, see
 [homie-dashboard-install-plan.md](../homie-dashboard/homie-dashboard-install-plan.md)'s "Overview C
 vertical overflow" section.
 
 ## Why both `hide_header` and `hide_sidebar`, not `hide_sidebar` alone
 
-`dashboard-home.md` documents a real exception to the usual both-flags pattern: Home is a
-multi-view dashboard whose native header carries the tab strip, so hiding the header there would
-have taken the only navigation between tabs with it. `dashboard-office` doesn't have that problem.
+The now-retired Home dashboard was a real exception to the usual both-flags pattern (see
+[native-dashboards-retired.md](native-dashboards-retired.md)): it was a multi-view dashboard whose
+native header carried the tab strip, so hiding the header there would have taken the only
+navigation between tabs with it. `dashboard-office` doesn't have that problem.
 Its saved config has exactly one view (confirmed by reading it back over the WebSocket API before
 making this change: `views` is a one-element array with a null `title`/`path`, i.e. no tab
 navigation for a hidden header to break). It is a single-screen kiosk display, the same shape as
@@ -51,10 +52,11 @@ model, and that model has no slot for `kiosk_mode`, so it isn't in the object th
 Exactly which editor action inside that session triggered the save (opening edit mode itself, versus
 some specific interaction within it) wasn't narrowed down further.
 
-This isn't unique to `dashboard-office`. `homie-dash` and the standalone domain dashboards
-(`dashboard-home.md`) carry the same kind of root-level `kiosk_mode` block, added the same way, and
-are exposed to the same risk: any of them can lose their kiosk chrome silently the next time someone
-opens them in the graphical editor, without touching YAML mode at all. Recorded as
+This isn't unique to `dashboard-office`. `homie-dash` carries the same kind of root-level
+`kiosk_mode` block, added the same way, and is exposed to the same risk: any dashboard carrying one
+can lose its kiosk chrome silently the next time someone opens it in the graphical editor, without
+touching YAML mode at all (the now-retired standalone domain dashboards had the same exposure; see
+[native-dashboards-retired.md](native-dashboards-retired.md)). Recorded as
 [ADR-0061](../adr/0061-kiosk-mode-lost-on-gui-edit-reapply-dont-prevent.md), since the practical
 mitigation is procedural (re-check and reapply after any GUI edit to a kiosk_mode-bearing dashboard)
 rather than something fixable in the block's own config.
