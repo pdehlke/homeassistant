@@ -1,5 +1,24 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-16 (Steel Blue default deployed)
+
+The Homie Dashboard one-time browser default changed from Classic Gold to Steel Blue. The fork's
+`dist/config.js` now sets `uiDefaults.theme` to `blue`, and the bundled HTML's defensive theme
+fallbacks use Steel Blue as well. Existing browser choices remain unchanged because the defaults
+are applied only through the existing versioned migration marker.
+
+Deployed as release `20260816.1`. Before deployment, the live HTML and token-bearing `config.js`
+were backed up under `/config/www/community/homie-dashboard/` with timestamp suffix
+`20260816-093040`. The source config's placeholder was replaced on the Home Assistant host using
+the existing live token; the token was not printed or copied into the fork. The `homie-dash`
+Lovelace iframe URL was updated to `?v=20260816.1`, with a local backup at
+`/Users/pde/tmp/homie-dash-lovelace.bak-20260816-theme.json`.
+
+Verification completed: the served `homie-dashboard.html` SHA-256 matches the fork's local
+`dist/homie-dashboard.html`; the served release token is `20260816.1`; the served `config.js`
+reports `theme: "blue"` and contains a live token rather than the repository placeholder. Visual
+verification on the actual device remains pde's next step.
+
 ## Checkpoint: 2026-08-15 (Music chip: unavailable-entity handling shipped)
 
 Follow-up to the outage checkpoint directly below: even though that outage turned out to be
@@ -756,7 +775,7 @@ The live `config.js` now defines:
 - Real light entities grouped by HA area, excluding demo and aggregate lights.
 - Main House and Office Wing thermostat labels.
 - Five irrigation zones, including the temporarily unavailable Back Yard controller.
-- Classic Gold, Screen A, vivid gradient, and 12-hour time as one-time browser defaults.
+- Steel Blue, Screen A, vivid gradient, and 12-hour time as one-time browser defaults.
 
 The deployed copy contains a real HA token. Any future repository copy must replace it with `YOUR_LONG_LIVED_ACCESS_TOKEN` before staging.
 
