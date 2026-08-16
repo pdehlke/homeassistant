@@ -111,6 +111,9 @@ chosen instead of any of its four.
 - `script.smart_toggle_lights` and the `bath`/`bedroom` labels.
 - `rebuild-domain-dashboard.py` and `rebuild-home-tab.py`.
 
+Every dashboard config, the script config, and the label/entity assignments were backed up to
+`/Users/pde/tmp/native-dashboards-retired-backup-20260816/` before deletion.
+
 Untouched: `dashboard-office` and its docs, `dashboard-sound`, `dashboard-clock`, `dashboard-test`,
 the `Homie Dashboard` and `Office` HA users, and `homie-dash` itself — none of these are part of the
 retired pattern.
