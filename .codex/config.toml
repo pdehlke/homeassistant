@@ -6,6 +6,7 @@ additional_directories = ["/Users/pde/src/github.com/pdehlke/homie-dashboard"]
 [sandbox_workspace_write]
 writable_roots = [
 	"/Users/pde/src/github.com/pdehlke/homeassistant/.git",
+	"/Users/pde/src/github.com/pdehlke/homie-dashboard",
 	"/Users/pde/src/github.com/pdehlke/homie-dashboard/.git",
 	"/Users/pde/src/github.com/pdehlke/homeassistant/.codex",
 	"/Users/pde/src/github.com/pdehlke/homie-dashboard/.codex",
