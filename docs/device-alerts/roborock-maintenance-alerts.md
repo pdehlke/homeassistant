@@ -89,12 +89,12 @@ exist under their stable IDs. No phone notification service should appear in the
 - Consumes the four numeric sensor states listed above.
 - Produces four independent Home Assistant interface notifications with automatic dismissal.
 
-- [ ] **Step 1: Verify the behavior is absent**
+- [x] **Step 1: Verify the behavior is absent**
 
   Read `/api/config/automation/config/roborock_maintenance_alerts`, the automation entity, and
   `persistent_notification/get`. Confirm no automation or notification with the planned IDs exists.
 
-- [ ] **Step 2: Create the minimal live automation**
+- [x] **Step 2: Create the minimal live automation**
 
   Submit this payload to `/api/config/automation/config/roborock_maintenance_alerts`:
 
@@ -202,27 +202,49 @@ exist under their stable IDs. No phone notification service should appear in the
   }
   ```
 
-- [ ] **Step 3: Validate creation**
+- [x] **Step 3: Validate creation**
 
   Call `/api/config/core/check_config` and require `result: valid`. Confirm
   `automation.roborock_maintenance_alerts` is enabled. Read the saved configuration and require
-  exactly four `persistent_notification` actions and zero `notify.*` actions.
+  one `persistent_notification.create` definition, one `persistent_notification.dismiss`
+  definition, four stable notification IDs supplied by the loop, and zero `notify.*` actions.
 
-- [ ] **Step 4: Verify both reconciliation branches**
+- [x] **Step 4: Verify both reconciliation branches**
 
   Create a temporary `roborock_maintenance_main_brush` persistent notification while its counter is
   positive. Trigger `automation.roborock_maintenance_alerts` once with conditions skipped. Require
   the temporary main-brush notification to be dismissed, air-filter and sensor-cleaning
   notifications to exist, and no side-brush notification to exist.
 
-- [ ] **Step 5: Inspect execution evidence**
+- [x] **Step 5: Inspect execution evidence**
 
   Read the newest automation trace. Require `script_execution: finished` and no action errors. Read
   each resulting notification and confirm its displayed overdue hours agree with the corresponding
   live sensor value after rounding to one decimal place.
 
-- [ ] **Step 6: Record the verified result**
+- [x] **Step 6: Record the verified result**
 
   Add the live automation ID, verification date, resulting notification IDs, and observed checks to
   this document. Run `git diff --check`, secret-scan the staged change, and commit with a
   Conventional Commit containing a body.
+
+## Live result
+
+Created `automation.roborock_maintenance_alerts` on 2026-08-17. Home Assistant's configuration
+checker returned `valid` with no errors or warnings, and the automation entity was enabled. The
+saved configuration contained the four intended sensor IDs, one persistent-notification create
+definition, one persistent-notification dismiss definition, and no `notify.*` action.
+
+The initial reconciliation exercised both action branches. A temporary
+`roborock_maintenance_main_brush` notification was dismissed while its counter was positive. The
+positive side-brush counter produced no notification. The two negative counters produced these
+on-screen notifications:
+
+| Notification ID | Sensor state | Displayed overdue time |
+|---|---:|---:|
+| `roborock_maintenance_air_filter` | -79.7381 h | 79.7 h |
+| `roborock_maintenance_sensors` | -105.8564 h | 105.9 h |
+
+Trace run `58102b4f0726298955156601f2d7944a` finished with no action errors. The main-brush and
+side-brush notification IDs were absent after the run, and the two overdue notification messages
+matched their live counter states rounded to one decimal place.
