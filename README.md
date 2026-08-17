@@ -179,6 +179,19 @@ Notes, planning, and specs for my Home Assistant buildout.
   `.single-event-container`, a class found by reading the card's live shadow DOM rather than
   guessed from its docs, and why it grows the event text without touching the card's own header.
 
+### Synology NAS
+
+- [synology-nas-dashboard.md](docs/synology-nas/synology-nas-dashboard.md)
+
+  Design and live-deployment record for the read-only native Home Assistant dashboard monitoring
+  the current Synology appliance's health and capacity, including its shared health-summary
+  boundary, focused-trend starting point, and deferred full-observability direction.
+
+- [synology-nas-dashboard-implementation-plan.md](docs/synology-nas/synology-nas-dashboard-implementation-plan.md)
+
+  Ordered implementation, rollback, testing, live deployment, and visual-verification plan for the
+  standalone dashboard and shared health sensor.
+
 ### Music Assistant
 
 - [homeii-music-flow.md](docs/music-assistant/homeii-music-flow.md)

@@ -352,6 +352,26 @@ Home Assistant OS, the bare-metal install this instance runs today on the Pi and
 running on the Mac mini if that migration happens — chosen for the target machine specifically to
 keep the Supervisor and its add-on ingress, which Music Assistant depends on.
 
+### Synology NAS
+
+**Synology NAS dashboard**:
+A live read-only Home Assistant dashboard for the current Synology appliance's health and capacity,
+used primarily from the owner's authenticated desktop or mobile session. It was deployed on
+2026-08-17 at `dashboard-nas` with Overview and Trends views. A later Homie Dashboard chip may
+summarize NAS status, but is a separate surface built after the standalone dashboard is established.
+_Avoid_: Storage dashboard, infrastructure dashboard (both imply a broader system boundary).
+
+**NAS health summary**:
+The single Home Assistant-owned interpretation of whether the Synology NAS needs attention,
+implemented as `sensor.nas_health` and shared by the standalone dashboard and a later Homie
+Dashboard chip. Its four states are Healthy, Attention, Critical, and Unknown.
+_Avoid_: separate health calculations in each dashboard frontend.
+
+**NAS health state**:
+Healthy means all required evidence is present and within policy; Attention means a warning or
+Security Advisor finding; Critical means a known integrity failure or critical threshold; Unknown
+means required evidence is missing. Known Critical conditions outrank Unknown.
+
 ### Networking & remote access
 
 **`hass.ehlke.net` / `mass.ehlke.net`**:

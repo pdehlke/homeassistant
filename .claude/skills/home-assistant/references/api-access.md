@@ -174,6 +174,13 @@ jq -r '[.result.response.items[] | keys] | flatten | unique' out.json   # every 
 
 Required for Lovelace, registries, and HACS. Use the bundled client:
 
+Run authenticated commands with the working directory set to this `homeassistant` repository. If a
+temporary client lives under `/tmp`, invoke its absolute path while keeping the repository as the
+working directory. In this harness, changing the command working directory to `/tmp` removes
+`HA_TOKEN` from the child environment. Reassigning `HA_TOKEN` from that unset context passes an
+empty value and produces a misleading WebSocket authentication failure even though the launch
+session's token is valid.
+
 ```bash
 export HA_URL=http://hass.ehlke.net:8123
 python3 scripts/haws.py '{"type":"lovelace/dashboards/list"}'
