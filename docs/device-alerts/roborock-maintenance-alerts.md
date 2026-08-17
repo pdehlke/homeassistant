@@ -1,4 +1,29 @@
-# Roborock maintenance alerts
+# Roborock Maintenance Alerts Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this
+> plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Create separate Home Assistant interface notifications for each overdue Q5 Max+
+maintenance counter without sending phone alerts.
+
+**Architecture:** One live Home Assistant automation reconciles four stable persistent notification
+IDs from four numeric countdown sensors. Every sensor change and Home Assistant start evaluates all
+four items, creating overdue notifications, dismissing reset items, and preserving alerts through
+temporary unavailable states.
+
+**Tech Stack:** Home Assistant 2026.8.2 automation REST API, Jinja templates, persistent notification
+actions, and Home Assistant WebSocket trace and notification APIs.
+
+## Global constraints
+
+- Use only the four Q5 Max+ maintenance entities listed below.
+- Use only `persistent_notification.create` and `persistent_notification.dismiss` for user alerts.
+- Never call `notify.*`; no phone alert may be sent.
+- Keep one stable notification ID per maintenance item.
+- Treat numeric states at or below zero as due, numeric states above zero as reset, and
+  `unknown` or `unavailable` states as no change.
+
+---
 
 The Roborock integration exposes four maintenance countdown sensors for the Q5 Max+:
 
@@ -45,3 +70,159 @@ Validate the live automation with Home Assistant's configuration checker, confir
 enabled, trigger one reconciliation, and inspect the automation trace. Then read persistent
 notifications over Home Assistant's WebSocket API and confirm exactly the currently overdue items
 exist under their stable IDs. No phone notification service should appear in the automation.
+
+## Implementation task
+
+### Task 1: Live maintenance notification automation
+
+**Live objects:**
+
+- Create: automation config ID `roborock_maintenance_alerts`
+- Produce: entity `automation.roborock_maintenance_alerts`
+- Produce: persistent notification IDs `roborock_maintenance_main_brush`,
+  `roborock_maintenance_side_brush`, `roborock_maintenance_air_filter`, and
+  `roborock_maintenance_sensors`
+- Modify after verification: `docs/device-alerts/roborock-maintenance-alerts.md`
+
+**Interfaces:**
+
+- Consumes the four numeric sensor states listed above.
+- Produces four independent Home Assistant interface notifications with automatic dismissal.
+
+- [ ] **Step 1: Verify the behavior is absent**
+
+  Read `/api/config/automation/config/roborock_maintenance_alerts`, the automation entity, and
+  `persistent_notification/get`. Confirm no automation or notification with the planned IDs exists.
+
+- [ ] **Step 2: Create the minimal live automation**
+
+  Submit this payload to `/api/config/automation/config/roborock_maintenance_alerts`:
+
+  ```json
+  {
+    "id": "roborock_maintenance_alerts",
+    "alias": "Roborock maintenance alerts",
+    "description": "Creates separate in-app reminders when a Q5 Max+ maintenance counter reaches zero, dismisses each reminder after its counter is reset, and leaves reminders unchanged while a counter is unavailable. Never sends phone notifications.",
+    "triggers": [
+      {
+        "trigger": "state",
+        "entity_id": [
+          "sensor.q5_max_main_brush_time_left",
+          "sensor.q5_max_side_brush_time_left",
+          "sensor.q5_max_filter_time_left",
+          "sensor.q5_max_sensor_time_left"
+        ]
+      },
+      {
+        "trigger": "homeassistant",
+        "event": "start"
+      }
+    ],
+    "conditions": [],
+    "actions": [
+      {
+        "repeat": {
+          "for_each": [
+            {
+              "entity": "sensor.q5_max_main_brush_time_left",
+              "key": "main_brush",
+              "task": "Main brush replacement",
+              "instruction": "Replace the main brush, then reset its consumable counter."
+            },
+            {
+              "entity": "sensor.q5_max_side_brush_time_left",
+              "key": "side_brush",
+              "task": "Side brush replacement",
+              "instruction": "Replace the side brush, then reset its consumable counter."
+            },
+            {
+              "entity": "sensor.q5_max_filter_time_left",
+              "key": "air_filter",
+              "task": "Air filter replacement",
+              "instruction": "Replace the air filter, then reset its consumable counter."
+            },
+            {
+              "entity": "sensor.q5_max_sensor_time_left",
+              "key": "sensors",
+              "task": "Sensor cleaning",
+              "instruction": "Clean the vacuum sensors, then reset their consumable counter."
+            }
+          ],
+          "sequence": [
+            {
+              "variables": {
+                "counter_state": "{{ states(repeat.item.entity) }}"
+              }
+            },
+            {
+              "choose": [
+                {
+                  "conditions": [
+                    {
+                      "condition": "template",
+                      "value_template": "{{ is_number(counter_state) and (counter_state | float) <= 0 }}"
+                    }
+                  ],
+                  "sequence": [
+                    {
+                      "action": "persistent_notification.create",
+                      "data": {
+                        "notification_id": "roborock_maintenance_{{ repeat.item.key }}",
+                        "title": "Roborock maintenance due: {{ repeat.item.task }}",
+                        "message": "Q5 Max+ reports this task is overdue by {{ (0 - (counter_state | float)) | round(1) }} operating hours. {{ repeat.item.instruction }}"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "conditions": [
+                    {
+                      "condition": "template",
+                      "value_template": "{{ is_number(counter_state) and (counter_state | float) > 0 }}"
+                    }
+                  ],
+                  "sequence": [
+                    {
+                      "action": "persistent_notification.dismiss",
+                      "continue_on_error": true,
+                      "data": {
+                        "notification_id": "roborock_maintenance_{{ repeat.item.key }}"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "mode": "queued",
+    "max": 10
+  }
+  ```
+
+- [ ] **Step 3: Validate creation**
+
+  Call `/api/config/core/check_config` and require `result: valid`. Confirm
+  `automation.roborock_maintenance_alerts` is enabled. Read the saved configuration and require
+  exactly four `persistent_notification` actions and zero `notify.*` actions.
+
+- [ ] **Step 4: Verify both reconciliation branches**
+
+  Create a temporary `roborock_maintenance_main_brush` persistent notification while its counter is
+  positive. Trigger `automation.roborock_maintenance_alerts` once with conditions skipped. Require
+  the temporary main-brush notification to be dismissed, air-filter and sensor-cleaning
+  notifications to exist, and no side-brush notification to exist.
+
+- [ ] **Step 5: Inspect execution evidence**
+
+  Read the newest automation trace. Require `script_execution: finished` and no action errors. Read
+  each resulting notification and confirm its displayed overdue hours agree with the corresponding
+  live sensor value after rounding to one decimal place.
+
+- [ ] **Step 6: Record the verified result**
+
+  Add the live automation ID, verification date, resulting notification IDs, and observed checks to
+  this document. Run `git diff --check`, secret-scan the staged change, and commit with a
+  Conventional Commit containing a body.
