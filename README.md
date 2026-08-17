@@ -69,6 +69,12 @@ Notes, planning, and specs for my Home Assistant buildout.
   automation tried first, and the strategy change that replaced it: deriving Overview A/B's status
   pill from battery and cleaning state instead of trusting the fields proven to get stuck.
 
+- [roborock-maintenance-alerts.md](docs/device-alerts/roborock-maintenance-alerts.md)
+
+  Separate in-app reminders for the Q5 Max+'s main brush, side brush, air filter, and sensor-cleaning
+  countdowns. Covers stable notification IDs, automatic dismissal after counter reset, unavailable
+  sensor handling, and why dock maintenance is excluded.
+
 - [media-player-restart-recovery.md](docs/device-alerts/media-player-restart-recovery.md)
 
   Automation and helper script that reload any `media_player` left `unavailable` after an HA
