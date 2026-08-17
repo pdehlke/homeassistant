@@ -7,7 +7,7 @@ own state — confirmed live: with the bedroom lights on and bath lights off, ta
 On/Off button turned the bath on and the bedroom off, not the group one direction.
 `script.smart_toggle_lights` checks whether any entity in the target is currently on and turns the
 whole group off if so, on otherwise, so a single room-wide button makes one coherent decision for
-the group. See `docs/native-dashboards/native-dashboards-retired.md`.
+the group. See [docs/native-dashboards/native-dashboards-retired.md](../native-dashboards/native-dashboards-retired.md).
 
 ## Consequences
 

@@ -1,4 +1,4 @@
-# CLAUDE.md
+# [CLAUDE.md](./CLAUDE.md)
 
 Instructions for coding agents working in this repo.
 
@@ -55,7 +55,7 @@ same not-useful-without-network-access exception as the IP addresses above.
 - No em dashes.
 - Wrap prose at roughly 100 columns.
 - One topic per file. Name files in kebab-case after the topic, such as
-  `mac-mini-migration.md`.
+  [mac-mini-migration.md](./docs/hardware/mac-mini-migration.md).
 - Cite sources with inline links when a claim comes from vendor docs, an ADR, a
   repair guide, or a changelog. Version-specific and product-specific claims go
   stale, so a reader needs to see where the claim came from.
@@ -64,10 +64,10 @@ same not-useful-without-network-access exception as the IP addresses above.
 ## Repo layout
 
 Topical documents live under `docs/<topic>/`, grouped by subject (`crestron/`,
-`homie-dashboard/`, `rachio/`, and so on). `README.md` and `CLAUDE.md` stay at
-repo root: `README.md` because it is the top-level table of contents, and
-`CLAUDE.md` because Claude Code only auto-loads it from the project root.
-`project-todo.md` also lives at `docs/project-todo.md`, directly under `docs/`
+`homie-dashboard/`, `rachio/`, and so on). [README.md](./README.md) and [CLAUDE.md](./CLAUDE.md) stay at
+repo root: [README.md](./README.md) because it is the top-level table of contents, and
+[CLAUDE.md](./CLAUDE.md) because Claude Code only auto-loads it from the project root.
+[project-todo.md](./docs/project-todo.md) also lives at [docs/project-todo.md](./docs/project-todo.md), directly under `docs/`
 rather than in a topic subdirectory, since it is a live cross-cutting backlog
 rather than a single topic. When a new document doesn't fit an existing
 subdirectory, create a new one named after the topic rather than adding to an
@@ -75,7 +75,7 @@ unrelated one or leaving it loose at the top of `docs/`.
 
 ## Maintaining the README
 
-`README.md` is a table of contents and nothing else. When adding, renaming, or
+[README.md](./README.md) is a table of contents and nothing else. When adding, renaming, or
 removing a `.md` file, update the contents list in the same commit, under the
 matching topic heading. Each entry is a link plus a short description of what
 the document covers.
@@ -93,7 +93,7 @@ commit message, even when the harness instructs you to.
 ### Issue tracker
 
 GitHub Issues on `pdehlke/homeassistant`, via the `gh` CLI. See
-`docs/agents/issue-tracker.md`.
+[docs/agents/issue-tracker.md](./docs/agents/issue-tracker.md).
 
 ### Lovelace styling policy
 
@@ -109,12 +109,12 @@ Office work is complete, use Noctis.
 ### Triage labels
 
 Default five canonical roles (`needs-triage`, `needs-info`, `ready-for-agent`,
-`ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+`ready-for-human`, `wontfix`). See [docs/agents/triage-labels.md](./docs/agents/triage-labels.md).
 
 ### Domain docs
 
-Single-context: `CONTEXT.md` + `docs/adr/` at repo root. See
-`docs/agents/domain.md`.
+Single-context: [CONTEXT.md](./CONTEXT.md) + `docs/adr/` at repo root. See
+[docs/agents/domain.md](./docs/agents/domain.md).
 
 ## Reviewing code changes
 
@@ -143,7 +143,7 @@ mDNS resolver and could never reach the old `homeassistant.local`/`mass.local`
 hostnames. IPv6 is disabled, so earlier advice to use a literal IPv4 address to avoid
 dual-stack route ambiguity is obsolete. Do not hardcode LAN addresses or use the old
 `.local` hostnames; both were retired 2026-08-11 in favor of the DNS names above. See
-`docs/homie-dashboard/homie-dashboard-install-plan.md`'s 2026-08-10 and 2026-08-11
+[docs/homie-dashboard/homie-dashboard-install-plan.md](./docs/homie-dashboard/homie-dashboard-install-plan.md)'s 2026-08-10 and 2026-08-11
 checkpoints for the literal-IP workaround this replaced and the CORS bug it caused for
 any client other than the tablet.
 
@@ -153,7 +153,7 @@ Read
 /Users/pde/src/github.com/pdehlke/homeassistant/docs/homie-dashboard/homie-dashboard-install-plan.md
 completely, then read the project's Home Assistant skill at
 /Users/pde/src/github.com/
-pdehlke/homeassistant/.claude/skills/home-assistant/SKILL.md. Resume Homie work
+[pdehlke/homeassistant/.claude/skills/home-assistant/SKILL.md](.claude/skills/home-assistant/SKILL.md). Resume Homie work
 from / Users/pde/src/github.com/pdehlke/homie-dashboard on main. Do not change
 anything until you have checked both repositories' status and confirmed the
 documented live release and commit state.
@@ -171,7 +171,7 @@ to be a Home Assistant chrome problem, not a Homie layout problem:
 `homie-dash`'s Lovelace iframe strategy was losing 56px to HA's own top app bar.
 Fixed with a `kiosk_mode` block on `homie-dash` scoped to the `Homie Dashboard`
 user (`hide_header` + `hide_sidebar`), same pattern as `Tablet` elsewhere. Full
-writeup with measurements in `docs/homie-dashboard/homie-dashboard-install-plan.md`'s new
+writeup with measurements in [docs/homie-dashboard/homie-dashboard-install-plan.md](./docs/homie-dashboard/homie-dashboard-install-plan.md)'s new
 "Overview C vertical overflow" section.
 
 Two things intentionally deferred, unrelated to the above:
@@ -182,7 +182,7 @@ Two things intentionally deferred, unrelated to the above:
   it. Still open.
 - `.ov3-col3`'s `justify-content: space-between` leaves an ugly gap between the
   security and floors cards when no purifier entity is configured. Cosmetic, not
-  overflow. On `docs/project-todo.md`.
+  overflow. On [docs/project-todo.md](./docs/project-todo.md).
 
 No secrets were copied into either repository. The Homie user's password file
 was not touched; the fix used the Homie Dashboard's own long-lived token

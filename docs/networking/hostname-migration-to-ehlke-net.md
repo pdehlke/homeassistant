@@ -80,7 +80,7 @@ mismatch can't recur regardless of which client asks.
 - `homie-dashboard` fork: `dist/config.js`'s `WS_URL` (and derived `BASE`) now point at
   `hass.ehlke.net`. Release `20260811.3`. `test/screen-a.test.cjs`'s regression test now asserts
   the DNS name and forbids both the old hostname and the literal IP.
-- This repo: `CLAUDE.md`, the `home-assistant` skill (`SKILL.md`, `references/*.md`,
+- This repo: [CLAUDE.md](../../CLAUDE.md), the `home-assistant` skill ([SKILL.md](../../.claude/skills/home-assistant/SKILL.md), `references/*.md`,
   `scripts/*.py`), and every doc that referenced `homeassistant.local`/`mass.local` as current
   guidance now say `hass.ehlke.net`/`mass.ehlke.net`. Historical narrative (what a doc says was
   literally true at some past date, the mDNS conflict during the Mac mini migration, the

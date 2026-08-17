@@ -7,4 +7,4 @@ conditioning." Fixed by hoisting Overview C's existing `climateIsActive()` (read
 for `heating`/`cooling`) into a shared function used everywhere. The AC control card's own on/off
 toggle (`hvac_mode`-based, meaning "is the system enabled at all") is a different, equally valid
 concept and was deliberately left untouched, confirmed with pde before changing anything. See
-`docs/homie-dashboard/climate-chip-activity-count.md`.
+[docs/homie-dashboard/climate-chip-activity-count.md](../homie-dashboard/climate-chip-activity-count.md).

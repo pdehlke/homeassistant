@@ -7,4 +7,4 @@ same any-on-counts convention already used by Lights and Climate elsewhere on th
 Rejected: a separately tracked boolean (drifts from reality the moment anything outside the
 dashboard changes a light) and matching the exact scene snapshot (too strict — a light nudged a
 few percent off its scene-defined brightness would read "off" for a scene a person would call
-active). See `docs/homie-dashboard/homie-scenes-chip.md`.
+active). See [docs/homie-dashboard/homie-scenes-chip.md](../homie-dashboard/homie-scenes-chip.md).

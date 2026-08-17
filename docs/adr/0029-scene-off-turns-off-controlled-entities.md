@@ -6,4 +6,4 @@ version wrapped each scene in a dedicated HA automation, but that only ever fire
 forward; reversing it would have meant a second automation per scene, or bypassing the wrapper for
 the off path only. The final design branches on entity domain and calls `scene.turn_on` directly
 for "on," and `homeassistant.turn_off` targeting every entity the scene controls for "off,"
-removing the automation indirection entirely. See `docs/homie-dashboard/homie-scenes-chip.md`.
+removing the automation indirection entirely. See [docs/homie-dashboard/homie-scenes-chip.md](../homie-dashboard/homie-scenes-chip.md).

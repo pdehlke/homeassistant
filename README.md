@@ -99,7 +99,7 @@ Notes, planning, and specs for my Home Assistant buildout.
   authenticated API but carry no field-level diff, only a "something changed, go re-fetch" signal,
   which caps how much a native webhook integration would actually buy over the existing reload.
   Records what was scoped, what shipped instead (the false-positive fix in
-  `rachio-zone-disabled-alert.md`), and what's still open (the homie-dashboard UX, the 15-minute
+  [rachio-zone-disabled-alert.md](./docs/rachio/rachio-zone-disabled-alert.md)), and what's still open (the homie-dashboard UX, the 15-minute
   reload retiming, the native webhook automation).
 
 ### Lennox and Climate Integration
@@ -252,7 +252,7 @@ Notes, planning, and specs for my Home Assistant buildout.
 - [climate-history-graph-feasibility.md](docs/homie-dashboard/climate-history-graph-feasibility.md)
 
   Feasibility analysis for project-todo item 1's temperature/humidity history graph, superseded
-  by homie-climate-native-dialog.md below: confirmed no charting library was needed, since
+  by [homie-climate-native-dialog.md](./docs/homie-dashboard/homie-climate-native-dialog.md) below: confirmed no charting library was needed, since
   Overview C's Weather and Solar cards already had two proven hand-rolled SVG charts to combine,
   but the item turned out not to need building at all once the Climate overlay opens HA's real
   dialog, which already has the graph. Kept as the record of what combining those two charts
@@ -363,14 +363,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   The domain glossary for this instance: canonical terms for the native dashboards, the Homie
   Dashboard fork, and the Crestron, Lennox, Rachio, Music Assistant, Harmony Hub, EV charger, and
   networking subsystems, with explicit `Avoid` entries where two documents used the same word
-  differently. Built via a `/grill-with-docs` session; see `docs/agents/domain.md` for how agent
+  differently. Built via a `/grill-with-docs` session; see [docs/agents/domain.md](./docs/agents/domain.md) for how agent
   skills are expected to consume it.
 
 - [docs/adr/](docs/adr/)
 
   Architecture decision records: short, sequentially numbered writeups of individual hard-to-reverse
   decisions from across every subsystem, each citing the fuller topic document it was drawn from.
-  Backfilled from a `CONTEXT.md` domain-modeling session; genuinely open questions are deliberately
+  Backfilled from a [CONTEXT.md](./CONTEXT.md) domain-modeling session; genuinely open questions are deliberately
   left out rather than recorded as settled.
 
 - [CLAUDE.md](CLAUDE.md)
@@ -389,7 +389,7 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 - [docs/agents/domain.md](docs/agents/domain.md)
 
-  Consumer rules for this repo's domain docs (`CONTEXT.md`, `docs/adr/`) and the single-context
+  Consumer rules for this repo's domain docs ([CONTEXT.md](./CONTEXT.md), `docs/adr/`) and the single-context
   layout in use.
 
 - [.claude/skills/home-assistant/](.claude/skills/home-assistant/SKILL.md)

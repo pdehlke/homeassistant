@@ -7,4 +7,4 @@ and summary views as static YAML, so new areas and newly discovered devices stop
 their own. That cost wasn't worth a wall clock, so it went to a new storage dashboard,
 `dashboard-clock`, with its original section shape, `grid_options`, and glass layout preserved
 unchanged, leaving Overview's automatic per-area generation untouched. See
-`docs/music-assistant/homeii-music-flow.md`.
+[docs/music-assistant/homeii-music-flow.md](../music-assistant/homeii-music-flow.md).

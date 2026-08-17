@@ -4,8 +4,8 @@ The investigation that recommended a periodic `homeassistant.reload_config_entry
 suggested a 15-30 minute cadence. pde chose hourly instead, explicitly trading detection latency
 for fewer reload-triggered `unavailable` blips across every Rachio entity, on the reasoning that a
 pending webhook fix (making the instance internet-reachable) might make the whole reload
-workaround moot within the week. See `docs/rachio/rachio-zone-disabled-alert.md` and
-`docs/rachio/rachio-webhook-responsiveness-plan.md`.
+workaround moot within the week. See [docs/rachio/rachio-zone-disabled-alert.md](../rachio/rachio-zone-disabled-alert.md) and
+[docs/rachio/rachio-webhook-responsiveness-plan.md](../rachio/rachio-webhook-responsiveness-plan.md).
 
 ## Consequences
 

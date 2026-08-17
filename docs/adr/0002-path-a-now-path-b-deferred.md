@@ -7,7 +7,7 @@ MC2E/AADS from the lighting bus entirely). Do Path A first — cheap, low-risk, 
 control almost immediately — and treat Path B as the endgame that happens only once the wall
 keypads are actually replaced, since that's the point where the low-voltage wiring is already
 being disturbed and the reverse-engineering effort only has to cover CLX command frames rather
-than the full keypad event vocabulary too. See `docs/crestron/crestron-strategy.md`.
+than the full keypad event vocabulary too. See [docs/crestron/crestron-strategy.md](../crestron/crestron-strategy.md).
 
 ## Consequences
 

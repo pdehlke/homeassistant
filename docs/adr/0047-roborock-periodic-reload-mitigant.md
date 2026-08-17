@@ -8,4 +8,4 @@ integration too); manually reloading whenever noticed was rejected as requiring 
 first, defeating the point of a status pill. Chosen: an automation reloading only the Roborock
 config entry every 30 minutes, the narrowest blast radius available and the same recovery action
 the upstream issue reporters already use by hand. See
-`docs/device-alerts/roborock-status-mqtt-stall.md`.
+[docs/device-alerts/roborock-status-mqtt-stall.md](../device-alerts/roborock-status-mqtt-stall.md).

@@ -149,7 +149,7 @@ on a second tap of the active bubble, and the chip glow/popup ring both reflecti
 
 ## Checkpoint: 2026-08-12 (Scenes chip: toggle + Bathroom + grouped Primary Suite scene)
 
-`project-todo.md` item 6: pde's HA scenes now surface as a "Scenes" chip, bottom row, using a
+[project-todo.md](../project-todo.md) item 6: pde's HA scenes now surface as a "Scenes" chip, bottom row, using a
 stock Homie Dashboard mechanism (`isSceneChip`/`subGroups[].scenes[]`) that turned out to
 already exist in the fork but had never been configured. Three rounds landed as one uncommitted
 body of work: (1) wire the popup bubble to fire a scene one-way, (2) rewrite that into a real
@@ -172,7 +172,7 @@ scene-icon override, `sceneAffectedEntities`/`sceneIsOn`/`togglePopupScene` (all
 a grouped bubble and a single-scene bubble share one code path), and the on-state render/refresh
 code in `refreshControls`/`_refreshOv3SidebarControls`/`refreshOpenScenePopup`, all in
 `dist/homie-dashboard.html`, and the `test/screen-a.test.cjs` updates covering all of it. This
-repo has three new/changed docs on top of `c5ecaca`: this checkpoint, `homie-scenes-chip.md`, and
+repo has three new/changed docs on top of `c5ecaca`: this checkpoint, [homie-scenes-chip.md](./homie-scenes-chip.md), and
 the README entry for it. Committing all of it is a separate ask.
 
 Deployed asset release: `20260812.4`. Verified 2026-08-12: regression suite passes 76/76 (11 new
@@ -196,7 +196,7 @@ first round (BusyBox `grep` on the HA host doesn't support `-P`, so the extracti
 returned nothing); caught within the same deploy by checking the spliced token's length rather
 than trusting "placeholder is gone" alone, and fixed by re-extracting from the pre-deploy backup
 with a BusyBox-compatible `sed` expression. Every later round's deploy used the corrected method
-from the start. Full account in `homie-scenes-chip.md`. Worth remembering for future deploys:
+from the start. Full account in [homie-scenes-chip.md](./homie-scenes-chip.md). Worth remembering for future deploys:
 this host's `grep` is BusyBox, not GNU.
 
 ## Checkpoint: 2026-08-12 (Climate overlay routed to HA's real native dialog)
@@ -215,7 +215,7 @@ This was the second silent break of the same +/- control in five days (first pos
 [homie-thermostat-control-fix.md](homie-thermostat-control-fix.md), 2026-08-07; the
 2026-08-11 native-parity rebuild below broke it again by the next morning). Full account,
 including the live spike that proved the cross-frame approach before any implementation code
-was written, the options rejected, and the side effect of resolving `project-todo.md` item 1's
+was written, the options rejected, and the side effect of resolving [project-todo.md](../project-todo.md) item 1's
 history-graph request for free, in
 [homie-climate-native-dialog.md](homie-climate-native-dialog.md).
 
@@ -287,7 +287,7 @@ Two real bugs found live, not just missing content:
   the dial is decorative and every real control on it is a separate `<button>`.
 
 Deferred: a temperature/humidity history graph matching the native dialog's history-graph
-icon, tracked as item 1 on `project-todo.md` (new charting surface, real scope beyond this
+icon, tracked as item 1 on [project-todo.md](../project-todo.md) (new charting surface, real scope beyond this
 session).
 
 Commit `b38a3c8` on `main` (not pushed), bundled with the `hass.ehlke.net` hostname migration
@@ -358,7 +358,7 @@ the IP automatically.
   concluding a future Homie bug is unrelated to this change.
 
   This is unrelated to the earlier dual-stack IPv4/IPv6 login-flow bug in the "former dual-stack login
-  failure" note below and in the HA skill's `references/api-access.md`: that one was fixed by disabling
+  failure" note below and in the HA skill's [references/api-access.md](../../.claude/skills/home-assistant/references/api-access.md): that one was fixed by disabling
   IPv6 on the instance, and `homeassistant.local` remains the right choice for REST/WebSocket/browser
   work done *from a machine that can resolve mDNS*, SSH included. This tablet's problem is that it has
   no mDNS resolver at all, so no IPv6 fix reaches it. The exception is scoped to this one file for this
@@ -486,7 +486,7 @@ made the original 21px overflow hard to notice in the first place.
 
 Side discovery, not yet fixed: with no purifier entity configured, `.ov3-col3`'s
 `justify-content: space-between` stretches a large, visually awkward gap between the security card
-and the floors card. Cosmetic only, does not overflow. Noted on `project-todo.md` as a follow-up.
+and the floors card. Cosmetic only, does not overflow. Noted on [project-todo.md](../project-todo.md) as a follow-up.
 
 Resume work in the fork, directly on `main` unless the user changes that instruction. The next
 design area is the remainder of Overview C; Solar and the Overview C A/V sidebar icon are accepted.
@@ -843,7 +843,7 @@ HACS updates can overwrite `config.js` and `homie-dashboard.html`, and can omit 
   formula and the alternatives rejected. Deploying it surfaced a cache-busting gap: the release
   token has to be bumped at both the Lovelace iframe and nested asset boundaries whenever a nested
   file's bytes change, not only on releases meant for a person to notice, same lesson as
-  `homie-thermostat-control-fix.md`.
+  [homie-thermostat-control-fix.md](./homie-thermostat-control-fix.md).
 - The Climate control's chip, Overview B sidebar list, and Overview C sidebar icon now show a red
   alert dot whenever either thermostat's Lennox alert sensor reads "moderate" or "critical",
   reusing the same DOM/CSS Irrigation's disabled-zone badge already established (`23b774a`, release

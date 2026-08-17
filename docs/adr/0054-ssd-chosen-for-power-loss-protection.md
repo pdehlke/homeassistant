@@ -8,4 +8,4 @@ auto-restarts: an unclean shutdown mid-write is the realistic way the SQLite rec
 gets corrupted, and corruption means a physical trip. The Kingston DC600M was chosen specifically
 because it's the only evaluated drive with real hardware protection — onboard capacitors that
 flush in-flight writes when power disappears — over cheaper or better-endurance alternatives with
-partial or no such protection. See `docs/hardware/mac-mini-migration.md`.
+partial or no such protection. See [docs/hardware/mac-mini-migration.md](../hardware/mac-mini-migration.md).

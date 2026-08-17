@@ -7,4 +7,4 @@ run of each collapse — a false positive baked into the automation's own archit
 every single hourly reload. Fixed with two trigger-level changes only, no change to the diff logic
 itself, which was already correct: a 60-second `for:` debounce on the state trigger (comfortably
 above the worst observed settle time) and moving the 30-minute fallback off `:00`/`:30` to `:10`/
-`:40`, clear of the reload's collapse window. See `docs/rachio/rachio-zone-disabled-alert.md`.
+`:40`, clear of the reload's collapse window. See [docs/rachio/rachio-zone-disabled-alert.md](../rachio/rachio-zone-disabled-alert.md).

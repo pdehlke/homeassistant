@@ -95,4 +95,4 @@ Release token bumped `20260809.6` -> `20260810.1` in `dist/homie-dashboard.html`
 ## Still open
 
 None. This fix is self-contained; it does not touch any of the items already tracked in
-`homie-dashboard-install-plan.md`'s open-work list.
+[homie-dashboard-install-plan.md](./homie-dashboard-install-plan.md)'s open-work list.

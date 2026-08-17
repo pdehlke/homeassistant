@@ -10,4 +10,4 @@ labels (`bath`, `bedroom`) applied to entities carry the area-targeting idea dow
 group preset row targets `label_id` the same way a room-wide preset targets `area_id`. Because a
 label isn't exclusive, a fixture genuinely shared between groups (the hallway carries both labels)
 answers to both rows without being duplicated or needing a third row of its own. See
-`docs/native-dashboards/native-dashboards-retired.md`.
+[docs/native-dashboards/native-dashboards-retired.md](../native-dashboards/native-dashboards-retired.md).

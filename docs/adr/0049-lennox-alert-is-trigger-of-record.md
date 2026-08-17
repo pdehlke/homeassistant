@@ -8,4 +8,4 @@ Confirmed live: South's `_alert` read `critical` while its `_active_alerts` list
 for that same code. `_alert` drives the alert automation's trigger and severity, since it's the one
 confirmed to match what's actually on the console right now; `_active_alerts` is used only as
 best-effort detail, and the notification says so plainly when the matching detail has already
-rotated out rather than guessing. See `docs/lennox-climate/lennox-thermostat-alerts.md`.
+rotated out rather than guessing. See [docs/lennox-climate/lennox-thermostat-alerts.md](../lennox-climate/lennox-thermostat-alerts.md).

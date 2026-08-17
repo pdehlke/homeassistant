@@ -6,4 +6,4 @@ Two of the six stations (1st Wave, BB King's Bluesville) resolve to both a Music
 field `musicStationIsOn()` reads — accepting the documented risk that a library favorite's id
 isn't content-stable (unfavoriting either station in Music Assistant would need a re-resolve via
 `music_assistant.search`), rather than having two of six entries address their station differently
-from the other four. See `docs/homie-dashboard/homie-music-chip.md`.
+from the other four. See [docs/homie-dashboard/homie-music-chip.md](../homie-dashboard/homie-music-chip.md).

@@ -6,4 +6,4 @@ regular use. Chosen instead: reset volume only when the player wasn't already `"
 moment of the tap; a hot-switch leaves volume exactly where it was last set. Applied uniformly to
 "was playing anything at all," not specifically one of the chip's own six stations, since a
 hot-switch away from unrelated audio shouldn't blast to a fixed volume any more than a hot-switch
-between two presets should. See `docs/homie-dashboard/homie-music-chip.md`.
+between two presets should. See [docs/homie-dashboard/homie-music-chip.md](../homie-dashboard/homie-music-chip.md).

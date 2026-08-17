@@ -91,7 +91,7 @@ visible card needed to change, only the number behind it.
 `homie-custom.js` instead of running a cached copy; leaving it unchanged means any device that had
 already loaded the dashboard, such as an always-on kiosk tablet, would keep running the old
 comparison logic indefinitely despite the new file sitting correctly on disk. This is the same
-trap `homie-thermostat-control-fix.md` documents under "Two mistakes caught by testing against the
+trap [homie-thermostat-control-fix.md](./homie-thermostat-control-fix.md) documents under "Two mistakes caught by testing against the
 real thing." Caught before calling this done, not after: bumped `HOMIE_ASSET_VERSION` from
 `20260808.15` to `20260809.1` in `homie-dashboard.html`, and separately bumped the matching
 `?v=` query string on the `homie-dash` Lovelace iframe strategy's URL (a second, outer

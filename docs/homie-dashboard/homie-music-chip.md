@@ -46,7 +46,7 @@ and tested for.
 moment of the tap. Off → on: first start the Harmony Hub's `Airplay` activity with
 `remote.turn_on` on `remote.harmony_hub`, then play the station via `music_assistant.play_media`
 (`media_id`/`media_type: "radio"`, the pattern already confirmed working for radio content on this
-instance — see the `home-assistant` skill's `music-assistant.md`). Only if the player wasn't
+instance — see the `home-assistant` skill's [music-assistant.md](../../.claude/skills/home-assistant/references/music-assistant.md)). Only if the player wasn't
 already `"playing"`, call `media_player.volume_set` first, after Harmony has started the activity.
 On → off: call `media_player.media_stop`, then turn off the Harmony Hub with `remote.turn_off`.
 The two systems are intentionally sequenced so the receiver is ready for the AirPlay stream before

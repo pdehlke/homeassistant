@@ -27,7 +27,7 @@ for the parts it covered.
 ## Why the symptom happened
 
 Both real thermostats (`climate.casasolar_south_zone_1`, `climate.casasolar_north_zone_1`, see
-lennoxs30-integration.md) run in `heat_cool` mode essentially all the time, reporting
+[lennoxs30-integration.md](../lennox-climate/lennoxs30-integration.md)) run in `heat_cool` mode essentially all the time, reporting
 `target_temp_high`/`target_temp_low` rather than a single `temperature` attribute. The dashboard
 code, both upstream's generic climate popup and the dedicated overlay built to replace it, assumed
 a single Celsius-style setpoint. The overlay's fallback path, when no single setpoint attribute

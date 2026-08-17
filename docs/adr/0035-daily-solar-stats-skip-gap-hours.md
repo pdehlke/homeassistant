@@ -7,4 +7,4 @@ a gap, the strict convention every other stat on this card uses for missing live
 trade-off: the grid's fossil%/CO2 sensors blip unavailable for a minute or two on most refresh
 cycles, so a strict policy would blank the badge on most days even though HA's hourly long-term
 statistics have so far always back-filled successfully around those blips. See
-`docs/homie-dashboard/overview-c-solar-today-totals.md`.
+[docs/homie-dashboard/overview-c-solar-today-totals.md](../homie-dashboard/overview-c-solar-today-totals.md).

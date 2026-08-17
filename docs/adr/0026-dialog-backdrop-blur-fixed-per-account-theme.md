@@ -7,7 +7,7 @@ theme) does. Rather than fix `visionos` itself (affects every dialog on that the
 not just Homie) or scope a CSS override to just Homie's dialog-open flow, pde resolved it by
 switching his own personal account theme from `visionos` to `noctis` — a personal preference
 change, not a fix to this fork, `homie-dash`, or the `visionos` theme itself. See
-`docs/homie-dashboard/homie-climate-native-dialog.md`.
+[docs/homie-dashboard/homie-climate-native-dialog.md](../homie-dashboard/homie-climate-native-dialog.md).
 
 ## Consequences
 

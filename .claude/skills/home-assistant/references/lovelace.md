@@ -15,7 +15,7 @@ REST cannot read or write dashboards. Use WebSocket:
 - `scripts/replace_section.py` overwrites one section by index, for iterating on a section you just added without duplicating it.
 - `scripts/add-kiosk-mode.py` adds a root-level `kiosk_mode` block scoped to one user's display
   name, refuses to write if one is already present. Also the reapply tool for
-  [ADR-0061](../../../docs/adr/0061-kiosk-mode-lost-on-gui-edit-reapply-dont-prevent.md): the
+  [ADR-0061](../../../../docs/adr/0061-kiosk-mode-lost-on-gui-edit-reapply-dont-prevent.md): the
   Lovelace UI editor doesn't round-trip this key, so any GUI edit to a kiosk_mode-bearing dashboard
   can silently drop it. Re-run with the same arguments to restore it.
 
@@ -105,7 +105,7 @@ A three-level Crestron-mirrored dashboard pattern (standalone `dashboard-lights`
 `dashboard-lennox-home`/`dashboard-alarm-system`, plus a tabbed `vision-sample`/"Home" dashboard
 generated from the same registries) predated Homie Dashboard and is now retired in favor of it;
 `scripts/rebuild-domain-dashboard.py` and `scripts/rebuild-home-tab.py`, the generators that built
-it, are deleted. See `docs/native-dashboards/native-dashboards-retired.md` and ADR-0062 in the
+it, are deleted. See [docs/native-dashboards/native-dashboards-retired.md](../../../../docs/native-dashboards/native-dashboards-retired.md) and ADR-0062 in the
 `pdehlke/homeassistant` repo for the full design (the three-level hierarchy, area-targeted presets,
 the header-card and strategy-merge behaviors it relied on) and why it was retired.
 

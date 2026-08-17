@@ -9,4 +9,4 @@ entity answering a different question ("is this specific code present" vs. "how 
 severity"). A second, independent automation kept the two concerns from tangling in one
 automation's branching logic. Display-only by explicit request: no phone push, since both units sit
 at this code often enough that a push would be noise. See
-`docs/lennox-climate/lennox-thermostat-alerts.md`.
+[docs/lennox-climate/lennox-thermostat-alerts.md](../lennox-climate/lennox-thermostat-alerts.md).

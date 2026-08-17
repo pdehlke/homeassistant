@@ -6,4 +6,4 @@ cycle or a page reload, leaving the sidebar and header hidden. Deliberately left
 pde's explicit call: it matches the fail-silently-no-fallback approach the cross-frame dialog
 dispatch itself already uses, since there is nothing else the code could reliably do, and the
 failure mode (a visibly missing sidebar) is easy to notice and self-corrects. See
-`docs/homie-dashboard/homie-climate-native-dialog.md`.
+[docs/homie-dashboard/homie-climate-native-dialog.md](../homie-dashboard/homie-climate-native-dialog.md).

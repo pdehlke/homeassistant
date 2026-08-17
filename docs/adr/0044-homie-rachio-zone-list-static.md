@@ -7,4 +7,4 @@ already do. Making either dynamic was considered and rejected: zone additions or
 rare, maybe once every few years, and the cost of a dynamic implementation isn't worth it against
 occasionally noticing a zone is missing and updating two lists by hand. A standing decision, not an
 open TODO, confirmed live when North's re-enablement required exactly that manual update. See
-`docs/rachio/rachio-zone-disabled-alert.md`.
+[docs/rachio/rachio-zone-disabled-alert.md](../rachio/rachio-zone-disabled-alert.md).

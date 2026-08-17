@@ -9,4 +9,4 @@ false for that, so the card renders with no ripple or pointer cursor). Showing o
 areas was rejected because it would currently collapse a domain dashboard to a single card: the
 dashboard doubles as a live migration checklist, with cards lighting up one at a time as Crestron
 channels get mapped, and hiding empty areas would hide exactly that information. See
-`docs/native-dashboards/native-dashboards-retired.md`.
+[docs/native-dashboards/native-dashboards-retired.md](../native-dashboards/native-dashboards-retired.md).

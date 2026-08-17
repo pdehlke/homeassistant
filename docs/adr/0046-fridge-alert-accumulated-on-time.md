@@ -8,4 +8,4 @@ dropouts exceeding three hours, a genuine failure would most likely be interrupt
 matured — an estimated 3 times out of 4. Replaced with a `history_stats` helper accumulating hours
 `on` over a rolling three-hour window, which a one-minute dropout doesn't reset, thresholded at 0.05
 hours (roughly 30x below a healthy fridge's measured 1.63h per window). See
-`docs/device-alerts/fridge-failure-alert.md`.
+[docs/device-alerts/fridge-failure-alert.md](../device-alerts/fridge-failure-alert.md).

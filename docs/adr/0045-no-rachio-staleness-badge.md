@@ -5,4 +5,4 @@ unneeded but because the periodic config-entry reload already provides the same 
 free: every Rachio entity gets refreshed at worst once per reload cycle regardless of whether the
 webhook is working, since a config-entry reload re-fetches everything, not just the zone list. The
 reload cadence is treated as the staleness bound itself; a separate badge showing it explicitly
-would be redundant. See `docs/rachio/rachio-webhook-responsiveness-plan.md`.
+would be redundant. See [docs/rachio/rachio-webhook-responsiveness-plan.md](../rachio/rachio-webhook-responsiveness-plan.md).

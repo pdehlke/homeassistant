@@ -1,6 +1,6 @@
 # Overview C calendar card: Google Calendar added, SYSTM deferred
 
-`docs/project-todo.md` item 2 ("Fix Overview C calendar entries") was really "the calendar card
+[docs/project-todo.md](../project-todo.md) item 2 ("Fix Overview C calendar entries") was really "the calendar card
 only ever shows Rachio's irrigation schedule." This document covers adding pde's Google Calendar
 to the same card, shipped 2026-08-12, and the record of why Wahoo SYSTM's workout calendar was
 investigated and set aside rather than built.
@@ -38,7 +38,7 @@ pick up new sources at once.
 The card's event list is internally scrollable (`.ov3-events-list { flex:1; overflow-y:auto }`)
 inside a fixed-height card (`.ov3-events-card { grid-row: 3 / 5; overflow:hidden }`). A busier
 calendar makes the list scroll further, not grow the card, so this doesn't reopen the vertical
-overflow bug class Overview C hit before (see `homie-dashboard-install-plan.md`'s Overview C
+overflow bug class Overview C hit before (see [homie-dashboard-install-plan.md](./homie-dashboard-install-plan.md)'s Overview C
 overflow section).
 
 Before this change, HA had no Google Calendar integration configured. The instance had only two
@@ -123,7 +123,7 @@ single `google` config entry titled `pde@rfc822.net`, state `loaded`.
    `calendar.rachio_base_station_ca358975` plus the three new Google calendar entities, with
    `calendar.home` removed. Validated with `node --check` before touching HA.
 3. Deployed following the same pattern used for every prior Homie config change (Scenes chip,
-   Music chip, the original install; see `homie-dashboard-install-plan.md`): SSH/SFTP to
+   Music chip, the original install; see [homie-dashboard-install-plan.md](./homie-dashboard-install-plan.md)): SSH/SFTP to
    `root@hass.ehlke.net:2222`, backed up the live `config.js` with a timestamp, spliced the real
    `HA_TOKEN` out of that backup with a BusyBox-safe `sed` expression into the new file (entirely
    inside one remote script over SSH stdin, so the token never touched a local shell variable or
@@ -143,8 +143,8 @@ single `google` config entry titled `pde@rfc822.net`, state `loaded`.
 5. Showed pde the live screenshots; he approved.
 6. Committed the fork's `dist/config.js` change (`80431bc`). The live copy's spliced token was
    never copied back to git, same as every prior deploy.
-7. Updated this document with what shipped, removed item 2 from `docs/project-todo.md`, confirmed
-   this file's entry is in `README.md`.
+7. Updated this document with what shipped, removed item 2 from [docs/project-todo.md](../project-todo.md), confirmed
+   this file's entry is in [README.md](../../README.md).
 
 ## Verification
 

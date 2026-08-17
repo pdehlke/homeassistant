@@ -93,9 +93,9 @@ Release token bumped `20260811.7` -> `20260812.1` in `dist/homie-dashboard.html`
 `homie-dash` Lovelace iframe `?v=` updated to match via `apply-card.py` (backup of the prior
 Lovelace config saved automatically to `/Users/pde/tmp/`).
 
-## A side effect: project-todo.md item 1 resolved for free
+## A side effect: [project-todo.md](../project-todo.md) item 1 resolved for free
 
-Item 1 on `project-todo.md` was a temperature/humidity history graph for the Climate overlay,
+Item 1 on [project-todo.md](../project-todo.md) was a temperature/humidity history graph for the Climate overlay,
 matching the history-graph icon on Home Assistant's native climate more-info dialog. A
 feasibility pass ([climate-history-graph-feasibility.md](climate-history-graph-feasibility.md))
 had already found that no charting library was needed and scoped the remaining work down to
@@ -105,7 +105,7 @@ That entire item is moot now. Homie's Climate chip opens Home Assistant's actual
 dialog, which already has a History section with a real, recorder-backed graph built in.
 Confirmed live: tapping the History icon on the real dialog for `climate.casasolar_south_zone_1`
 rendered a real temperature/target history chart, no Homie code involved. Removed from
-`project-todo.md`.
+[project-todo.md](../project-todo.md).
 
 ## Options considered and rejected
 
@@ -162,7 +162,7 @@ pde: "I dislike the desktop browser behavior intensely."
 ### Why the two accounts looked different
 
 Nothing about the morning's dialog-routing change caused this. The 2026-08-07 fix that first
-added `kiosk_mode` to `homie-dash` (see `homie-dashboard-install-plan.md`'s checkpoint of that
+added `kiosk_mode` to `homie-dash` (see [homie-dashboard-install-plan.md](./homie-dashboard-install-plan.md)'s checkpoint of that
 date) deliberately scoped it to `users: ["Homie Dashboard"]` only, specifically so Pete's admin
 session would keep its sidebar and top bar for dev and testing navigation. That scoping was
 still in place, untouched. Home Assistant's real more-info dialog always renders as an overlay
@@ -329,4 +329,4 @@ The known, accepted `dialog-closed` filtering gap described above (a different, 
 dialog closing first can prematurely restore chrome while the thermostat dialog is still open
 underneath it). Not tracked as a bug to fix; it was weighed and explicitly accepted rather than
 engineered around. Nothing else from either change in this document touches any other item
-tracked in `homie-dashboard-install-plan.md`'s open-work list.
+tracked in [homie-dashboard-install-plan.md](./homie-dashboard-install-plan.md)'s open-work list.

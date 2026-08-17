@@ -3,7 +3,7 @@
 This context covers pde's Home Assistant instance and everything that touches it: the native
 dashboards, the Homie Dashboard fork, and the Crestron, Rachio, Lennox, Music Assistant, Harmony
 Hub, EV charger, and networking subsystems it integrates. Single context for the whole repo, per
-`docs/agents/domain.md`.
+[docs/agents/domain.md](./docs/agents/domain.md).
 
 ## Language
 
@@ -205,7 +205,7 @@ TCP — the transport a Home Assistant integration would use to talk to MC2E/CP3
 
 **Ethernet Intersystem Communications (ISC)**:
 The existing Crestron-to-Crestron Ethernet link between MC2E and AADS. Distinct from XSIG, which
-is HA-facing, though `crestron-migration.md` uses the two terms loosely together in places.
+is HA-facing, though [crestron-migration.md](./docs/crestron/crestron-migration.md) uses the two terms loosely together in places.
 
 **Alarm keypad**:
 The DSC-branded wall-mounted interface unit (faceplate visible in the pantry). A user-facing
@@ -344,7 +344,7 @@ _Avoid_: don't read any Mac mini reference as the current host — see below.
 
 **Mac mini migration**:
 A planned, not yet implemented move of this instance from the Raspberry Pi 4 to a surplus Late
-2014 Mac mini. `docs/hardware/mac-mini-migration.md` is the plan, not a record of a completed
+2014 Mac mini. [docs/hardware/mac-mini-migration.md](./docs/hardware/mac-mini-migration.md) is the plan, not a record of a completed
 move.
 
 **HAOS**:

@@ -8,4 +8,4 @@ admin nav chrome on every visit, not just while a dialog is open. Instead, `Neme
 support for a live reactive template condition drives the same hide rule for every account: a
 dedicated `input_boolean.homie_native_dialog_open` helper, turned on right before the dialog opens
 and off when HA's own `dialog-closed` event fires. See
-`docs/homie-dashboard/homie-climate-native-dialog.md`.
+[docs/homie-dashboard/homie-climate-native-dialog.md](../homie-dashboard/homie-climate-native-dialog.md).

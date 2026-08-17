@@ -7,4 +7,4 @@ and watching which eero client drops offline to find the real address, then conf
 genuinely a Lennox unit (not just a correctly-guessed IP) via `openssl s_client`, checking for a TLS
 certificate issued to `O=Lennox International Inc.`. This is the standing method for any future IP
 change too (e.g. before a DHCP reservation exists), not a one-time troubleshooting step. See
-`docs/lennox-climate/lennoxs30-integration.md`.
+[docs/lennox-climate/lennoxs30-integration.md](../lennox-climate/lennoxs30-integration.md).

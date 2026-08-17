@@ -5,7 +5,7 @@ Homie's Climate overlay was a from-scratch reimplementation of HA's climate more
 time with no client-visible error to catch it. Since Homie's iframe is same-origin with its
 parent HA frontend, dispatching HA's own `hass-more-info` `CustomEvent` on the parent document
 opens the real dialog instead of a lookalike; roughly 940 lines of hand-rolled markup/CSS/JS were
-deleted, not just left unused. See `docs/homie-dashboard/homie-climate-native-dialog.md`.
+deleted, not just left unused. See [docs/homie-dashboard/homie-climate-native-dialog.md](../homie-dashboard/homie-climate-native-dialog.md).
 
 ## Considered Options
 

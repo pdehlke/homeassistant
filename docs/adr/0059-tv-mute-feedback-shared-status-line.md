@@ -5,4 +5,4 @@ highlight on the Mute button would be a guess rendered as fact — and it would 
 moment anyone used the physical remote or the receiver's own front panel, since nothing observes
 real state, only the last button this dashboard itself pressed. The shared `tv-feedback`
 Sending…/Done line was used instead, the same fire-and-forget acknowledgment every other control on
-this overlay already gives. See `docs/harmony-hub/homie-tv-volume-mute-controls.md`.
+this overlay already gives. See [docs/harmony-hub/homie-tv-volume-mute-controls.md](../harmony-hub/homie-tv-volume-mute-controls.md).

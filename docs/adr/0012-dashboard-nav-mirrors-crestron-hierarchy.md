@@ -7,4 +7,4 @@ for a keypad replacement: reaching a dimmer by scrolling past media players and 
 regression from a physical button on a wall. Every generated dashboard instead mirrors the
 Crestron panels' fixed structure — domain selection, then an area grid, then a single-domain,
 single-area leaf — deliberately diverging from HA's own default. See
-`docs/native-dashboards/native-dashboards-retired.md`.
+[docs/native-dashboards/native-dashboards-retired.md](../native-dashboards/native-dashboards-retired.md).

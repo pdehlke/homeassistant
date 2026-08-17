@@ -89,7 +89,7 @@ No zone number 1 is present. Given the observed numbering (2 through 5 are the f
 zones), zone 1 is the most likely candidate for North, but this is inferred from the gap, not
 confirmed.
 
-Back Yard Smart Hose Timer (separate device, already known to be offline, see `project-todo.md`
+Back Yard Smart Hose Timer (separate device, already known to be offline, see [project-todo.md](../project-todo.md)
 item 3's sibling notes):
 
 | Entity | State |
@@ -335,9 +335,9 @@ disappearing) and a different blast radius (every zone paused at once, not one z
 - **Built live, not just specced.** This repo is documentation only and nothing in it deploys
   automatically, but the automation itself lives on the Home Assistant instance, not in this
   repo, so building it directly via the REST API and documenting it here afterward, the same
-  split already used for `fridge-failure-alert.md`, was in scope.
+  split already used for [fridge-failure-alert.md](../device-alerts/fridge-failure-alert.md), was in scope.
 - **Delivery.** Both automations originally sent both a persistent notification and `notify.notify`,
-  matching the existing `fridge_failure_alert` convention (`fridge-failure-alert.md`), including
+  matching the existing `fridge_failure_alert` convention ([fridge-failure-alert.md](../device-alerts/fridge-failure-alert.md)), including
   `continue_on_error: true` on the push step so a notify failure can never block the persistent
   notification. The zone-disabled alert's `notify.notify` step was removed on 2026-08-08, the same
   day the state trigger was added, at pde's request: with `time_pattern` alone, a push could only
@@ -352,7 +352,7 @@ disappearing) and a different blast radius (every zone paused at once, not one z
 
 ## Mobile push actually reaches a phone now
 
-`fridge-failure-alert.md` recorded that `notify.notify` completed successfully but delivered to
+[fridge-failure-alert.md](../device-alerts/fridge-failure-alert.md) recorded that `notify.notify` completed successfully but delivered to
 nothing, because no companion app had been registered on this instance. That has since changed:
 `notify.mobile_app_pete_iphone` now exists as a registered service. `notify.notify` fans out to
 every registered platform. Confirmed end to end on 2026-08-08 during the real North re-disable
@@ -408,7 +408,7 @@ source pinned to the running version, [`home-assistant/core` tag
 - After creation, a zone's state is driven only by an incoming webhook event
   ([`switch.py:448-464`](https://github.com/home-assistant/core/blob/2026.7.4/homeassistant/components/rachio/switch.py#L448-L464),
   dispatched only for `ZONE_STARTED`/`STOPPED`/`COMPLETED`/`PAUSED`), and this instance's webhook is
-  unreachable (no `external_url`; already established in `project-todo.md`'s Overview A irrigation
+  unreachable (no `external_url`; already established in [project-todo.md](../project-todo.md)'s Overview A irrigation
   item). Even a reachable webhook would not help here: Rachio's webhook categories include a
   separate `DELTA` type for exactly this kind of configuration change
   ([rachio.readme.io/reference/webhooks](https://rachio.readme.io/reference/webhooks)), and HA's
@@ -467,7 +467,7 @@ The investigation above concluded that nothing on this instance ever surfaces a 
 without a forced Rachio config-entry reload, and recommended a `homeassistant.reload_config_entry`
 automation on a 15-30 minute cadence. pde decided on an hourly cadence instead, explicitly trading
 detection latency for fewer reload-triggered `unavailable` blips across every Rachio entity, on the
-grounds that a webhook fix (making this instance internet-reachable, see `project-todo.md` item 3)
+grounds that a webhook fix (making this instance internet-reachable, see [project-todo.md](../project-todo.md) item 3)
 might make the whole reload workaround moot within the week; if that happens this automation can
 likely be deleted rather than tuned.
 
@@ -508,7 +508,7 @@ stale.
 ## The reload race condition, and the fix (2026-08-10)
 
 Found while scoping an unrelated question, whether to fork Home Assistant's `rachio` integration to
-add support for Rachio's `DELTA` webhook category (see `rachio-webhook-responsiveness-plan.md`).
+add support for Rachio's `DELTA` webhook category (see [rachio-webhook-responsiveness-plan.md](./rachio-webhook-responsiveness-plan.md)).
 pde reported being annoyed by frequent false-positive disabled-zone alerts, which turned out to
 have nothing to do with webhooks and everything to do with the periodic reload automation directly
 above.
@@ -583,7 +583,7 @@ run computed `missing_keys: ''`. `input_boolean.rachio_zone_or_valve_disabled`'s
 whole window shows zero transitions, no flicker at all.
 
 **Independent of this fix:** the periodic reload's own hourly cadence was not changed. The original
-plan in `rachio-webhook-responsiveness-plan.md` to tighten it to 15 minutes was motivated partly by
+plan in [rachio-webhook-responsiveness-plan.md](./rachio-webhook-responsiveness-plan.md) to tighten it to 15 minutes was motivated partly by
 a hope that more frequent reloads plus the (then-undiagnosed) false-positive risk would balance out;
 that plan is now stale on that point. The debounce above absorbs a reload's blip regardless of how
 often reloads happen, so tightening the cadence is now a pure detection-latency lever (worst case
@@ -858,7 +858,7 @@ curl -s -H "$HB" "$U/api/config/automation/config/rachio_back_yard_health_alert"
 ```
 
 Inspect a run with `trace/list` then `trace/get` over WebSocket, same as
-`fridge-failure-alert.md`.
+[fridge-failure-alert.md](../device-alerts/fridge-failure-alert.md).
 
 **`persistent_notification.<id>` is not queryable via `/api/states/<id>`,** confirmed directly
 2026-08-10: `GET /api/states/persistent_notification.rachio_back_yard_offline` returned "Entity

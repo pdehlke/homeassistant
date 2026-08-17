@@ -9,7 +9,7 @@ own charging LED was off, confirmed by physical inspection. Home Assistant still
 Overview A status pill nor the vacuum overlay in the Homie Dashboard fork ever caught up.
 
 This was investigated immediately after a similar-looking but differently-caused bug in the
-Rachio irrigation entities (see `project-todo.md`, item 2). The two turned out to be unrelated:
+Rachio irrigation entities (see [project-todo.md](../project-todo.md), item 2). The two turned out to be unrelated:
 Rachio's problem is that this Home Assistant instance is not reachable from the internet, so
 Rachio's cloud can never deliver the webhook it uses to report zone state. Roborock's integration
 does not depend on inbound reachability at all.

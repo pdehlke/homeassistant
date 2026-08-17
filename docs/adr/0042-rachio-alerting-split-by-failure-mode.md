@@ -8,4 +8,4 @@ every zone at once versus losing one zone. The Back Yard Smart Hose Timer's heal
 low, offline) got its own automation instead of joining the Main Irrigation zone-disabled alert for
 the same reason: pde considers a dead battery a completely different condition from a disabled
 zone, and Back Yard has a real Rachio-provided battery signal that needs no reload-blip debounce,
-unlike connectivity. See `docs/rachio/rachio-zone-disabled-alert.md`.
+unlike connectivity. See [docs/rachio/rachio-zone-disabled-alert.md](../rachio/rachio-zone-disabled-alert.md).

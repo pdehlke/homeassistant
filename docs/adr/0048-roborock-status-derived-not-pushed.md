@@ -9,4 +9,4 @@ incident's evidence to keep updating normally through the entire stall that froz
 Implemented as the same UI-managed template-sensor pattern every other Homie status pill uses,
 rejecting a Homie-fork-side JS reimplementation so this pill stays consistent with its siblings
 rather than becoming the one computed differently. See
-`docs/device-alerts/roborock-status-mqtt-stall.md`.
+[docs/device-alerts/roborock-status-mqtt-stall.md](../device-alerts/roborock-status-mqtt-stall.md).

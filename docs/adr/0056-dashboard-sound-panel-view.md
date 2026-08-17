@@ -7,4 +7,4 @@ regardless of config. Switching the view from `sections` to `panel` sidesteps th
 giving the one card full width with no grid sizing, and the card then renders its full desktop
 layout. The tradeoff, accepted: a panel view holds exactly one card, so nothing else can share the
 Sound dashboard's main view without a second view added alongside it. See
-`docs/music-assistant/homeii-music-flow.md`.
+[docs/music-assistant/homeii-music-flow.md](../music-assistant/homeii-music-flow.md).

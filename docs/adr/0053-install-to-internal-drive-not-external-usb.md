@@ -7,4 +7,4 @@ next bootable device — if macOS is still on the internal drive, the machine qu
 instead of Home Assistant, with no way to tell short of a physical trip, since this machine has no
 IPMI, AMT, or any other out-of-band management. Installing internally removes the failure mode
 entirely: one bootable device, no NVRAM dependency, no USB enumeration race. See
-`docs/hardware/mac-mini-migration.md`.
+[docs/hardware/mac-mini-migration.md](../hardware/mac-mini-migration.md).

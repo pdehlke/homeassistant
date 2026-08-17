@@ -18,7 +18,7 @@ removing an item for any reason other than pde saying it's done or cancelled.
    `justify-content: space-between` stretches an oversized gap between the
    security and floors cards when no purifier entity is configured; cosmetic,
    found while fixing Overview C's vertical overflow, see
-   `homie-dashboard-install-plan.md`)
+   [homie-dashboard-install-plan.md](./homie-dashboard/homie-dashboard-install-plan.md))
 4. Remove Solar from Homie Dashboard's Screensaver rotation options
    (`ssm-solar`). Same trap as the Startup option removed in the fork's
    `4277ee6` (release `20260808.1`): Solar's fullscreen overlay hides its close

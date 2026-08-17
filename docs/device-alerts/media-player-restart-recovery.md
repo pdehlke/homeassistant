@@ -31,10 +31,12 @@ that wasn't enough.
 
 ## How it works
 
-Broad by design: it watches every `media_player` entity, not a hand-maintained list of the ones
-known to be fragile today. On 2026-08-15, that breadth immediately paid off: the automation's
-`stuck_entities` variable found three devices nobody had noticed were down — both Samsung TVs and
-the LG webOS TV — on top of the three already known about.
+Broad by design: it watches every non-TV `media_player` entity, not a hand-maintained list of the
+ones known to be fragile today. Television entities are excluded because their unavailable state
+is expected when they are powered off or disconnected. The exclusion currently covers
+`media_player.carol`, `media_player.carol_2`, `media_player.gymnasium`, and
+`media_player.lg_webos_tv_um7300pua`. On 2026-08-15, the original broad query found several TVs
+alongside the audio players that needed recovery; those TVs are now exempt.
 
 ```yaml
 alias: Recover stuck media players after restart
@@ -50,7 +52,10 @@ actions:
   - variables:
       stuck_entities: >
         {{ states.media_player | selectattr('state', 'eq', 'unavailable')
-           | map(attribute='entity_id') | list }}
+           | map(attribute='entity_id')
+           | reject('in', ['media_player.carol', 'media_player.carol_2',
+                          'media_player.gymnasium', 'media_player.lg_webos_tv_um7300pua'])
+           | list }}
   - if:
       - condition: template
         value_template: "{{ stuck_entities | length > 0 }}"
@@ -149,8 +154,8 @@ notice for something no longer down is possible if a device recovers between run
 No mobile push, deliberately (pde's call): `persistent_notification.create` only, nothing routed to
 `notify.notify` or a phone.
 
-The three newly-discovered stuck TVs (`samsung_qn90ba_85`, `samsung_tu7000_60_tv`,
-`lg_webos_tv_um7300pua`) haven't been investigated past what this automation's notification says.
+TV entities are intentionally outside this automation's scope. If another television is added,
+add its entity ID to the exclusion list before treating it as a recovery candidate.
 
 ## Gotchas hit while building this
 

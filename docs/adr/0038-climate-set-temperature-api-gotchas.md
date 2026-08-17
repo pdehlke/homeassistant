@@ -7,7 +7,7 @@ entity's own declared `target_temp_step` (both Lennox zones declare `1.0`, not t
 client. Homie's thermostat control always sent both bound keys (changing only the active one) and
 read each entity's own step size rather than a hardcoded default, discovered only by testing
 directly against the real entities rather than trusting a service call's own response. See
-`docs/homie-dashboard/homie-thermostat-control-fix.md`.
+[docs/homie-dashboard/homie-thermostat-control-fix.md](../homie-dashboard/homie-thermostat-control-fix.md).
 
 ## Consequences
 

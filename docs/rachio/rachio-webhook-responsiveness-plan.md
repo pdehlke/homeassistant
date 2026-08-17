@@ -2,13 +2,13 @@
 
 ## Context
 
-Every prior Rachio decision in this repo (`rachio-zone-disabled-alert.md`,
-`project-todo.md` item 4) was made under one hard constraint: this Home
+Every prior Rachio decision in this repo ([rachio-zone-disabled-alert.md](./rachio-zone-disabled-alert.md),
+[project-todo.md](../project-todo.md) item 4) was made under one hard constraint: this Home
 Assistant instance had no `external_url` and was not reachable from the
 internet, so Rachio's cloud could never deliver the webhook its integration
 depends on for zone state. That constraint is now gone: Home Assistant Cloud
 (Nabu Casa) is connected (`remote_connected: true`, certificate issued,
-confirmed in `nabucasa-remote-ui-dns-fragility.md`) and the instance is
+confirmed in [nabucasa-remote-ui-dns-fragility.md](../nabucasa-remote-access/nabucasa-remote-ui-dns-fragility.md)) and the instance is
 reachable at `https://home.ehlke.net`. This is not the same problem as the Homie
 dashboard's `WS_URL` misconfiguration; that is explicitly out of scope and
 untouched here.
@@ -16,13 +16,13 @@ untouched here.
 This plan revisits the two Rachio limitations that were previously written off
 as permanent, and lays out what's now achievable in `homie-dashboard`:
 
-1. **Zone on/off state staleness** (`project-todo.md` item 4): caused directly
+1. **Zone on/off state staleness** ([project-todo.md](../project-todo.md) item 4): caused directly
    by the unreachable webhook. Should now resolve itself once confirmed live,
    since `homie-dashboard`'s WebSocket pipeline already reflects HA state
    changes within milliseconds; no dashboard code changes are needed for this
    half.
 2. **Disabled-zone detection latency/hackiness**
-   (`rachio-zone-disabled-alert.md`): investigated at the source level and found
+   ([rachio-zone-disabled-alert.md](./rachio-zone-disabled-alert.md)): investigated at the source level and found
    to be **independent of the webhook problem**. HA's Rachio integration
    (`webhooks.py` in `home-assistant/core`) never subscribes to Rachio's `DELTA`
    webhook category, the one that would report a zone being disabled/enabled. It
@@ -70,7 +70,7 @@ below plus turned up something more consequential:
   race condition in the existing reload/diff automation, found from real production data and fixed
   the same day, plus a new live current-state indicator and a second automation covering the Back
   Yard Smart Hose Timer's own failure modes (dead battery, offline). Full writeup in
-  `rachio-zone-disabled-alert.md`'s "The reload race condition, and the fix" and the two sections
+  [rachio-zone-disabled-alert.md](./rachio-zone-disabled-alert.md)'s "The reload race condition, and the fix" and the two sections
   after it. That fix also has two knock-on effects on this plan, noted inline below: it decouples
   the 15-minute reload-cadence idea from false positives entirely (that reasoning is now stale), and
   it builds the "standalone staleness indicator" this plan rejected below, just scoped to
@@ -91,9 +91,9 @@ just unfinished and partly overtaken by the disabled-zone fix.
 - **Verification of the webhook itself**: an active test (start a real zone
   briefly from the Rachio app, bypassing Homie, and watch
   `switch.main_irrigation_*` flip within seconds, the same method that
-  originally proved the bug in `project-todo.md` item 4). Explicitly **not** a
+  originally proved the bug in [project-todo.md](../project-todo.md) item 4). Explicitly **not** a
   blocker for the rest of this plan; pde may run it later today. Record the
-  result in `rachio-zone-disabled-alert.md` or the new doc (see below) once run.
+  result in [rachio-zone-disabled-alert.md](./rachio-zone-disabled-alert.md) or the new doc (see below) once run.
 - **New dashboard UX in scope**: a rain-delay/standby banner surfaced on the
   Irrigation control's card face (currently only visible inside the zone popup),
   and a next/last scheduled run display sourced from
@@ -118,7 +118,7 @@ just unfinished and partly overtaken by the disabled-zone fix.
   indicator (`input_boolean.rachio_zone_or_valve_disabled` plus a
   `device_class: problem` binary_sensor) for disabled-zone status specifically,
   requested directly by pde for a dashboard red-dot, not a staleness measure.
-  See `rachio-zone-disabled-alert.md`.
+  See [rachio-zone-disabled-alert.md](./rachio-zone-disabled-alert.md).
 - **Disabled-zone detection: pursue both the incremental fix and the real fix.**
   - Incremental (build now): tighten
     `automation.rachio_periodic_config_entry_reload` from hourly to 15 minutes.
@@ -163,13 +163,13 @@ just unfinished and partly overtaken by the disabled-zone fix.
     remains a real but lower-priority option than it looked when written. Still
     needs pde's own API key to register the webhook regardless of when it's
     built.
-- **New backlog item**: add a `project-todo.md` entry reminding pde to actually
+- **New backlog item**: add a [project-todo.md](../project-todo.md) entry reminding pde to actually
   fix the root cause upstream, HA core's `rachio` integration never subscribing
   to Rachio's config-change webhook category at all. This is a separate,
   longer-horizon item (patch or upstream PR against `home-assistant/core`),
   independent of the workarounds above, in the same spirit as the
   `hass_nabucasa` upstream-issue prep work in
-  `nabucasa-remote-ui-dns-fragility.md`.
+  [nabucasa-remote-ui-dns-fragility.md](../nabucasa-remote-access/nabucasa-remote-ui-dns-fragility.md).
 
 ## Graceful degradation (what "rollback: A" means concretely)
 
@@ -197,7 +197,7 @@ see "Status update, 2026-08-10" above for the full story of what happened instea
 
 ### 1. Home Assistant side (this repo documents it, changes happen live via REST, same pattern
 
-already used for `rachio-zone-disabled-alert.md`)
+already used for [rachio-zone-disabled-alert.md](./rachio-zone-disabled-alert.md))
 
 - Update `automation.rachio_periodic_config_entry_reload`: `time_pattern` from
   `hours: "/1"` to `minutes: "/15"`. **Not done.** Still hourly; now a pure
@@ -207,7 +207,7 @@ already used for `rachio-zone-disabled-alert.md`)
   the standby-mode automation). **Done, 2026-08-10**, but as part of the
   reload-race fix, not as an isolated step.
 - Verify both via `automation.trigger` and a trace check, same method already
-  used in `rachio-zone-disabled-alert.md`'s Trigger history table. N/A, nothing
+  used in [rachio-zone-disabled-alert.md](./rachio-zone-disabled-alert.md)'s Trigger history table. N/A, nothing
   here to verify since the retiming wasn't done; the `notify.notify` restoration
   was verified as part of the reload-race fix instead.
 - Research spike (read-only): fetch and actually read Rachio's webhook docs
@@ -229,7 +229,7 @@ already used for `rachio-zone-disabled-alert.md`)
 
 ### 2. Documentation (this repo)
 
-- Update `rachio-zone-disabled-alert.md`: close out "Remaining gaps" items that
+- Update [rachio-zone-disabled-alert.md](./rachio-zone-disabled-alert.md): close out "Remaining gaps" items that
   this plan resolves (reload cadence, notify restoration), correct the "might
   make this moot" framing now that it's known the webhook doesn't affect
   disabled-zone detection, and note the `entity_registry_updated` open item as
@@ -243,12 +243,12 @@ already used for `rachio-zone-disabled-alert.md`)
 - New file, e.g. `rachio-webhook-responsiveness.md`: records this decision
   (webhook now live via Nabu Casa Cloud), the two-track disabled-zone-detection
   fix, the graceful-degradation posture, the webhook verification test and its
-  result once run, and the new dashboard UX. Add it to `README.md`'s contents
+  result once run, and the new dashboard UX. Add it to [README.md](../../README.md)'s contents
   list. **Done differently**: revised this file in place at pde's explicit
   instruction rather than spinning off a new one, since nothing in the original
-  Context/Graceful-degradation reasoning turned out wrong. Added to `README.md`
+  Context/Graceful-degradation reasoning turned out wrong. Added to [README.md](../../README.md)
   under this file's existing name.
-- Update `project-todo.md`: resolve/update item 4 (webhook limitation, now fixed
+- Update [project-todo.md](../project-todo.md): resolve/update item 4 (webhook limitation, now fixed
   for on/off state), add the Track B research-spike/build item, and add the new
   upstream-fix reminder item for HA core's `rachio` integration never
   subscribing to config-change webhooks. **Not done.** Not asked for this
@@ -292,7 +292,7 @@ fully open, still scoped as below.
 **Status, 2026-08-10**: none of the below was run, since the work it verifies wasn't built. The
 reload-race fix and the new Back Yard automation were both verified instead, against real
 conditions (a forced config-entry reload, a real battery pull), documented in
-`rachio-zone-disabled-alert.md`'s Trigger history table.
+[rachio-zone-disabled-alert.md](./rachio-zone-disabled-alert.md)'s Trigger history table.
 
 - HA automations: `automation.trigger` + `trace/get` over WebSocket showing a
   clean run, and `switch.main_irrigation_east_of_garage`'s `last_changed` moving
@@ -304,6 +304,6 @@ conditions (a forced config-entry reload, a real battery pull), documented in
   the new banner and schedule display, plus whatever test coverage matches the
   existing pattern in `test/screen-a.test.cjs` (which already covers the
   disabled-zone badge at similar card-face locations).
-- Re-run the doc's own reproduction queries (`rachio-zone-disabled-alert.md`'s
+- Re-run the doc's own reproduction queries ([rachio-zone-disabled-alert.md](./rachio-zone-disabled-alert.md)'s
   "Reproducing the measurements" section) after the cadence change to confirm
   the new interval is actually in effect.

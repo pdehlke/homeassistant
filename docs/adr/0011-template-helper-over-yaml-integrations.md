@@ -7,8 +7,8 @@ file-edit path to `configuration.yaml` at all (no File Editor, Terminal & SSH, o
 Server add-on), and `demo:` is YAML-only besides, with a fixed entity set that doesn't match real
 room names. `switch_as_x` was also rejected for lights specifically: its entity selector is hard
 filtered to `domain: ["switch"]`, so an `input_boolean` can't feed it. See
-`docs/areas-and-entities/light-entity-strategy.md` and
-`docs/native-dashboards/native-dashboards-retired.md`.
+[docs/areas-and-entities/light-entity-strategy.md](../areas-and-entities/light-entity-strategy.md) and
+[docs/native-dashboards/native-dashboards-retired.md](../native-dashboards/native-dashboards-retired.md).
 
 ## Consequences
 

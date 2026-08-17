@@ -131,5 +131,5 @@ Persistent credential handoff files live outside both repositories under `/Users
 - `/Users/pde/tmp/homie-dashboard-token`
 
 Never print their contents. SSH/SFTP uses `root@hass.ehlke.net` on port `2222`. Read
-`docs/homie-dashboard/homie-dashboard-install-plan.md` in this repository for the current
+[docs/homie-dashboard/homie-dashboard-install-plan.md](../../../docs/homie-dashboard/homie-dashboard-install-plan.md) in this repository for the current
 customization ledger, deployment procedure, backups, and next-work checkpoint.

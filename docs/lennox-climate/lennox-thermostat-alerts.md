@@ -75,7 +75,7 @@ unchanged and still describes the current automation.
 
 `automation.lennox_thermostat_alert`, created via the REST config API, `mode: queued`. Both
 thermostats are recomputed on every run regardless of which one triggered it, the same
-diff-everything-every-time approach `rachio-zone-disabled-alert.md` uses, rather than branching on
+diff-everything-every-time approach [rachio-zone-disabled-alert.md](../rachio/rachio-zone-disabled-alert.md) uses, rather than branching on
 `trigger.entity_id`. This also makes it directly testable with a plain `automation.trigger` call,
 with no fabricated trigger context required.
 
@@ -142,7 +142,7 @@ as "no alert" rather than raising a template error); `<= 1` is "moderate or wors
 `unavailable` alert sensor, meaning the integration itself has lost contact with the thermostat,
 deliberately does not raise a Lennox alert notification here; that is a different failure mode
 than the one this automation covers, matching the DHCP/connectivity gap already tracked in
-`lennoxs30-integration.md`.
+[lennoxs30-integration.md](./lennoxs30-integration.md).
 
 `persistent_notification.dismiss` on a `notification_id` that was never created is a no-op, so the
 `else` branch is safe to run unconditionally on every pass rather than needing to track whether a
@@ -154,7 +154,7 @@ independently when its own thermostat recovers.
 
 ### Naming: South/North, not Main House/Office Wing
 
-The notification text uses `South`/`North`, matching `lennoxs30-integration.md`, the entity IDs,
+The notification text uses `South`/`North`, matching [lennoxs30-integration.md](./lennoxs30-integration.md), the entity IDs,
 and this repo's naming throughout. The Homie dashboard's Climate chip labels the same two zones
 `Main House` and `Office Wing`. Deliberately not reused here: the notification lives in Home
 Assistant, not on the dashboard, and every other document about these thermostats already uses
@@ -165,7 +165,7 @@ South/North.
 "Critical" in the ask was Lennox's own severity word, not necessarily a request for iOS's Critical
 Alert feature (the one that bypasses silent mode and Do Not Disturb, which the HA companion app
 does support with a special sound payload). Confirmed directly with pde: a normal notification is
-correct here, same delivery mechanism `fridge-failure-alert.md` and the Rachio alerts already use.
+correct here, same delivery mechanism [fridge-failure-alert.md](../device-alerts/fridge-failure-alert.md) and the Rachio alerts already use.
 
 ## Verification
 
@@ -181,7 +181,7 @@ notification). `persistent_notification/get` afterward showed exactly the expect
 
 ## The dashboard badge
 
-Extends the same three entry points `rachio-zone-disabled-alert.md` built for Irrigation's
+Extends the same three entry points [rachio-zone-disabled-alert.md](../rachio/rachio-zone-disabled-alert.md) built for Irrigation's
 disabled-zone indicator, reusing their existing DOM elements and CSS rather than adding new ones:
 the Overview A/B chip dot (`chip-alert-${i}` / `ov2-alert-${i}`) and the Overview C sidebar icon
 dot (`ov3-sb-alert-${i}`). Each toggle site already special-cased `c.label === "Irrigation"`; a new

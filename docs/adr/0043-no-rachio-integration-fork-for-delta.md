@@ -7,4 +7,4 @@ payload itself carries no field-level diff, only "something changed, go re-fetch
 and a simpler native-webhook-triggered reload buy the same thing — faster detection, not better
 data — and a fork means permanently shadowing a core HA component and manually re-syncing it
 against upstream forever, for a benefit narrower than it first looked. See
-`docs/rachio/rachio-webhook-responsiveness-plan.md`.
+[docs/rachio/rachio-webhook-responsiveness-plan.md](../rachio/rachio-webhook-responsiveness-plan.md).

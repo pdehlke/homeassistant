@@ -135,7 +135,7 @@ real save.
 Confirmed by screenshot: both cards keep current temperature, current humidity, the dial, +/-
 buttons, hvac-mode icon toggles, and the Mode/Preset/Fan chip row, with the redundant row gone and
 each card correspondingly shorter. Spot-checked the `dashboard-office` calendar card (the
-FullCalendar `$`-piercing UIX fix recorded in `references/lovelace.md`) on the same page load; its
+FullCalendar `$`-piercing UIX fix recorded in [references/lovelace.md](../../.claude/skills/home-assistant/references/lovelace.md)) on the same page load; its
 tinted background was still applying, so this change did not destabilize UIX elsewhere on the
 dashboard. The only browser console errors on reload were the pre-existing duplicate
 `rss-news-card` registration and its related 404, both already on record as unrelated.

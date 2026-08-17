@@ -8,4 +8,4 @@ buttons). Home has no such replacement, and its native header carries the one th
 dashboards don't need from it: the row of view tabs is Home's only navigation between domains.
 Setting `hide_header: true` on Home, as it briefly was when copied from the other dashboards' kiosk
 block, took the tab strip down with the rest of the native chrome; fixed by dropping `hide_header`
-and keeping only `hide_sidebar`. See `docs/native-dashboards/native-dashboards-retired.md`.
+and keeping only `hide_sidebar`. See [docs/native-dashboards/native-dashboards-retired.md](../native-dashboards/native-dashboards-retired.md).

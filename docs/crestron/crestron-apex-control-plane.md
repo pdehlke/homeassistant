@@ -32,7 +32,7 @@ AADS. The AADS descriptor lists them at IP IDs 11 through 14. Its separate
 Cresnet leg contains the ST-IO and two obsolete Crestron thermostat definitions,
 but no touch panels. See
 [`dumps/aads-favela-v4.dsc.txt`](dumps/aads-favela-v4.dsc.txt)
-and the AADS findings in [`crestron-migration.md`](crestron-migration.md).
+and the AADS findings in [crestron-migration.md](crestron-migration.md).
 
 Crestron's official Destiny 6100 SIMPL module confirms the downstream side of
 the path. It controls the Apex through a CNXCOM or ST-COM serial port using

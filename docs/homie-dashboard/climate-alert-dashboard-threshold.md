@@ -13,11 +13,11 @@ the fork and deployment workflow.
 
 Both thermostats' `_alert` sensors read `info` at the time this was raised (South: code 312,
 "Reduced Airflow-Indoor Blower Cutback"; North: code 901, "Inconsistent Indoor Temp", the same
-code already flagged in `lennox-thermostat-alerts.md` as one North seems to sit in more or less
+code already flagged in [lennox-thermostat-alerts.md](../lennox-climate/lennox-thermostat-alerts.md) as one North seems to sit in more or less
 permanently). `lennoxAlertActive()`, the shared helper behind all three Climate entry points, lit
 the dot for any state other than `none`/`unavailable`/`unknown` — which by original design
 included `info` and `minor`. That was a deliberate, explicit call at the time
-(`lennox-thermostat-alerts.md`'s "Severity mapping" section): the dashboard badge was meant to be
+([lennox-thermostat-alerts.md](../lennox-climate/lennox-thermostat-alerts.md)'s "Severity mapping" section): the dashboard badge was meant to be
 a more permissive, glanceable indicator than the phone/persistent_notification threshold, on the
 reasoning that a dashboard dot and an interruption worth a persistent record are different bars.
 

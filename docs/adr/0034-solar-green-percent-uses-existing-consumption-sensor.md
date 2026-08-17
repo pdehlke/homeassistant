@@ -7,5 +7,5 @@ reconstructed as `solar + gridImport` from the same inputs already in the formul
 Self-consistency with an already-displayed figure was chosen over immunity to a (so far
 unobserved) metering mismatch between independently metered sensors, so this stat can never
 quietly diverge from the number sitting right next to it. See
-`docs/homie-dashboard/overview-c-solar-home-green-percentage.md` and
-`docs/homie-dashboard/overview-c-solar-today-totals.md`.
+[docs/homie-dashboard/overview-c-solar-home-green-percentage.md](../homie-dashboard/overview-c-solar-home-green-percentage.md) and
+[docs/homie-dashboard/overview-c-solar-today-totals.md](../homie-dashboard/overview-c-solar-today-totals.md).

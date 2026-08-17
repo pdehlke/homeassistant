@@ -7,8 +7,8 @@ edge case — it falls back to whichever bound `current_temperature` is nearer t
 band midpoint. The midpoint fallback was the original design, deliberate and covered by its own
 test; it just didn't hold up once idle turned out to be the common case, producing a target (70°)
 that matched no real setpoint on either thermostat. See
-`docs/homie-dashboard/homie-thermostat-control-fix.md` and
-`docs/homie-dashboard/climate-idle-target-fallback.md`.
+[docs/homie-dashboard/homie-thermostat-control-fix.md](../homie-dashboard/homie-thermostat-control-fix.md) and
+[docs/homie-dashboard/climate-idle-target-fallback.md](../homie-dashboard/climate-idle-target-fallback.md).
 
 ## Considered Options (idle fallback)
 

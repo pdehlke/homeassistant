@@ -10,7 +10,7 @@ since that grouping need was already visible with just two rooms and will only g
 
 pde defined two scenes in Home Assistant (`scene.bedroom_evening`, `scene.bathroom_evening`)
 and expected them to surface automatically as a bottom-row chip, based on the dashboard's docs
-and screenshots. Nothing appeared. `docs/project-todo.md` item 6.
+and screenshots. Nothing appeared. [docs/project-todo.md](../project-todo.md) item 6.
 
 ## Investigation
 

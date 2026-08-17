@@ -7,7 +7,7 @@ merely disabled) zone. Trusting it alone risked false positives without testing 
 cases individually. Chosen instead: a baseline diff against a remembered set of entities that
 should exist, generically identified by a `Zone number` attribute rather than a hardcoded name
 list, so a re-enabled zone is picked up automatically. See
-`docs/rachio/rachio-zone-disabled-alert.md`.
+[docs/rachio/rachio-zone-disabled-alert.md](../rachio/rachio-zone-disabled-alert.md).
 
 ## Consequences
 

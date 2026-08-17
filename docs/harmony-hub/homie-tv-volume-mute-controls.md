@@ -90,7 +90,7 @@ tracks activity state without its own subscription.
   Harmony.
 - **No hold-to-repeat.** Each tap is exactly one button press. A physical remote lets you hold for a
   continuous ramp; this dashboard doesn't attempt to simulate that.
-- Everything else `harmony-hub-integration.md` records as unused, direct control of the other five
+- Everything else [harmony-hub-integration.md](./harmony-hub-integration.md) records as unused, direct control of the other five
   devices, `harmony.change_channel`, `harmony.sync`, the Universal media-player wrapper idea, and
   state-driven automation off `current_activity`, remains unused. This change only touches volume
   and mute on the one device that carries audio.

@@ -6,7 +6,7 @@ user's permissions, and LAN-only HTTP does not remove the risk. Accepted with mi
 than blocked on: a dedicated non-admin `Homie Dashboard` HA user owns the token (never the
 administrator account or the `Tablet` kiosk identity, so it can be revoked independently), and pde
 explicitly confirmed acceptance of the residual risk that a standard HA user has no fine-grained
-per-entity authorization. See `docs/homie-dashboard/homie-dashboard-install-plan.md`.
+per-entity authorization. See [docs/homie-dashboard/homie-dashboard-install-plan.md](../homie-dashboard/homie-dashboard-install-plan.md).
 
 ## Consequences
 

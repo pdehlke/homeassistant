@@ -55,7 +55,7 @@ Healthy, high-confidence signatures: `fridge` (415 kWh/yr, up from 401), `heat_p
 ## Media
 
 - Sonos, with 9 `switch.gym_gym_*` entities that are all DSP toggles (crossfade, loudness, night sound, subwoofer, surround), not room controls.
-- Music Assistant add-on, see the main SKILL.md.
+- Music Assistant add-on, see the main [SKILL.md](../SKILL.md).
 - 11 `media_player` entities: Crestron (Living Room), Gym, LSX II-045089 (Office), Samsung QN90BA 85, carol, gymnasium, plus two new since the last snapshot: Samsung TU7000 60 TV and an LG webOS TV UM7300PUA (powered by the new `lg_thinq` integration). Several appear twice and some read `unavailable`.
 
 ## Dashboards
@@ -66,29 +66,29 @@ Current as of 2026-08-16 (re-check with `lovelace/dashboards/list`, this list gr
 - `dashboard-clock`, titled "Clock".
 - `map`, titled "Map".
 - `dashboard-test`, titled "test".
-- `dashboard-office`, titled "Office": the Office kiosk user's own dashboard. See `docs/native-dashboards/office-kiosk-mode.md` and its sibling `office-*.md` docs in the `pdehlke/homeassistant` repo.
-- `homie-dash`, titled "Homie Dash": the installed Homie Dashboard fork, and the sole kiosk target for the wall-mounted Fire HD tablet. See `docs/homie-dashboard/homie-dashboard-install-plan.md` in the `pdehlke/homeassistant` repo for its architecture, deployment workflow, and checkpoint.
+- `dashboard-office`, titled "Office": the Office kiosk user's own dashboard. See [docs/native-dashboards/office-kiosk-mode.md](../../../../docs/native-dashboards/office-kiosk-mode.md) and its sibling `office-*.md` docs in the `pdehlke/homeassistant` repo.
+- `homie-dash`, titled "Homie Dash": the installed Homie Dashboard fork, and the sole kiosk target for the wall-mounted Fire HD tablet. See [docs/homie-dashboard/homie-dashboard-install-plan.md](../../../../docs/homie-dashboard/homie-dashboard-install-plan.md) in the `pdehlke/homeassistant` repo for its architecture, deployment workflow, and checkpoint.
 - The default Overview dashboard does not appear in `lovelace/dashboards/list`; its path is `/lovelace/0`.
 
 Retired 2026-08-16, deleted along with the `Tablet` user, `script.smart_toggle_lights`, and the
 `bath`/`bedroom` labels: `vision-sample` (Home), `tablet-home` (Tablet Home), `dashboard-lights`,
 `dashboard-av`, `dashboard-lennox-home`, `dashboard-alarm-system` — the Crestron-mirrored
 three-level dashboard pattern that predated Homie Dashboard. See
-`docs/native-dashboards/native-dashboards-retired.md` and ADR-0062 in the `pdehlke/homeassistant`
+[docs/native-dashboards/native-dashboards-retired.md](../../../../docs/native-dashboards/native-dashboards-retired.md) and ADR-0062 in the `pdehlke/homeassistant`
 repo. `rebuild-domain-dashboard.py` and `rebuild-home-tab.py`, this skill's own generator scripts
 for that pattern, were deleted with it.
 
 ## Users
 
 - `pete` (id in `config/auth/list`), the owner account, admin.
-- `Homie Dashboard` (display name `Homie Dashboard`), non-admin, `local_only: true`. Scoped for the Homie Dashboard fork's own `kiosk_mode` block (`hide_header` + `hide_sidebar`). See `docs/homie-dashboard/homie-dashboard-install-plan.md`.
-- `Office` (username `office`), non-admin, `local_only: true`. Scoped for `dashboard-office`'s own `kiosk_mode` block. See `docs/native-dashboards/office-kiosk-mode.md`.
+- `Homie Dashboard` (display name `Homie Dashboard`), non-admin, `local_only: true`. Scoped for the Homie Dashboard fork's own `kiosk_mode` block (`hide_header` + `hide_sidebar`). See [docs/homie-dashboard/homie-dashboard-install-plan.md](../../../../docs/homie-dashboard/homie-dashboard-install-plan.md).
+- `Office` (username `office`), non-admin, `local_only: true`. Scoped for `dashboard-office`'s own `kiosk_mode` block. See [docs/native-dashboards/office-kiosk-mode.md](../../../../docs/native-dashboards/office-kiosk-mode.md).
 
 (System-created accounts — Supervisor, Home Assistant Cast, Home Assistant Content, and two Home Assistant Cloud accounts — exist but aren't relevant to dashboard or automation work. The `Tablet` user, built for the now-retired Home dashboard, was deleted 2026-08-16.)
 
 ## HACS frontend plugins installed
 
-As of 2026-08-15, the deprecated `thomasloven/lovelace-card-mod` v4.2.1 resource has been replaced by UIX v8.0.1 and must not be reinstalled. The remaining HACS inventory is `rkotulan/ha-wall-clock-card` v3.4.0, `punxaphil/custom-sonos-card` v10.7.1, `r11a/homeii-music-flow` v5.9.3, `NemesisRE/kiosk-mode` v14.0.2, `pkissling/clock-weather-card` v2.9.4, and `Big-Edge2297/homie-dashboard` v4.1.1 (the Homie Dashboard fork's upstream, tracked here as a HACS repository even though the deployed copy is pde's own fork, see `docs/homie-dashboard/homie-dashboard-install-plan.md`). Re-check via `hacs/repositories/list` rather than trusting this list; it will go stale.
+As of 2026-08-15, the deprecated `thomasloven/lovelace-card-mod` v4.2.1 resource has been replaced by UIX v8.0.1 and must not be reinstalled. The remaining HACS inventory is `rkotulan/ha-wall-clock-card` v3.4.0, `punxaphil/custom-sonos-card` v10.7.1, `r11a/homeii-music-flow` v5.9.3, `NemesisRE/kiosk-mode` v14.0.2, `pkissling/clock-weather-card` v2.9.4, and `Big-Edge2297/homie-dashboard` v4.1.1 (the Homie Dashboard fork's upstream, tracked here as a HACS repository even though the deployed copy is pde's own fork, see [docs/homie-dashboard/homie-dashboard-install-plan.md](../../../../docs/homie-dashboard/homie-dashboard-install-plan.md)). Re-check via `hacs/repositories/list` rather than trusting this list; it will go stale.
 
 ## Things previously created here
 
@@ -96,7 +96,7 @@ As of 2026-08-15, the deprecated `thomasloven/lovelace-card-mod` v4.2.1 resource
 - `calendar.home` via Local Calendar, installed because the wall clock card's calendar widget needs a calendar entity and none existed.
 - A calendar event titled `DEMO EVENT - safe to delete`. If it is still present and the user has not mentioned it, it can go.
 - Five `light.*` template entities in the Primary Suite area (`bedroom_perimeter`, `bedroom_diagonals`, `bath_perimeter`, `bath_diagonals`, `hallway`), same template-light pattern as the original two (`bed_light`, `ceiling_lights`). `hallway` carries both the `bath` and `bedroom` labels at once, deliberately; a label list is not exclusive.
-- Two labels, `bath` and `bedroom`, used to target sub-area preset groups a nested area can't express (HA areas do not nest). Deleted 2026-08-16 along with the retired native-dashboard pattern that used them; see `docs/native-dashboards/native-dashboards-retired.md` in the `pdehlke/homeassistant` repo.
+- Two labels, `bath` and `bedroom`, used to target sub-area preset groups a nested area can't express (HA areas do not nest). Deleted 2026-08-16 along with the retired native-dashboard pattern that used them; see [docs/native-dashboards/native-dashboards-retired.md](../../../../docs/native-dashboards/native-dashboards-retired.md) in the `pdehlke/homeassistant` repo.
 - `script.smart_toggle_lights`, a reusable field-driven script (`target_area_id` / `target_label_id`) that turned a whole group of lights uniformly on or off based on whether any of them was currently on, because the `light.toggle` service does not do that for a multi-entity target. Deleted 2026-08-16 with the retired native-dashboard pattern it served. See [references/api-access.md](api-access.md#a-script-or-automation-field-named-after-a-jinja-global-silently-breaks) for the naming bug that cost the most time building it — still worth knowing even though the script itself is gone.
 - `scene.bedroom_evening` and `scene.bathroom_evening`, both in Primary Suite: a fixed, specific brightness combination per room rather than a uniform level, the thing an area/label-targeted preset structurally cannot express.
 - Five `light.*` template entities in the Entry area (`door`, `home_perimeter`, `garage_sconces`, `entry_perimeter`, `entry_center`), same template-light pattern, no scenes and no group-preset labels for this batch.
@@ -107,9 +107,9 @@ As of 2026-08-15, the deprecated `thomasloven/lovelace-card-mod` v4.2.1 resource
 - `lock.poorly_installed_door` and `alarm_control_panel.security`, both backed by their own `input_boolean` (`poorly_installed_door_locked`, `security_armed`) rather than any real hardware integration yet, matching the light-entity-strategy pattern of building the entity ahead of real control.
 - The Lennox iComfort S30 integration (`lennoxs30`), bringing in `climate.casasolar_north_zone_1` and `climate.casasolar_south_zone_1` plus a large set of diagnostic binary sensors, selects, and away-mode switches per unit, and two automations (`automation.lennox_thermostat_alert`, `automation.lennox_reduced_airflow_filter_alert`). See `docs/lennox-climate/`.
 - The Rachio integration, covering Main Irrigation's 7 named zones plus standby/rain-delay/even-days switches and the separate Back Yard Smart Hose Timer, with four automations (`rachio_zone_or_valve_disabled_alert`, `rachio_standby_mode_engaged_alert`, `rachio_periodic_config_entry_reload`, `rachio_back_yard_hose_timer_health_alert`). See `docs/rachio/`.
-- The Roborock integration, covering `vacuum.q5_max` (the Q5 Max+) and its charging/cleaning/dock/mop/water sensors, plus `automation.roborock_integration_periodic_reload` to work around the known MQTT status-freeze bug. See `docs/device-alerts/roborock-status-mqtt-stall.md`.
-- Home Assistant Cloud (Nabu Casa), giving `binary_sensor.remote_ui` and internet-reachable remote access. See `docs/nabucasa-remote-access/nabucasa-remote-ui-dns-fragility.md`.
-- The Homie Dashboard fork, deployed as the `homie-dash` Lovelace dashboard with its own `Homie Dashboard` user. See `docs/homie-dashboard/homie-dashboard-install-plan.md`.
+- The Roborock integration, covering `vacuum.q5_max` (the Q5 Max+) and its charging/cleaning/dock/mop/water sensors, plus `automation.roborock_integration_periodic_reload` to work around the known MQTT status-freeze bug. See [docs/device-alerts/roborock-status-mqtt-stall.md](../../../../docs/device-alerts/roborock-status-mqtt-stall.md).
+- Home Assistant Cloud (Nabu Casa), giving `binary_sensor.remote_ui` and internet-reachable remote access. See [docs/nabucasa-remote-access/nabucasa-remote-ui-dns-fragility.md](../../../../docs/nabucasa-remote-access/nabucasa-remote-ui-dns-fragility.md).
+- The Homie Dashboard fork, deployed as the `homie-dash` Lovelace dashboard with its own `Homie Dashboard` user. See [docs/homie-dashboard/homie-dashboard-install-plan.md](../../../../docs/homie-dashboard/homie-dashboard-install-plan.md).
 - Mobile app registration for Pete's iPhone and the Fire HD 10 tablet, enabling real push notifications and device trackers. See the Notifications section above.
 - `script.group_compatible_media_players` and `script.ungroup_compatible_media_players`, for Sonos speaker grouping, not otherwise documented in this archive yet.
 - The garage EV charger via the `openevse` integration and a Logitech Harmony Hub (`remote.harmony_hub`) both appear live but have no writeup anywhere in this archive; see the Integrations section above.

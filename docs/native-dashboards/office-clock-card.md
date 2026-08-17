@@ -2,7 +2,7 @@
 
 `dashboard-office`'s clock, already set to the native `type: clock` card's largest built-in size,
 needed to be larger still. Swapped to `custom:wall-clock-card` (rkotulan/ha-wall-clock-card
-v3.5.0, already HACS-installed and documented in this skill's `references/lovelace.md`), which has
+v3.5.0, already HACS-installed and documented in this skill's [references/lovelace.md](../../.claude/skills/home-assistant/references/lovelace.md)), which has
 no upper size cap. Built 2026-08-15 on Home Assistant 2026.8.1.
 
 ## Why the native card couldn't do this
@@ -20,7 +20,7 @@ no numeric override in the card's own config schema.
   `clock_size`/`clock_style`, capped at whatever `large` needs; a CSS-only size increase wouldn't
   grow that computed row count with it, and this instance has already been bitten once by the
   general version of that trap (shrinking a card's `grid_options` doesn't shrink its contents,
-  documented in `references/lovelace.md`'s "Sections grid math"; the enlarging direction has the
+  documented in [references/lovelace.md](../../.claude/skills/home-assistant/references/lovelace.md)'s "Sections grid math"; the enlarging direction has the
   same box/content mismatch risk). Fixable only by hand-tuning an explicit `grid_options.rows`
   against CSS that HA's own row-height math knows nothing about.
 - **Swap to `custom:wall-clock-card` (chosen).** Its `clockSize` field takes a raw CSS size, no
@@ -66,7 +66,7 @@ outside the repo; the pre-swap one is the rollback path if this doesn't hold up.
 
 - **`clockSize: 6rem` (96px), `dateSize: 1.75rem` (28px).** Roughly 1.7x the old 56px digits,
   chosen by eye against a live screenshot rather than a fixed ratio: this instance's own working
-  size-set for `wall-clock-card` (`references/lovelace.md`'s "Working small-card size set") is for
+  size-set for `wall-clock-card` ([references/lovelace.md](../../.claude/skills/home-assistant/references/lovelace.md)'s "Working small-card size set") is for
   a ~430px card and 4rem clock text, a smaller target than this one, so it wasn't reused directly.
 - **`timeFormat`/`dateFormat` set explicitly.** The native card had left format to HA locale
   defaults; `wall-clock-card` needs the format spelled out, so `hour12: true` and the same

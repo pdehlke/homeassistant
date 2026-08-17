@@ -9,4 +9,4 @@ misdiagnosed "History Unavailable" chart. The actual problem was never "the tabl
 was "the tablet's OS can't do mDNS." Fixed by giving every client, tablet included, one real DNS
 hostname (`hass.ehlke.net`/`mass.ehlke.net`) that resolves without mDNS, so the outer page and
 every inner `fetch()` call always share an origin regardless of which client asks. See
-`docs/networking/hostname-migration-to-ehlke-net.md`.
+[docs/networking/hostname-migration-to-ehlke-net.md](../networking/hostname-migration-to-ehlke-net.md).

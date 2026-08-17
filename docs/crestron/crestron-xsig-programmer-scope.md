@@ -110,9 +110,9 @@ assumed to be the Apex serial interface or disconnected as part of this work.
 
 ### Repository evidence supplied to the programmer
 
-- [`crestron-migration.md`](crestron-migration.md)
-- [`crestron-strategy.md`](crestron-strategy.md)
-- [`crestron-apex-control-plane.md`](crestron-apex-control-plane.md)
+- [crestron-migration.md](crestron-migration.md)
+- [crestron-strategy.md](crestron-strategy.md)
+- [crestron-apex-control-plane.md](crestron-apex-control-plane.md)
 - [`dumps/mc2e-gale-favela-11-14-08.dsc.txt`](dumps/mc2e-gale-favela-11-14-08.dsc.txt)
 - [`dumps/aads-favela-v4.dsc.txt`](dumps/aads-favela-v4.dsc.txt)
 - [`dumps/aads-favela-v4.dip.txt`](dumps/aads-favela-v4.dip.txt)
