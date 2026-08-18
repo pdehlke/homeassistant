@@ -199,7 +199,8 @@ Notes, planning, and specs for my Home Assistant buildout.
   Why the Genres browse page filed Front 242, Patti Smith, and other new-wave/goth/post-punk
   artists under Classical and Experimental: a bundled alias table wrongly mapped the bare tag
   "Alternative" to both. Fixed live via Music Assistant's Promote Alias feature; includes the
-  before/after verification and a superseded playlist-based workaround.
+  before/after verification and the API calls used to build, then delete, the playlist-based
+  workaround that preceded the real fix.
 
 - [homeii-music-flow.md](docs/music-assistant/homeii-music-flow.md)
 

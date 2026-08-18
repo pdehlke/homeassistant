@@ -82,11 +82,16 @@ and against "Full Restore" ("reinstalls the defective defaults"). Both are plaus
 or restore could plausibly re-seed the bundled alias table — but neither was tested here. Treat
 as unconfirmed if it comes up again; don't repeat it as established fact without checking.
 
-## Workaround, superseded
+## Workaround, superseded and removed
 
 Before the real fix was applied, a static Music Assistant playlist named "Alternative (genuine)"
 (`library://playlist/9`) was built directly via the API — `music/playlists/create_playlist` then
 `music/playlists/add_playlist_tracks` — containing the 198 tracks whose raw tag is `Alternative`,
-since `music/tracks/library_items` has no genre filter to query against directly. It's redundant
-now that the native Alternative genre page does the same job and stays live as the library
-changes, but it's harmless to leave in place or delete.
+since `music/tracks/library_items` has no genre filter to query against directly.
+
+Deleted 2026-08-18 once the real fix confirmed it redundant, via
+`music/library/remove_item` with `media_type: playlist` and `library_item_id` (not `item_id` —
+that parameter name returns a `999` error naming `library_item_id` as the required field).
+Verified gone two ways: `music/get_library_item` on `library://playlist/9` now returns `playlist
+not found in library: 9`, and the HA-side `music_assistant.get_library` service (`media_type:
+playlist`) lists exactly the original 8 built-in playlists again, with the extra one gone.
