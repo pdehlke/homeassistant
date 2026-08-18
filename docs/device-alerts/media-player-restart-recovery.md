@@ -10,7 +10,9 @@ doesn't require someone to notice and manually reload it.
 | Helper script | `script.reload_media_player_config_entry` |
 
 Both live and enabled. Created 2026-08-15, verified working the same day against Home Assistant
-2026.8.1.
+2026.8.1. TV exclusion list corrected and re-verified live 2026-08-18; see
+[2026-08-18: incomplete TV exemption broke the notification, not just the reload](#2026-08-18-incomplete-tv-exemption-broke-the-notification-not-just-the-reload)
+below.
 
 ## Why it exists
 
@@ -34,9 +36,12 @@ that wasn't enough.
 Broad by design: it watches every non-TV `media_player` entity, not a hand-maintained list of the
 ones known to be fragile today. Television entities are excluded because their unavailable state
 is expected when they are powered off or disconnected. The exclusion currently covers
-`media_player.carol`, `media_player.carol_2`, `media_player.gymnasium`, and
+`media_player.carol`, `media_player.carol_2`, `media_player.gymnasium`,
+`media_player.samsung_qn90ba_85`, `media_player.samsung_tu7000_60_tv`, and
 `media_player.lg_webos_tv_um7300pua`. On 2026-08-15, the original broad query found several TVs
-alongside the audio players that needed recovery; those TVs are now exempt.
+alongside the audio players that needed recovery; those TVs are now exempt. See the 2026-08-18
+section below for how the exclusion is now applied and why it changed shape, not just grew by two
+entries.
 
 ```yaml
 alias: Recover stuck media players after restart
@@ -50,11 +55,17 @@ actions:
   - delay:
       minutes: 5
   - variables:
+      exempt_entities:
+        - media_player.carol
+        - media_player.carol_2
+        - media_player.gymnasium
+        - media_player.samsung_qn90ba_85
+        - media_player.samsung_tu7000_60_tv
+        - media_player.lg_webos_tv_um7300pua
       stuck_entities: >
         {{ states.media_player | selectattr('state', 'eq', 'unavailable')
            | map(attribute='entity_id')
-           | reject('in', ['media_player.carol', 'media_player.carol_2',
-                          'media_player.gymnasium', 'media_player.lg_webos_tv_um7300pua'])
+           | reject('in', exempt_entities)
            | list }}
   - if:
       - condition: template
@@ -145,6 +156,45 @@ inferable from the target entity still being unavailable at the 60 second rechec
 because the automation's actual correctness condition, whether the entity recovered, doesn't depend
 on knowing *why* a reload attempt failed.
 
+## 2026-08-18: incomplete TV exemption broke the notification, not just the reload
+
+pde asked for two more TVs to be exempted (`media_player.samsung_qn90ba_85` and
+`media_player.samsung_tu7000_60_tv`) after getting a persistent notification that named all six
+TVs as "still unavailable" following a restart, including four that were supposedly already
+exempt. An earlier, undocumented edit had touched this automation to add TV exemptions and got two
+things wrong:
+
+- The exclusion list covered only 4 of the 6 TVs that needed it. The two Samsungs were still being
+  reload-attempted. Harmless on its own (a reload can't fix a powered-off TV) but wasted effort and
+  not what was intended.
+- The bigger problem: the exclusion was applied only inside the `repeat.for_each` that drives
+  reload attempts, by wrapping that one template in a `reject('in', [...])`. The `stuck_entities`
+  variable that the final `still_stuck` check and the notification message are built from was
+  populated once, earlier, straight from `states.media_player` with no exclusion at all. So every
+  one of the six TVs kept landing in the notification on every restart where they were powered
+  off, regardless of whether the reload loop had been told to skip them. The reload-side fix and
+  the notification-side bug were independent; fixing one didn't touch the other, which is exactly
+  why four of the six TVs stayed exempt from reload but still triggered the alert.
+
+An alternative considered and rejected: leave the two exemption points as-is and just add the two
+missing entities to both reject filters. Rejected because that keeps the underlying defect, two
+places that must independently agree on the same list, with no mechanism forcing them to. The next
+TV added to the house would have the same failure mode: exempted from reload, still notified
+about, because it's easy to update one `reject()` call and forget the other exists.
+
+Fixed instead by computing `stuck_entities` once, with the exclusion applied at that single point,
+and reusing that already-filtered value for both the reload loop and the `still_stuck` recheck.
+There is now exactly one list and one place it's applied; nothing downstream can see an exempted
+entity at all, so there's no second copy to fall out of sync.
+
+Verified live via `automation.trigger`, not just `check_config`: at the time of the test, all six
+exempted TVs were the only `unavailable` `media_player` entities on the instance. The run trace
+showed `exempt_entities` populated with all six, `stuck_entities` correctly empty, and the run
+exiting cleanly at the outer `if` condition (`action/2/if/condition/0`, result `false`), meaning
+the reload loop and notification block were both skipped entirely. Confirmed separately that no
+new `persistent_notification` was created by that run, then dismissed the stale one from before
+the fix.
+
 ## Remaining gaps
 
 Nothing clears `media_player_restart_recovery` when a flagged entity later comes back on its own;
@@ -155,7 +205,9 @@ No mobile push, deliberately (pde's call): `persistent_notification.create` only
 `notify.notify` or a phone.
 
 TV entities are intentionally outside this automation's scope. If another television is added,
-add its entity ID to the exclusion list before treating it as a recovery candidate.
+add its entity ID to `exempt_entities`, the single list both the reload loop and the notification
+check now read from (see the 2026-08-18 section above for why that consolidation matters: a
+two-list version of this exclusion silently under-covered the notification path for over a day).
 
 ## Gotchas hit while building this
 
