@@ -10,41 +10,50 @@ HB="Authorization: Bearer $HA_TOKEN"; U=http://hass.ehlke.net:8123
 
 Confirmed working on this instance:
 
-| Endpoint | Use |
-|---|---|
-| `GET /api/` | Auth check, returns 200 |
-| `GET /api/config` | Version, components, config dir, unit system |
-| `GET /api/states` | All entity states |
-| `GET /api/states/<entity_id>` | One entity |
-| `POST /api/services/<domain>/<service>` | Call a service |
-| `GET /api/services` | Every service domain |
-| `GET /api/config/config_entries/entry` | Installed integrations |
-| `GET/POST/DELETE /api/config/automation/config/<id>` | Automation CRUD |
-| `POST /api/config/core/check_config` | Validate config |
-| `GET /api/history/period/<start>` | History, see the gotcha below |
-| `POST /api/template` | Render a Jinja template |
+| Endpoint                                             | Use                                          |
+| ---------------------------------------------------- | -------------------------------------------- |
+| `GET /api/`                                          | Auth check, returns 200                      |
+| `GET /api/config`                                    | Version, components, config dir, unit system |
+| `GET /api/states`                                    | All entity states                            |
+| `GET /api/states/<entity_id>`                        | One entity                                   |
+| `POST /api/services/<domain>/<service>`              | Call a service                               |
+| `GET /api/services`                                  | Every service domain                         |
+| `GET /api/config/config_entries/entry`               | Installed integrations                       |
+| `GET/POST/DELETE /api/config/automation/config/<id>` | Automation CRUD                              |
+| `POST /api/config/core/check_config`                 | Validate config                              |
+| `GET /api/history/period/<start>`                    | History, see the gotcha below                |
+| `POST /api/template`                                 | Render a Jinja template                      |
 
 `GET /api/error_log` returns **404** here. Do not rely on it.
 
 ### History timestamps must use `Z`
 
-An ISO timestamp with a `+00:00` offset silently returns `[]`. Python's `.isoformat()` produces exactly that, which cost real debugging time. Use:
+An ISO timestamp with a `+00:00` offset silently returns `[]`. Python's
+`.isoformat()` produces exactly that, which cost real debugging time. Use:
 
 ```bash
 START=$(python3 -c "import datetime;print((datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(hours=28)).strftime('%Y-%m-%dT%H:%M:%SZ'))")
 curl -s -H "$HB" "$U/api/history/period/$START?filter_entity_id=binary_sensor.fridge_power"
 ```
 
-Also note the API may return a series whose data starts later than the requested window, so measure the actual span of returned points rather than assuming you got what you asked for.
+Also note the API may return a series whose data starts later than the requested
+window, so measure the actual span of returned points rather than assuming you
+got what you asked for.
 
-**A start time earlier than the recorder's oldest row also returns `[]`, not the subset that does exist.** Asking for 48h on an instance holding 24h gets you nothing at all, which reads exactly like "this entity has no history". Confirmed 2026-08-04: a 48h query on `binary_sensor.fridge_power` returned `[]` while a 24h query returned 86 events. When a history query comes back empty, halve the window and retry before concluding the entity is unrecorded.
+**A start time earlier than the recorder's oldest row also returns `[]`, not the
+subset that does exist.** Asking for 48h on an instance holding 24h gets you
+nothing at all, which reads exactly like "this entity has no history". Confirmed
+2026-08-04: a 48h query on `binary_sensor.fridge_power` returned `[]` while a
+24h query returned 86 events. When a history query comes back empty, halve the
+window and retry before concluding the entity is unrecorded.
 
 ### The former dual-stack login failure is resolved
 
-A multi-request login flow once failed with `{"message": "IP address changed"}` because consecutive
-requests could take different IPv4 and IPv6 routes. IPv6 is now disabled for this installation, so
-the literal-IP workaround is obsolete. Use `hass.ehlke.net` consistently for login flows,
-REST, WebSocket, browser, and SSH access. Use `mass.ehlke.net` for direct Music Assistant access.
+A multi-request login flow once failed with `{"message": "IP address changed"}`
+because consecutive requests could take different IPv4 and IPv6 routes. IPv6 is
+now disabled for this installation, so the literal-IP workaround is obsolete.
+Use `hass.ehlke.net` consistently for login flows, REST, WebSocket, browser, and
+SSH access. Use `mass.ehlke.net` for direct Music Assistant access.
 
 ### Install an integration via config flow
 
@@ -59,17 +68,24 @@ curl -s -X POST -H "$HB" -H "Content-Type: application/json" \
   -d '{"calendar_name":"Home"}' "$U/api/config/config_entries/flow/$FID"
 ```
 
-Inspect the first response's `step_id` and `data_schema` to learn what the second POST needs.
+Inspect the first response's `step_id` and `data_schema` to learn what the
+second POST needs.
 
 ### Create an automation
 
-POST the config to `/api/config/automation/config/<your_id>`. HA reloads automatically. Use the modern schema (`triggers` / `conditions` / `actions`, with `trigger:` and `action:` keys inside them). Verify by checking that `automation.<slug>` appears in `/api/states`, then confirm behavior with `POST /api/services/automation/trigger` and reading `last_triggered`.
+POST the config to `/api/config/automation/config/<your_id>`. HA reloads
+automatically. Use the modern schema (`triggers` / `conditions` / `actions`,
+with `trigger:` and `action:` keys inside them). Verify by checking that
+`automation.<slug>` appears in `/api/states`, then confirm behavior with
+`POST /api/services/automation/trigger` and reading `last_triggered`.
 
-To verify an automation ran, read `last_triggered` and the run trace. Do not verify by looking for its notification over REST; see below.
+To verify an automation ran, read `last_triggered` and the run trace. Do not
+verify by looking for its notification over REST; see below.
 
 ### Create a scene
 
-Same shape as an automation: POST the config to `/api/config/scene/config/<your_id>`.
+Same shape as an automation: POST the config to
+`/api/config/scene/config/<your_id>`.
 
 ```bash
 curl -s -X POST -H "$HB" -H "Content-Type: application/json" \
@@ -83,16 +99,23 @@ curl -s -X POST -H "$HB" -H "Content-Type: application/json" \
   }'
 ```
 
-`entities` values are either a bare state string (`"on"`) or an object of `state` plus whatever
-attributes that domain understands (`brightness` 0-255, `color_temp_kelvin`, not the removed
-mireds-based `color_temp`). A scene has no device, so give it an area the same way a template
-entity gets one: `config/entity_registry/update` over WebSocket, not anything in the scene config
-itself. Activate with `scene.turn_on` targeting the entity, or a `tile` card's default tap action,
-which opens a more-info dialog with an Activate button rather than firing on the first tap.
+`entities` values are either a bare state string (`"on"`) or an object of
+`state` plus whatever attributes that domain understands (`brightness` 0-255,
+`color_temp_kelvin`, not the removed mireds-based `color_temp`). A scene has no
+device, so give it an area the same way a template entity gets one:
+`config/entity_registry/update` over WebSocket, not anything in the scene config
+itself. Activate with `scene.turn_on` targeting the entity, or a `tile` card's
+default tap action, which opens a more-info dialog with an Activate button
+rather than firing on the first tap.
 
 ### Persistent notifications are not entities
 
-Recent HA versions removed persistent notifications from the state machine. `GET /api/states` filtered on `persistent_notification.` returns **nothing whether or not notifications exist**, and there is no REST endpoint for them. An empty result reads exactly like "the automation did not fire" and means nothing of the kind. This produced a wrong conclusion here once, on 2026-08-04, when a notification that had in fact been created looked absent.
+Recent HA versions removed persistent notifications from the state machine.
+`GET /api/states` filtered on `persistent_notification.` returns **nothing
+whether or not notifications exist**, and there is no REST endpoint for them. An
+empty result reads exactly like "the automation did not fire" and means nothing
+of the kind. This produced a wrong conclusion here once, on 2026-08-04, when a
+notification that had in fact been created looked absent.
 
 Read them over WebSocket:
 
@@ -109,61 +132,84 @@ curl -s -X POST -H "$HB" -H "Content-Type: application/json" \
 
 ### Inspect an automation or script run with traces
 
-More reliable than inferring behavior from side effects. `script_execution` and per-action errors are both visible, including errors swallowed by `continue_on_error`, and every rendered `variables:` value along the way.
+More reliable than inferring behavior from side effects. `script_execution` and
+per-action errors are both visible, including errors swallowed by
+`continue_on_error`, and every rendered `variables:` value along the way.
 
 ```bash
 python3 scripts/haws.py '{"type":"trace/list","domain":"automation","item_id":"<id>"}'
 python3 scripts/haws.py '{"type":"trace/get","domain":"automation","item_id":"<id>","run_id":"<run>"}'
 ```
 
-`domain` is `"script"` for a script, same two commands otherwise. This is how a `smart_toggle_lights`
-script that silently computed the wrong branch got diagnosed: the outcome alone (wrong lights turned
-off) looked like a resolution problem, but the trace's `changed_variables` on the `variables:` step
-showed the real cause directly, an empty entity list and a variable that had rendered to `false` when
-it should not have.
+`domain` is `"script"` for a script, same two commands otherwise. This is how a
+`smart_toggle_lights` script that silently computed the wrong branch got
+diagnosed: the outcome alone (wrong lights turned off) looked like a resolution
+problem, but the trace's `changed_variables` on the `variables:` step showed the
+real cause directly, an empty entity list and a variable that had rendered to
+`false` when it should not have.
 
-A logbook entry carrying a `context_user_id` marks an API-initiated trigger rather than a real one. Check that before reading anything into `last_triggered`.
+A logbook entry carrying a `context_user_id` marks an API-initiated trigger
+rather than a real one. Check that before reading anything into
+`last_triggered`.
 
 ### A script or automation field named after a Jinja global silently breaks
 
-Home Assistant registers lookup functions as Jinja globals: `area_id()`, `area_name()`,
-`area_entities()`, `area_devices()`, `label_id()`, `label_name()`, `label_entities()`,
-`label_devices()`, `label_areas()`, `device_id()`, and more, all available in any template regardless
-of what fields a script or automation defines.
+Home Assistant registers lookup functions as Jinja globals: `area_id()`,
+`area_name()`, `area_entities()`, `area_devices()`, `label_id()`,
+`label_name()`, `label_entities()`, `label_devices()`, `label_areas()`,
+`device_id()`, and more, all available in any template regardless of what fields
+a script or automation defines.
 
-Give a script field the same name as one of these — `area_id`, say — and a call that does not supply
-it does not leave that name `Undefined` inside the template. Jinja resolves the bare name against its
-own global environment when no local value shadows it, finds the built-in function instead, and a
-function object is truthy. `{{ area_id | default(omit) }}` never falls back, because `default()`
-only triggers on `Undefined`, not on some other value that happens not to be what was meant.
-Downstream logic that branches on `if area_id` takes the wrong branch, and nothing raises: no error,
-no warning, just a quietly wrong result that looks like a different bug entirely (an empty
-`area_entities()` call, a condition that evaluates backwards) until the trace is actually read.
+Give a script field the same name as one of these — `area_id`, say — and a call
+that does not supply it does not leave that name `Undefined` inside the
+template. Jinja resolves the bare name against its own global environment when
+no local value shadows it, finds the built-in function instead, and a function
+object is truthy. `{{ area_id | default(omit) }}` never falls back, because
+`default()` only triggers on `Undefined`, not on some other value that happens
+not to be what was meant. Downstream logic that branches on `if area_id` takes
+the wrong branch, and nothing raises: no error, no warning, just a quietly wrong
+result that looks like a different bug entirely (an empty `area_entities()`
+call, a condition that evaluates backwards) until the trace is actually read.
 
-Name fields to not collide: `target_area_id` / `target_label_id` rather than `area_id` / `label_id`,
-for instance. There is no validator for this; the field selector accepts the name fine, and
-`check_config` reports the config valid, because it is valid, just wrong once it runs.
+Name fields to not collide: `target_area_id` / `target_label_id` rather than
+`area_id` / `label_id`, for instance. There is no validator for this; the field
+selector accepts the name fine, and `check_config` reports the config valid,
+because it is valid, just wrong once it runs.
 
 ### Services that return data
 
-Some services (all four Music Assistant query services, for example) return a response that is **not optional**. Ask for it explicitly or the call fails:
+Some services (all four Music Assistant query services, for example) return a
+response that is **not optional**. Ask for it explicitly or the call fails:
 
-- REST: append `?return_response` to the service URL, and read `.service_response`.
+- REST: append `?return_response` to the service URL, and read
+  `.service_response`.
 - WebSocket: add `"return_response": true`, and read `.result.response`.
 
 ### Debug failed service calls over WebSocket
 
-A rejected service call over REST returns a bare `400: Bad Request` with an empty body. The **identical** call over WebSocket returns the real voluptuous validator message naming the offending key, for example `extra keys not allowed @ data['pagination']`. Whenever a service call 400s and the reason is not obvious, re-issue it through `scripts/haws.py` before guessing.
+A rejected service call over REST returns a bare `400: Bad Request` with an
+empty body. The **identical** call over WebSocket returns the real voluptuous
+validator message naming the offending key, for example
+`extra keys not allowed @ data['pagination']`. Whenever a service call 400s and
+the reason is not obvious, re-issue it through `scripts/haws.py` before
+guessing.
 
-Note also that a published service schema can advertise fields the validator rejects. Trust the validator, not `/api/services`.
+Note also that a published service schema can advertise fields the validator
+rejects. Trust the validator, not `/api/services`.
 
 ### Read the real keys before concluding anything
 
-`jq` returns null for a field that does not exist, exactly as it does for a field that exists and is empty. Filtering on an assumed field name and getting nulls is **not** evidence of absence.
+`jq` returns null for a field that does not exist, exactly as it does for a
+field that exists and is empty. Filtering on an assumed field name and getting
+nulls is **not** evidence of absence.
 
-This produced a wrong, confidently-stated conclusion once: querying `.provider` on Music Assistant library items returned null for all 36, and the report claimed no music provider was configured. The items simply have no `provider` key, and Pandora was connected the whole time.
+This produced a wrong, confidently-stated conclusion once: querying `.provider`
+on Music Assistant library items returned null for all 36, and the report
+claimed no music provider was configured. The items simply have no `provider`
+key, and Pandora was connected the whole time.
 
-Dump one full object and read its actual keys before drawing a conclusion from any field query:
+Dump one full object and read its actual keys before drawing a conclusion from
+any field query:
 
 ```bash
 jq -r '.result.response.items[0]' out.json                      # one whole object
@@ -174,12 +220,13 @@ jq -r '[.result.response.items[] | keys] | flatten | unique' out.json   # every 
 
 Required for Lovelace, registries, and HACS. Use the bundled client:
 
-Run authenticated commands with the working directory set to this `homeassistant` repository. If a
-temporary client lives under `/tmp`, invoke its absolute path while keeping the repository as the
-working directory. In this harness, changing the command working directory to `/tmp` removes
-`HA_TOKEN` from the child environment. Reassigning `HA_TOKEN` from that unset context passes an
-empty value and produces a misleading WebSocket authentication failure even though the launch
-session's token is valid.
+Run authenticated commands with the working directory set to this
+`homeassistant` repository. If a temporary client lives under `/tmp`, invoke its
+absolute path while keeping the repository as the working directory. In this
+harness, changing the command working directory to `/tmp` removes `HA_TOKEN`
+from the child environment. Reassigning `HA_TOKEN` from that unset context
+passes an empty value and produces a misleading WebSocket authentication failure
+even though the launch session's token is valid.
 
 ```bash
 export HA_URL=http://hass.ehlke.net:8123
@@ -191,46 +238,52 @@ python3 scripts/haws.py '{"type":"config/label_registry/create","name":"Bath","i
 python3 scripts/haws.py '{"type":"config/entity_registry/update","entity_id":"light.x","labels":["bath"]}'
 ```
 
-It authenticates, sends each argument as one command in order, and prints each result as JSON on its own line. Needs `aiohttp`, which is already installed.
+It authenticates, sends each argument as one command in order, and prints each
+result as JSON on its own line. Needs `aiohttp`, which is already installed.
 
-Labels work like a second, non-exclusive area: `config/label_registry/create` returns a `label_id`
-slugged from `name`, same as areas do. `entity_registry/update`'s `labels` field is a full list, not
-an add/remove delta, and one entity can carry more than one label at once — a fixture that
-legitimately belongs to two logical groups (a hallway light that's part of both a bedroom's and a
-bathroom's preset group, say) just gets both label IDs in that list. Target a label in a service call
-the same way as an area, `target: {"label_id": "bath"}` instead of `{"area_id": ...}`.
+Labels work like a second, non-exclusive area: `config/label_registry/create`
+returns a `label_id` slugged from `name`, same as areas do.
+`entity_registry/update`'s `labels` field is a full list, not an add/remove
+delta, and one entity can carry more than one label at once — a fixture that
+legitimately belongs to two logical groups (a hallway light that's part of both
+a bedroom's and a bathroom's preset group, say) just gets both label IDs in that
+list. Target a label in a service call the same way as an area,
+`target: {"label_id": "bath"}` instead of `{"area_id": ...}`.
 
-To write a dashboard, use `scripts/apply-card.py` rather than hand-rolling a save. It reads the live config, writes a timestamped backup, swaps only the card you target, and refuses to save unless it matched exactly one.
+To write a dashboard, use `scripts/apply-card.py` rather than hand-rolling a
+save. It reads the live config, writes a timestamped backup, swaps only the card
+you target, and refuses to save unless it matched exactly one.
 
 ## Never leak the token
-
-Two separate leaks so far, both forcing a rotation. `playwright-cli` printing generated code was
-the first. The second was a plain Bash command meant to just report whether `$HA_TOKEN` was set:
 
 ```bash
 # LEAKS THE TOKEN. Do not use this pattern.
 echo "HA_TOKEN set: ${HA_TOKEN:+yes}${HA_TOKEN:-no}"
 ```
 
-`${VAR:-fallback}` substitutes `fallback` only when `VAR` is unset or empty. When it *is* set,
-which is the normal case, that expansion is the literal value, not the word "no". The safe way to
-check presence without ever interpolating the value into anything printed is a test expression:
+`${VAR:-fallback}` substitutes `fallback` only when `VAR` is unset or empty.
+When it _is_ set, which is the normal case, that expansion is the literal value,
+not the word "no". The safe way to check presence without ever interpolating the
+value into anything printed is a test expression:
 
 ```bash
 if [ -n "$HA_TOKEN" ]; then echo "HA_TOKEN is set"; else echo "HA_TOKEN is NOT set"; fi
 ```
 
-`${HA_TOKEN:+set}` alone (no paired `:-`) is also safe. The general rule: before running any Bash
-command that references `$HA_TOKEN`, check whether the value could reach stdout/stderr — string
-interpolation into an echoed literal, a heredoc, `set -x`, or a redaction pipe applied after the
-fact — not just whether the command "looks like" a print. Piping through `curl -H "$HB" ...` is
-fine, since curl doesn't echo its own headers back unless `-v`/`--trace` is added; the danger is
-specifically building a string that contains the token and displaying it, which redaction can only
-catch after the fact and imperfectly, as both incidents showed.
+`${HA_TOKEN:+set}` alone (no paired `:-`) is also safe. The general rule: before
+running any Bash command that references `$HA_TOKEN`, check whether the value
+could reach stdout/stderr — string interpolation into an echoed literal, a
+heredoc, `set -x`, or a redaction pipe applied after the fact — not just whether
+the command "looks like" a print. Piping through `curl -H "$HB" ...` is fine,
+since curl doesn't echo its own headers back unless `-v`/`--trace` is added; the
+danger is specifically building a string that contains the token and displaying
+it, which redaction can only catch after the fact and imperfectly.
 
-`playwright-cli` prints the code it generates. Passing the token through `run-code` or `localstorage-set` puts it in the transcript verbatim. It happened once and the token had to be rotated.
+`playwright-cli` prints the code it generates. Passing the token through
+`run-code` or `localstorage-set` puts it in the transcript verbatim.
 
-Safe pattern. Generate a storage-state file in Python so the token never appears on a command line, where `ps` could see it either:
+Safe pattern. Generate a storage-state file in Python so the token never appears
+on a command line, where `ps` could see it either:
 
 ```python
 import os, json, pathlib
@@ -259,6 +312,11 @@ npx playwright-cli close 2>&1 | redact
 rm -f ha-auth-state.json
 ```
 
-This injects the token into `localStorage` under `hassTokens`, which the HA frontend accepts as a live session. Give the page about 7 seconds before screenshotting; weather forecasts and background images load late.
+This injects the token into `localStorage` under `hassTokens`, which the HA
+frontend accepts as a live session. Give the page about 7 seconds before
+screenshotting; weather forecasts and background images load late.
 
-`playwright-cli` is not installed globally. `pnpm add -g` fails because pnpm's global bin is not on PATH and fixing that would edit pde's shell config, which is off limits. Install it locally in the scratchpad with `npm install @playwright/cli@latest` and call it with `npx playwright-cli`.
+`playwright-cli` is not installed globally. `pnpm add -g` fails because pnpm's
+global bin is not on PATH and fixing that would edit pde's shell config, which
+is off limits. Install it locally in the scratchpad with
+`npm install @playwright/cli@latest` and call it with `npx playwright-cli`.
