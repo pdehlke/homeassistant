@@ -1,5 +1,46 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-17 (NAS chip: admin-only health/capacity overlay)
+
+A new "NAS" chip on the bottom control row, visible only to admin viewers, opens an overlay
+reproducing the essential content of the native `dashboard-nas` Overview
+([synology-nas-dashboard.md](../synology-nas/synology-nas-dashboard.md)): a four-state health hero,
+capacity/temperature tiles, a health-checks list, system context, and a conditional Open DSM link.
+Strictly read-only, same boundary as the native dashboard. Visibility is enforced by a live
+cross-frame read of the real logged-in HA user's admin flag (`isAdminViewer()`, the same
+same-origin technique already used for the Climate native dialog), not a device-level toggle — the
+chip is never removed from `CONFIG.controls` (every other chip's index would shift depending on who's
+viewing), just hidden via a CSS class re-checked every refresh cycle. Chip glow reuses the existing
+`.chip.on` mechanic but with a fixed color rather than the active theme's accent, so a real
+Attention/Critical state can't render as reassuring green under some themes. Full design record,
+rejected alternatives, entity list, and verification detail in
+[homie-nas-chip.md](homie-nas-chip.md).
+
+106/106 tests pass (16 new). Deployed and live-verified as release `20260817.2` (`.1` never reached
+review — an overflow bug was found and fixed first, see below). Deployed to
+`/config/www/community/homie-dashboard/` via SFTP, prior copies backed up first, real `HA_TOKEN`
+spliced into the placeholder-bearing `config.js` entirely on the HA host, never printed locally.
+`homie-dashboard.html` and `homie-custom.js` confirmed SHA-256-identical to the fork's local `dist/`
+after upload. `homie-dash`'s Lovelace iframe `?v=` bumped via WebSocket `lovelace/config/save`,
+prior config read back and diffed first.
+
+Live-verified via Playwright as both real accounts against the live instance, not mocked state: as
+`Pete` (admin), `isAdminViewer()` read `true` inside the live iframe and the chip rendered without
+`chip-hidden`; as `Homie Dashboard` (its own dev-only token), `isAdminViewer()` read `false` and the
+chip rendered with `chip-hidden` — the exact mechanism the kiosk tablet will see, exercised on the
+real account. The overlay was opened against live data and matched a direct API read taken during
+design research exactly (Healthy, 30.3% volume used, both drives Normal/OK, etc.).
+
+A real bug was found live before pde's review, not after: every NAS row renders expanded at once
+(unlike the accordion-style Lights/Irrigation popups), so the popup ran taller than the viewport —
+inside the vertically centered overlay, the title and hero rendered off the top edge of the browser
+entirely, unreachable. Fixed with `max-height`/`overflow-y: auto` on `.popup--nas`, same pattern
+`.popup--media-browser` already uses; verified by scrolling the live element and screenshotting both
+ends, and a regression test now asserts the fix. Redeployed as `.2` before pde ever saw `.1`.
+
+pde reviewed the live result on his own admin session and approved. Committed to the fork, `52830fb`
+on `main`.
+
 ## Checkpoint: 2026-08-16 (Steel Blue default deployed)
 
 The Homie Dashboard one-time browser default changed from Classic Gold to Steel Blue. The fork's

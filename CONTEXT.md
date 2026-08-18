@@ -87,8 +87,16 @@ _Avoid_: Screen A (legacy name for Overview A), bare "Overview" (see Native Dash
 
 **Chip**:
 A labeled control button in Homie's bottom control row (Lights, Climate, A/V, Irrigation, Scenes,
-Music, TV). Shows a live on/off glow and sometimes an "N on" count or an alert dot; tapping opens
-the chip's overlay.
+Music, TV, NAS). Shows a live on/off glow and sometimes an "N on" count or an alert dot; tapping
+opens the chip's overlay. NAS is the only chip restricted to admin viewers; see `isAdminViewer`
+below.
+
+**`isAdminViewer`**:
+The live, per-viewer identity check gating the NAS chip's visibility: reads the real logged-in HA
+user's admin flag off the parent frame (same same-origin cross-frame access as the Climate
+overlay's native dialog), fails closed (hidden) on any uncertainty. Not a device-level Settings
+toggle — deliberately tied to who's actually looking, not which browser they're using. See
+[homie-nas-chip.md](docs/homie-dashboard/homie-nas-chip.md).
 
 **Bubble**:
 A round icon button inside a chip's overlay — one per scene (Scenes chip) or one per station
@@ -357,14 +365,15 @@ keep the Supervisor and its add-on ingress, which Music Assistant depends on.
 **Synology NAS dashboard**:
 A live read-only Home Assistant dashboard for the current Synology appliance's health and capacity,
 used primarily from the owner's authenticated desktop or mobile session. It was deployed on
-2026-08-17 at `dashboard-nas` with Overview and Trends views. A later Homie Dashboard chip may
-summarize NAS status, but is a separate surface built after the standalone dashboard is established.
+2026-08-17 at `dashboard-nas` with Overview and Trends views. Homie Dashboard's own NAS chip
+(admin-only, see [homie-nas-chip.md](docs/homie-dashboard/homie-nas-chip.md)) followed the same day,
+reproducing the Overview's content, not the Trends charts.
 _Avoid_: Storage dashboard, infrastructure dashboard (both imply a broader system boundary).
 
 **NAS health summary**:
 The single Home Assistant-owned interpretation of whether the Synology NAS needs attention,
-implemented as `sensor.nas_health` and shared by the standalone dashboard and a later Homie
-Dashboard chip. Its four states are Healthy, Attention, Critical, and Unknown.
+implemented as `sensor.nas_health` and shared by the standalone dashboard and Homie Dashboard's NAS
+chip. Its four states are Healthy, Attention, Critical, and Unknown.
 _Avoid_: separate health calculations in each dashboard frontend.
 
 **NAS health state**:

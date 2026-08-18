@@ -323,6 +323,17 @@ Notes, planning, and specs for my Home Assistant buildout.
   uses its `library://` URI rather than mixing in the native SiriusXM form for two of them. Includes
   a same-day follow-up round lowering the reset volume and shortening five of six station labels.
 
+- [homie-nas-chip.md](docs/homie-dashboard/homie-nas-chip.md)
+
+  An admin-only "NAS" chip reproducing the live native `dashboard-nas` Overview inside Homie Dash:
+  health hero, capacity/temperature tiles, a health-checks list, system context, and a conditional
+  Open DSM link. Visibility is a live cross-frame read of the real logged-in HA user's admin flag,
+  not a device toggle, since the chip must never appear on the shared kiosk tablet. Chip glow reuses
+  the existing `.chip.on` mechanic but with a fixed color rather than the active theme's accent, so
+  a real Attention/Critical state can't render as reassuring green. Verified live both directions
+  (admin and the kiosk account) against the real instance; a real popup-overflow bug was found and
+  fixed before pde's review, not after.
+
 ### Cloud and Remote Access
 
 - [nabucasa-remote-ui-dns-fragility.md](docs/nabucasa-remote-access/nabucasa-remote-ui-dns-fragility.md)
