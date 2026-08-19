@@ -1,0 +1,2 @@
+[env]
+CONTAINER_EXTRA_MOUNTS = '/Users/pde/src/github.com/pdehlke/homie-dashboard'
