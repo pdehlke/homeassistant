@@ -166,14 +166,25 @@ must never be copied back into Git. HACS can overwrite the live directory, so do
 not update Homie through HACS without first reconciling the fork and taking a
 backup.
 
-Persistent credential handoff files live outside both repositories under
-`/Users/pde/tmp`:
+Credential handoff is via environment variables, not files. Moved off
+`/Users/pde/tmp` on 2026-08-20; see
+[docs/homie-dashboard/homie-dashboard-install-plan.md](../../../docs/homie-dashboard/homie-dashboard-install-plan.md)'s
+2026-08-20 checkpoint for the migration and how each was verified.
 
-- `/Users/pde/tmp/homie-ha-edit-key`
-- `/Users/pde/tmp/homie-dashboard-password`
-- `/Users/pde/tmp/homie-dashboard-token`
+- `$HA_EDIT_KEY` — SSH/SFTP private key (was `homie-ha-edit-key`)
+- `$HOMIE_PASSWORD` — the `Homie Dashboard` HA user's password (was `homie-dashboard-password`)
+- `$HOMIE_TOKEN` — that account's long-lived access token (was `homie-dashboard-token`)
 
-Never print their contents. SSH/SFTP uses `root@hass.ehlke.net` on port `2222`.
+Never print their contents, echo them, or interpolate them into a command line
+that gets displayed — same discipline `$HA_TOKEN` already requires, see "Never
+leak the token" below. Read each from `os.environ` inside a script, or write to
+a mode-0600 temp file and delete it right after use; see
+[references/api-access.md](references/api-access.md#the-other-three-credentials-ha_edit_key-homie_password-homie_token)
+for the verified patterns.
+
+SSH/SFTP uses `root@hass.ehlke.net` on port `2222`. The SSH & Web Terminal
+add-on is manual-boot and normally stopped between uses: start it before a
+deploy, or expect `Connection refused` rather than an auth failure.
 Read
 [docs/homie-dashboard/homie-dashboard-install-plan.md](../../../docs/homie-dashboard/homie-dashboard-install-plan.md)
 in this repository for the current customization ledger, deployment procedure,

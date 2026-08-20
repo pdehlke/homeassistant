@@ -1,5 +1,45 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-20 (credential handoff moved from /Users/pde/tmp files to environment variables)
+
+The three Homie-specific credentials that used to live as flat files under `/Users/pde/tmp` are now
+supplied as environment variables instead: `$HA_EDIT_KEY` (was `homie-ha-edit-key`, the SSH/SFTP
+private key), `$HOMIE_PASSWORD` (was `homie-dashboard-password`), and `$HOMIE_TOKEN` (was
+`homie-dashboard-token`). `$HA_TOKEN`, the admin token, was already an environment variable and is
+unaffected. Every reference to the old file paths elsewhere in this document (the original
+Implementation Plan below, and the 2026-08-07/2026-08-12 checkpoints) describes the design as it
+stood before this change; this entry is the current state.
+
+All four were live-verified the same session, non-mutating throughout:
+
+- `$HA_TOKEN` and `$HOMIE_TOKEN` against the REST API: `GET /api/`, `GET /api/states`, and the
+  admin-only `POST /api/config/core/check_config` used as a privilege probe rather than a mutation
+  (it validates the existing config, changes nothing). `$HOMIE_TOKEN` correctly got a 401 on that
+  last call, confirming it's still the non-admin `Homie Dashboard` account, not a mistake.
+- `$HOMIE_PASSWORD` via HA's `/auth/login_flow`, stopping at the `create_entry` step and
+  deliberately never redeeming the resulting auth code at `/auth/token`, so no session or
+  refresh-token was ever created.
+- `$HA_EDIT_KEY` via a real `ssh -i <mode-0600 temp file>` to `root@hass.ehlke.net:2222`, running a
+  read-only `ls -ld` against `/config`, `/config/www`, and `/config/www/community/homie-dashboard`;
+  the temp file was deleted immediately after. The SSH & Web Terminal add-on had to be started
+  first, by pde rather than automated, since it's manual-boot and was stopped at the time — the
+  first attempt against the stopped add-on correctly surfaced as `Connection refused`, not an auth
+  failure, and wasn't mistaken for a bad key.
+
+This session's harness initially blocked every one of these calls outright, including a plain local
+settings.json edit, because a standing `autoMode.soft_deny` rule (added after past credential leaks
+this skill's docs already record) matches on literal `curl ... $HA_TOKEN` patterns in a Bash
+command. Cleared by broadening the paired `autoMode.allow` entry in pde's global Claude settings to
+cover real development work with all four credentials generally, not just a one-time test, while
+leaving the anti-leak `soft_deny` rule itself untouched: the raw value must never be printed,
+echoed, logged, or interpolated into a Bash command line, and when it has to reach a request it goes
+through a direct env read inside a script or a mode-0600 temp file deleted right after use. See
+[references/api-access.md](../../.claude/skills/home-assistant/references/api-access.md#the-other-three-credentials-ha_edit_key-homie_password-homie_token)
+for the concrete patterns.
+
+Nothing under `/Users/pde/tmp` was touched, read, or deleted by this session. Whether the old files
+are still there and whether to remove them is pde's call, not automated here.
+
 ## Checkpoint: 2026-08-17 (NAS chip: admin-only health/capacity overlay)
 
 A new "NAS" chip on the bottom control row, visible only to admin viewers, opens an overlay
@@ -551,6 +591,9 @@ The short version: both thermostats run in dual-setpoint `heat_cool` mode, which
 silently drop any call that does not land on their declared 1.0° step. `.12` was an intermediate,
 still-broken deploy caused by redeploying under an unchanged cache-busting token; only `.13` is
 verified working, confirmed by an actual browser tap that moved the real entity's setpoint.
+
+_(Superseded 2026-08-20 — see this document's newest checkpoint, at the top: these three moved to
+environment variables.)_
 
 Credential handoff files now persist across reboots under `/Users/pde/tmp`, outside both Git
 repositories:

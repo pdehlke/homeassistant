@@ -320,3 +320,64 @@ screenshotting; weather forecasts and background images load late.
 global bin is not on PATH and fixing that would edit pde's shell config, which
 is off limits. Install it locally in the scratchpad with
 `npm install @playwright/cli@latest` and call it with `npx playwright-cli`.
+
+## The other three credentials: $HA_EDIT_KEY, $HOMIE_PASSWORD, $HOMIE_TOKEN
+
+Homie Dashboard's SSH key, HA user password, and long-lived token moved from files under
+`/Users/pde/tmp` to environment variables on 2026-08-20; see
+[homie-dashboard-install-plan.md](../../../../docs/homie-dashboard/homie-dashboard-install-plan.md)'s
+2026-08-20 checkpoint. Same leak discipline as `$HA_TOKEN` above applies to all three: never print,
+echo, or interpolate the raw value into a command line that gets displayed.
+
+**`$HOMIE_TOKEN`** is an ordinary HA long-lived access token for the non-admin `Homie Dashboard`
+account. Use it exactly like `$HA_TOKEN` (same `Authorization: Bearer` header), over REST or
+WebSocket. Expect a 401 on anything admin-only (`POST /api/config/core/check_config` is a good
+probe) — that's confirmation it's the right, non-admin account, not a failure.
+
+**`$HOMIE_PASSWORD`** is the login password for HA user `homie`. Verify it without ever creating a
+session: POST to `/auth/login_flow`, then POST the username/password to the returned `flow_id`, and
+stop there. A `type: create_entry` response means the password is correct; `type: form` with
+`errors` means it isn't. Redeeming the returned code at `/auth/token` is the step that actually
+mints a session/refresh-token — skip it for a check, only do it if you want a live login.
+
+```python
+import json, os, urllib.request
+U = "http://hass.ehlke.net:8123"
+
+def post(path, payload):
+    req = urllib.request.Request(f"{U}{path}", data=json.dumps(payload).encode(),
+                                  headers={"Content-Type": "application/json"}, method="POST")
+    return json.loads(urllib.request.urlopen(req, timeout=10).read())
+
+flow = post("/auth/login_flow",
+            {"client_id": U + "/", "handler": ["homeassistant", None], "redirect_uri": U + "/"})
+result = post(f"/auth/login_flow/{flow['flow_id']}",
+              {"client_id": U + "/", "username": "homie", "password": os.environ["HOMIE_PASSWORD"]})
+# result["type"] == "create_entry" -> correct password, no session created yet
+```
+
+**`$HA_EDIT_KEY`** is the SSH private key for `root@hass.ehlke.net:2222`. Write it to a mode-0600
+temp file, pass `-i <file>` to `ssh`/`sftp`, and delete the file in a `finally` block so it's gone
+even if the connection fails:
+
+```python
+import os, pathlib, tempfile, subprocess
+fd, path = tempfile.mkstemp(prefix="ha-edit-key-")
+keyfile = pathlib.Path(path)
+try:
+    key = os.environ["HA_EDIT_KEY"]
+    os.write(fd, (key if key.endswith("\n") else key + "\n").encode())
+    os.close(fd)
+    keyfile.chmod(0o600)
+    subprocess.run(["ssh", "-i", str(keyfile), "-p", "2222",
+                     "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null",
+                     "root@hass.ehlke.net", "ls -ld /config/www/community/homie-dashboard"],
+                   check=True, timeout=20)
+finally:
+    keyfile.unlink(missing_ok=True)
+```
+
+`Connection refused` on port 2222 means the SSH & Web Terminal add-on isn't running — it's
+manual-boot, stopped between uses by design, see
+[media-player-restart-recovery.md](../../../../docs/device-alerts/media-player-restart-recovery.md#gotchas-hit-while-building-this)
+— not a bad key. `Permission denied (publickey)` means the key itself doesn't authenticate.
