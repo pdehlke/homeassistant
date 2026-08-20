@@ -185,6 +185,46 @@ response that is **not optional**. Ask for it explicitly or the call fails:
   `.service_response`.
 - WebSocket: add `"return_response": true`, and read `.result.response`.
 
+### Getting a period total for a sensor that resets (`recorder.get_statistics`)
+
+For any entity with `state_class: total` or `total_increasing` (most `device_class: energy`
+sensors, including ones like Sense's `daily_to_grid`/`daily_from_grid` that reset to 0 every
+local midnight), the live state is useless for "yesterday's total" once the entity has already
+reset. The recorder already computes a per-period `change` statistic that correctly accounts for
+resets, and it's available with no extra integration via the built-in `recorder.get_statistics`
+service (`GET /api/services` lists it, response required):
+
+```bash
+curl -s -X POST -H "$HB" -H "Content-Type: application/json" \
+  "$U/api/services/recorder/get_statistics?return_response" \
+  -d '{
+    "start_time": "2026-08-19T00:00:00-07:00",
+    "end_time": "2026-08-20T00:00:00-07:00",
+    "statistic_ids": ["sensor.sense_287516_daily_to_grid"],
+    "period": "day",
+    "types": ["change"]
+  }'
+```
+
+returns `{"statistics": {"<entity_id>": [{"start", "end", "change", ...}]}}`, one list entry per
+requested period. `start_time`/`end_time` want an explicit UTC offset (`-07:00` for this
+instance's fixed America/Phoenix, no DST); inside a template, `now()` already carries the right
+offset, so `now().replace(hour=0, minute=0, second=0, microsecond=0)` gives local midnight without
+having to hardcode it.
+
+In an automation or script, call it as an `action:` step with `response_variable: some_name` (not
+`return_response`, which is the REST/WebSocket-only flag). The bound variable has the same
+`{"statistics": {...}}` shape REST returns under `service_response`, so index into it as
+`some_name.statistics['<entity_id>']`, not `some_name['<entity_id>']` directly. See
+[docs/energy/low-grid-export-alert.md](../../../../docs/energy/low-grid-export-alert.md) in the
+`pdehlke/homeassistant` repo for a full worked automation built on this.
+
+The `utility_meter` integration (the other standard HA pattern for "remember the previous
+period's total after a reset," via its `last_period` attribute) is not installed on this
+instance — confirmed absent from `GET /api/config/config_entries/entry`. Reach for
+`recorder.get_statistics` first; only consider `utility_meter` if a use case needs something it
+provides that statistics don't (per-period cost with `tariffs`, for instance).
+
 ### Debug failed service calls over WebSocket
 
 A rejected service call over REST returns a bare `400: Bad Request` with an

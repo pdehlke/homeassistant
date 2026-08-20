@@ -82,6 +82,16 @@ Notes, planning, and specs for my Home Assistant buildout.
   and a `continue_on_error` dead end that looked right and wasn't: some integrations reject reload
   in a way that flag doesn't catch, fixed with a fire-and-forget helper script instead.
 
+### Energy
+
+- [low-grid-export-alert.md](docs/energy/low-grid-export-alert.md)
+
+  A daily 7 AM automation checking net solar export (Sense's `to_grid` minus `from_grid`) for the
+  prior day: a persistent notification when net export is under 20 kWh, plus a push to Pete's
+  iPhone when the house was a net importer for the day. Why `daily_to_grid` alone can never go
+  negative and the net figure was used instead, and why `recorder.get_statistics` was used over
+  a Utility Meter helper, which isn't installed on this instance.
+
 ### Rachio
 
 - [rachio-zone-disabled-alert.md](docs/rachio/rachio-zone-disabled-alert.md)
