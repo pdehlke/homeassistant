@@ -446,3 +446,12 @@ Notes, planning, and specs for my Home Assistant buildout.
   of the REST, WebSocket, and MCP access paths to use for a given job, instance quirks, and
   scripts for safe Lovelace edits and dashboard regeneration. Repo-scoped rather than a
   user-scoped dotfiles skill, since it is specific to this instance.
+
+- [.claude/skills/verify-home-assistant/](.claude/skills/verify-home-assistant/SKILL.md)
+
+  The coding-agent skill for proving an automation, script, or notification actually works on
+  this live instance: trigger it for real, read its trace, and confirm the effect, with a
+  read-only doctor check and a maintained feature map. Companion to `home-assistant` above;
+  covers verification specifically, not general access. The equivalent skill for Homie
+  Dashboard's own tablet UI, `verify-homie-dashboard`, lives in the sibling
+  `pdehlke/homie-dashboard` repo instead, since it is that repo's own code being verified.
