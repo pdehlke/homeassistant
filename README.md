@@ -373,13 +373,22 @@ Notes, planning, and specs for my Home Assistant buildout.
   image proxying, for any client other than that one tablet. The wrong first diagnosis, the
   screenshot that corrected it, and what's still open.
 
+- [caddy-reverse-proxy.md](docs/networking/caddy-reverse-proxy.md)
+
+  Home Assistant and Music Assistant moved behind a name-based Caddy reverse proxy on plain HTTP
+  port 80, landing alongside the Proxmox migration below; the old `:8123`/`:8095` ports no longer
+  work at all. What was verified live, every doc/skill/homie-dashboard file it touched, and what's
+  still open.
+
 ### Hardware
 
 - [mac-mini-migration.md](docs/hardware/mac-mini-migration.md)
 
-  Plan, not yet implemented, for moving Home Assistant off its current Raspberry Pi 4 and onto a
-  surplus headless Late 2014 Mac mini. Installation method, storage and SSD choices, external boot
-  persistence, and the migration sequence.
+  Superseded plan for moving Home Assistant off its Raspberry Pi 4 onto a surplus headless Late
+  2014 Mac mini via a bare-metal HAOS install. The migration happened, but as a Proxmox VE
+  virtualized install instead (see [caddy-reverse-proxy.md](docs/networking/caddy-reverse-proxy.md) above); this document's
+  own storage and SSD research is preserved, annotated with which parts turned out to matter and
+  which didn't.
 
 ### EV Charger
 

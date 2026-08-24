@@ -102,7 +102,7 @@ Deployed by hand to `/config/www/office-news-ticker/office-news-ticker.js` on `h
 confirmed to reach `/config/www` generally rather than being scoped to Homie's own subdirectory)
 and registered as a Lovelace resource at `/local/office-news-ticker/office-news-ticker.js` via
 `lovelace/resources/create` over the WebSocket API. Not HACS-managed, not tracked in any git repo;
-this document and the deployed file on the Pi are its only copies. The dashboard's News card was
+this document and the deployed file on `hass.ehlke.net` are its only copies. The dashboard's News card was
 swapped from `custom:rss-news-card` to `custom:office-news-ticker` (wrapping the original
 `rss-news-card` config verbatim) with `scripts/apply-card.py`, which refused to run until it
 confirmed exactly one match, same read-backup-modify-save discipline as every other dashboard edit

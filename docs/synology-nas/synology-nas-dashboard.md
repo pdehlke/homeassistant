@@ -209,7 +209,7 @@ aborted under the execution sandbox, and the in-app browser reported no availabl
 No desktop or mobile rendering, computed UIX style, interaction, DSM navigation, browser console,
 or network result is claimed from that environment. The temporary token-derived browser state was
 deleted after those attempts. Initial visual acceptance therefore belongs to the owner's live
-desktop and mobile review at `http://hass.ehlke.net:8123/dashboard-nas/overview`.
+desktop and mobile review at `http://hass.ehlke.net/dashboard-nas/overview`.
 
 Initial acceptance requires all of the following. Deployment and hardened-action read-back are
 complete; browser items remain open:

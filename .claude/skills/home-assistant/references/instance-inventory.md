@@ -6,7 +6,8 @@ Snapshot taken 2026-08-11. Re-check with `GET /api/states` rather than trusting 
 
 - Home Assistant 2026.8.1, timezone `America/Phoenix`, units °F, 256 components.
 - **Instance was created 2026-08-03.** It is still young, but no longer empty: 8 automations, several config-flow integrations, and a real dashboard buildout now exist. Sparse area assignments (22 of 695 registered entities have one) are still a consequence of age, not neglect. Do not report those as findings; do report a growing automation/integration list as expected progress, not as evidence the "young instance" framing no longer applies at all.
-- Raspberry Pi host. Config dir `/config`, not mounted on this machine.
+- VM under Proxmox VE on a Mac mini (migrated off a Raspberry Pi 4; confirmed live
+  2026-08-24). Config dir `/config`, not mounted on this machine.
 
 ## Entity counts
 

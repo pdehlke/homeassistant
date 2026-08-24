@@ -347,18 +347,32 @@ diagnostic entities.
 ### Hardware & hosting
 
 **Raspberry Pi 4**:
-The current, live host for this Home Assistant instance, running HAOS.
-_Avoid_: don't read any Mac mini reference as the current host — see below.
+The former host for this Home Assistant instance. Retired by the Proxmox migration below,
+confirmed live 2026-08-24. _Avoid_: don't read this as the current host in any doc dated before
+that migration — see below.
 
-**Mac mini migration**:
-A planned, not yet implemented move of this instance from the Raspberry Pi 4 to a surplus Late
-2014 Mac mini. [docs/hardware/mac-mini-migration.md](./docs/hardware/mac-mini-migration.md) is the plan, not a record of a completed
-move.
+**Proxmox migration**:
+Completed move of this instance from the Raspberry Pi 4 to a Late 2014 Mac mini, running
+Proxmox VE rather than the bare-metal install originally planned.
+[docs/hardware/mac-mini-migration.md](./docs/hardware/mac-mini-migration.md) is the original bare-metal plan, now superseded
+and marked as such; [ADR-0063](docs/adr/0063-proxmox-virtualization-over-bare-metal.md) records why virtualization replaced
+it (Jellyfin needed to run alongside Home Assistant, not instead of it). The full build procedure
+lives in the sibling `pdehlke/proxmox` repo's `mac-mini-proxmox-plan.md`, not here.
+
+**Caddy reverse proxy**:
+A small LXC guest on the same Proxmox host that fronts Home Assistant, Music Assistant, and
+Jellyfin on plain HTTP port 80, routing by hostname. Replaced direct `:8123`/`:8095` access,
+which no longer works at all. See
+[docs/networking/caddy-reverse-proxy.md](./docs/networking/caddy-reverse-proxy.md) and
+[ADR-0064](docs/adr/0064-caddy-reverse-proxy-replaces-direct-ports.md). _Avoid_: don't read `hass.ehlke.net`/`mass.ehlke.net`
+with a port suffix as current; that was true only before 2026-08-24.
 
 **HAOS**:
-Home Assistant OS, the bare-metal install this instance runs today on the Pi and would continue
-running on the Mac mini if that migration happens — chosen for the target machine specifically to
-keep the Supervisor and its add-on ingress, which Music Assistant depends on.
+Home Assistant OS. Still the install method this instance runs, chosen originally for the
+Supervisor and its add-on ingress, which Music Assistant depends on
+([ADR-0052](docs/adr/0052-haos-bare-metal-over-container-supervised.md)). Runs as a VM under Proxmox VE now, not bare metal
+on the host — a separate decision ([ADR-0063](docs/adr/0063-proxmox-virtualization-over-bare-metal.md)) layered on top, not a revision
+of the HAOS-vs-Container/Supervised choice itself.
 
 ### Synology NAS
 
@@ -385,9 +399,11 @@ means required evidence is missing. Known Critical conditions outrank Unknown.
 
 **`hass.ehlke.net` / `mass.ehlke.net`**:
 The real DNS names (resolving to the internal LAN address) used for all HA and Music Assistant
-access, replacing the retired `.local` mDNS hostnames.
+access, replacing the retired `.local` mDNS hostnames. Reached on plain HTTP port 80 through the
+Caddy reverse proxy since 2026-08-24; no port suffix.
 _Avoid_: `homeassistant.local`, `mass.local` (retired 2026-08-11), literal LAN IP addresses (a
-since-retired workaround that caused a CORS bug).
+since-retired workaround that caused a CORS bug), a `:8123`/`:8095` port suffix (retired
+2026-08-24, see [Caddy reverse proxy](#hardware--hosting) above).
 
 **Home Assistant Cloud / Nabu Casa / Remote UI**:
 The paid remote-access service (`hass_nabucasa` package) exposing this instance externally via a

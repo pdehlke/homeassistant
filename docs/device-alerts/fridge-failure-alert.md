@@ -143,7 +143,7 @@ no `notify.mobile_app_*` service, because the companion app has never been regis
 Finishing it requires action on the phone and cannot be done server side:
 
 1. Install the Home Assistant companion app on iOS or Android.
-2. Sign in to `http://hass.ehlke.net:8123` while on the home network.
+2. Sign in to `http://hass.ehlke.net` while on the home network.
 3. The app registers itself, creating a `mobile_app` config entry and a
    `notify.mobile_app_<device>` service.
 
@@ -200,7 +200,7 @@ events.
 ## Reproducing the measurements
 
 ```bash
-U=http://hass.ehlke.net:8123
+U=http://hass.ehlke.net
 S=$(python3 -c "import datetime;print((datetime.datetime.now(datetime.UTC)-datetime.timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%SZ'))")
 curl -s -H "Authorization: Bearer $HA_TOKEN" \
   "$U/api/history/period/$S?filter_entity_id=binary_sensor.fridge_power&minimal_response"

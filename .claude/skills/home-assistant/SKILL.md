@@ -1,8 +1,8 @@
 ---
 name: home-assistant
 description:
-  Work with pde's Home Assistant at http://hass.ehlke.net:8123 and the Music
-  Assistant server at http://mass.ehlke.net:8095. Use when asked to inspect or
+  Work with pde's Home Assistant at http://hass.ehlke.net and the Music
+  Assistant server at http://mass.ehlke.net. Use when asked to inspect or
   change Home Assistant - entities, states, automations, scripts, scenes,
   helpers, integrations, Lovelace dashboards and cards, energy or Sense data,
   calendars, weather, or media playback. Tells you which of the three access
@@ -14,13 +14,20 @@ description:
 
 ## Facts that do not change
 
-- Base URL `http://hass.ehlke.net:8123`. Local network only.
+- Base URL `http://hass.ehlke.net`. Local network only. Reached through a Caddy
+  reverse proxy on plain HTTP port 80; the old `:8123` direct port no longer
+  works at all, from any client. See
+  [references/api-access.md](references/api-access.md) and
+  [docs/networking/caddy-reverse-proxy.md](../../../docs/networking/caddy-reverse-proxy.md).
 - `$HA_TOKEN` is always a valid long-lived access token with **full admin
   rights**. Read it from the environment. Never echo, log, or paste it. See
   [Never leak the token](#never-leak-the-token).
-- Runs on a Raspberry Pi. Config dir is `/config`, not reachable from this
-  machine.
-- Music Assistant runs as an HA add-on at `http://mass.ehlke.net:8095`. Drive it
+- Runs as a VM under Proxmox VE on a Mac mini (migrated off a Raspberry Pi 4;
+  confirmed live 2026-08-24 — see
+  [docs/hardware/mac-mini-migration.md](../../../docs/hardware/mac-mini-migration.md)).
+  Config dir is `/config`, not reachable from this machine.
+- Music Assistant runs as an HA add-on at `http://mass.ehlke.net` (also behind
+  the Caddy proxy, no port). Drive it
   through the HA-side `music_assistant.*` services; its own API rejects
   `$HA_TOKEN` and needs separate credentials we do not have. **Pandora and
   SiriusXM are both connected.** Pandora surfaces as 36 library radio stations;
@@ -182,9 +189,18 @@ a mode-0600 temp file and delete it right after use; see
 [references/api-access.md](references/api-access.md#the-other-three-credentials-ha_edit_key-homie_password-homie_token)
 for the verified patterns.
 
-SSH/SFTP uses `root@hass.ehlke.net` on port `2222`. The SSH & Web Terminal
-add-on is manual-boot and normally stopped between uses: start it before a
-deploy, or expect `Connection refused` rather than an auth failure.
+SSH/SFTP uses `root@192.168.4.141` on port `2222` (confirmed live 2026-08-24)
+— **not** `hass.ehlke.net`. That hostname now resolves to the Caddy proxy
+(see [docs/networking/caddy-reverse-proxy.md](../../../docs/networking/caddy-reverse-proxy.md)),
+which only speaks HTTP on port 80; SSH isn't proxied, and connecting to
+`hass.ehlke.net:2222` gets a plain `Connection refused` because nothing
+listens there. `192.168.4.141` is the Home Assistant VM's own LAN address,
+worth reconfirming if this ever breaks again (`supervisor/api` on
+`/addons/a0d7b954_ssh/info` reports `ip_address`, though that's the add-on's
+internal Docker IP, not this one — this one was found by testing directly).
+The SSH & Web Terminal add-on is manual-boot and normally stopped between
+uses: start it before a deploy, or expect `Connection refused` rather than an
+auth failure.
 Read
 [docs/homie-dashboard/homie-dashboard-install-plan.md](../../../docs/homie-dashboard/homie-dashboard-install-plan.md)
 in this repository for the current customization ledger, deployment procedure,

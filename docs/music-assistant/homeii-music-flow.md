@@ -60,7 +60,7 @@ language: auto
 theme_mode: auto
 phone_display_mode: auto
 active_player_helper_entity: input_text.homeii_flow_active_player
-ma_url: "http://mass.ehlke.net:8095"
+ma_url: "http://mass.ehlke.net"
 ma_token: "<redacted>"
 ```
 
@@ -99,17 +99,25 @@ Music Assistant is not misconfigured. It returns `Access-Control-Allow-Origin: *
 response, confirmed with a direct `curl`. The block is Chrome's [Local Network
 Access](https://developer.chrome.com/blog/local-network-access) restriction: a page must be a
 secure context (HTTPS, or `localhost`) before Chrome will let it reach an address in local
-network space at all, permission prompt included. `http://hass.ehlke.net:8123` is plain
+network space at all, permission prompt included. `http://hass.ehlke.net` is plain
 HTTP, so the request is refused before it reaches Music Assistant.
 
 This breaks two things specifically:
-- Sendspin's own WebSocket to `mass.ehlke.net:8095`, so "This device" playback cannot connect.
+- Sendspin's own WebSocket to `mass.ehlke.net`, so "This device" playback cannot connect.
 - Playlist and library artwork, since Music Assistant serves cover art through its own
-  `imageproxy` endpoint on the same host and port. This half breaks independently of Sendspin:
+  `imageproxy` endpoint on the same host. This half breaks independently of Sendspin:
   the library metadata HOMEii Flow reads through Home Assistant already carries
-  `mass.ehlke.net:8095/imageproxy/...` URLs (Music Assistant's `base_url` config entry, confirmed via
+  `mass.ehlke.net/imageproxy/...` URLs (Music Assistant's `base_url` config entry, confirmed via
   `/info`), so thumbnails come back blank even for playback that has nothing to do with
   Sendspin.
+
+Since the 2026-08-24 Caddy reverse-proxy migration (see
+[docs/networking/caddy-reverse-proxy.md](../networking/caddy-reverse-proxy.md)), the old
+`mass.ehlke.net:8095` direct port doesn't exist any more either, on top of the Chrome block
+above: even a client unaffected by Local Network Access (Firefox, Safari) now has to go through
+`mass.ehlke.net` on port 80 like everything else. The quoted console errors below predate that
+change and still show the original `:8095` URLs; they're the literal captured output from
+2026-08-04 and are left as recorded, not evidence of the current URL.
 
 Player selection, transport control, queue management, and the FLOW wizard are unaffected: those
 go through Home Assistant's own WebSocket, which the browser already trusts as same-origin.
@@ -166,20 +174,20 @@ Confirm the helper is live:
 
 ```bash
 curl -s -H "Authorization: Bearer $HA_TOKEN" \
-  "http://hass.ehlke.net:8123/api/states/input_text.homeii_flow_active_player"
+  "http://hass.ehlke.net/api/states/input_text.homeii_flow_active_player"
 ```
 
 Confirm Music Assistant's CORS headers directly, bypassing the browser:
 
 ```bash
-curl -s -o /dev/null -D - -H "Origin: http://hass.ehlke.net:8123" \
-  "http://mass.ehlke.net:8095/info" | grep -i access-control
+curl -s -o /dev/null -D - -H "Origin: http://hass.ehlke.net" \
+  "http://mass.ehlke.net/info" | grep -i access-control
 ```
 
 Query Music Assistant's own auth setup:
 
 ```bash
-curl -s -X POST http://mass.ehlke.net:8095/api \
+curl -s -X POST http://mass.ehlke.net/api \
   -H 'Content-Type: application/json' \
   -d '{"message_id":"1","command":"auth/providers"}'
 ```

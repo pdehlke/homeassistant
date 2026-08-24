@@ -1,5 +1,10 @@
 # Home Assistant OS bare metal, not Container or Supervised
 
+**Note:** this instance later moved from bare metal to a Proxmox VM
+([ADR-0063](0063-proxmox-virtualization-over-bare-metal.md)), so "bare metal" in this title no
+longer describes how HAOS runs. The decision recorded here — HAOS over Container or Supervised —
+is unaffected; virtualization is a separate axis ADR-0063 covers, not a revision of this choice.
+
 Migrating off the Raspberry Pi, HAOS `generic-x86-64` was chosen over a Debian + HA Container
 install (drops the Supervisor entirely, meaning no add-ons and no ingress — Music Assistant runs
 as an add-on and its working API path is through HA's ingress proxy, so both disappear) and Debian

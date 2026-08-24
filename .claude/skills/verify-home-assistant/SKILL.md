@@ -29,8 +29,13 @@ verify, and restore.
 
 ## Launch
 
-Nothing to launch. HA is always up on the Raspberry Pi at
-`hass.ehlke.net:8123`. Skip straight to Doctor.
+Nothing to launch. HA is always up at `hass.ehlke.net`, reached through the
+Caddy reverse proxy on port 80 (plain HTTP, no TLS); the old direct `:8123`
+port no longer works. Runs as a VM under Proxmox VE on a Mac mini, not the
+Raspberry Pi 4 this instance used to run on — see
+[CONTEXT.md](../../../CONTEXT.md) and
+[docs/hardware/mac-mini-migration.md](../../../docs/hardware/mac-mini-migration.md).
+Skip straight to Doctor.
 
 ## Doctor
 
@@ -80,7 +85,7 @@ for the current list), screenshot, close.
 python3 .claude/skills/verify-home-assistant/scripts/make-auth-state.py HA_TOKEN /path/to/scratch/ha-auth-state.json
 playwright-cli open
 playwright-cli state-load /path/to/scratch/ha-auth-state.json
-playwright-cli goto "http://hass.ehlke.net:8123/lovelace/0"
+playwright-cli goto "http://hass.ehlke.net/lovelace/0"
 playwright-cli screenshot --filename=/path/to/evidence/whatever.png
 playwright-cli close
 ```

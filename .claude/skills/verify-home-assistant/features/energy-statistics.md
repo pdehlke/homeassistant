@@ -37,7 +37,7 @@ Preconditions:
 - **Call it, REST, with `?return_response`:**
 
   ```bash
-  HB="Authorization: Bearer $HA_TOKEN"; U=http://hass.ehlke.net:8123
+  HB="Authorization: Bearer $HA_TOKEN"; U=http://hass.ehlke.net
   curl -s -X POST --max-time 8 -H "$HB" -H "Content-Type: application/json" \
     "$U/api/services/recorder/get_statistics?return_response" \
     -d '{

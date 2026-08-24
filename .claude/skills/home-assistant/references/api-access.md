@@ -3,7 +3,7 @@
 All examples assume:
 
 ```bash
-HB="Authorization: Bearer $HA_TOKEN"; U=http://hass.ehlke.net:8123
+HB="Authorization: Bearer $HA_TOKEN"; U=http://hass.ehlke.net
 ```
 
 ## REST
@@ -269,7 +269,7 @@ passes an empty value and produces a misleading WebSocket authentication failure
 even though the launch session's token is valid.
 
 ```bash
-export HA_URL=http://hass.ehlke.net:8123
+export HA_URL=http://hass.ehlke.net
 python3 scripts/haws.py '{"type":"lovelace/dashboards/list"}'
 python3 scripts/haws.py '{"type":"lovelace/config","url_path":"dashboard-sound"}'
 python3 scripts/haws.py '{"type":"hacs/repositories/list","categories":["plugin"]}'
@@ -327,7 +327,7 @@ on a command line, where `ps` could see it either:
 
 ```python
 import os, json, pathlib
-url = "http://hass.ehlke.net:8123"
+url = "http://hass.ehlke.net"
 tokens = {
     "access_token": os.environ["HA_TOKEN"], "token_type": "Bearer",
     "expires_in": 315360000, "hassUrl": url, "clientId": None,
@@ -382,7 +382,7 @@ mints a session/refresh-token — skip it for a check, only do it if you want a 
 
 ```python
 import json, os, urllib.request
-U = "http://hass.ehlke.net:8123"
+U = "http://hass.ehlke.net"
 
 def post(path, payload):
     req = urllib.request.Request(f"{U}{path}", data=json.dumps(payload).encode(),
@@ -396,7 +396,12 @@ result = post(f"/auth/login_flow/{flow['flow_id']}",
 # result["type"] == "create_entry" -> correct password, no session created yet
 ```
 
-**`$HA_EDIT_KEY`** is the SSH private key for `root@hass.ehlke.net:2222`. Write it to a mode-0600
+**`$HA_EDIT_KEY`** is the SSH private key for `root@192.168.4.141:2222` — the
+Home Assistant VM's own LAN address, confirmed live 2026-08-24. Not
+`hass.ehlke.net`: that hostname now resolves to the Caddy proxy, which only
+speaks HTTP; see [SKILL.md](../SKILL.md) and
+[docs/networking/caddy-reverse-proxy.md](../../../../docs/networking/caddy-reverse-proxy.md).
+Write it to a mode-0600
 temp file, pass `-i <file>` to `ssh`/`sftp`, and delete the file in a `finally` block so it's gone
 even if the connection fails:
 

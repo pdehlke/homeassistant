@@ -1,5 +1,9 @@
 # SSD choice: capacitor-backed power-loss protection, not endurance (TBW)
 
+**Status:** Superseded by [ADR-0063](0063-proxmox-virtualization-over-bare-metal.md) — the
+migration reused the Mac mini's existing Fusion Drive components instead of buying a drive. The
+reasoning below is preserved; it would apply again if a drive purchase ever becomes necessary.
+
 SSD datasheets lead with TBW (total terabytes written), the spec everyone compares, but it's
 close to irrelevant for this workload: even the lowest-rated candidate drive gives roughly a
 century of headroom at the recorder database's actual write volume (2-5 GB/day). What actually

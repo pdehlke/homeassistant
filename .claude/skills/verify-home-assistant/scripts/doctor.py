@@ -21,7 +21,7 @@ import sys
 import urllib.error
 import urllib.request
 
-BASE_URL = os.environ.get("HA_URL", "http://hass.ehlke.net:8123")
+BASE_URL = os.environ.get("HA_URL", "http://hass.ehlke.net")
 TIMEOUT = 8
 
 # From .claude/skills/home-assistant/references/instance-inventory.md.

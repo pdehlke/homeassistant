@@ -22,7 +22,7 @@ import sys
 
 import aiohttp
 
-URL = os.environ.get("HA_URL", "http://hass.ehlke.net:8123")
+URL = os.environ.get("HA_URL", "http://hass.ehlke.net")
 TOKEN = os.environ["HA_TOKEN"]
 
 UNITS = {

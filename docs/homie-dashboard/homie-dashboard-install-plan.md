@@ -1,5 +1,46 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-24 (WS_URL port dropped for the Caddy proxy migration; SSH target changed too)
+
+Home Assistant and Music Assistant moved behind a name-based Caddy reverse proxy on plain HTTP
+port 80, as part of a larger move off the Raspberry Pi onto a Proxmox VE host on a Mac mini. Full
+account in [docs/networking/caddy-reverse-proxy.md](../networking/caddy-reverse-proxy.md); this
+entry covers only what changed in this fork and this deploy.
+
+`dist/config.js`'s `WS_URL` dropped `:8123`: `ws://hass.ehlke.net/api/websocket`, the old direct
+port no longer answering at all. `HOMIE_ASSET_VERSION` bumped `20260817.2` → `20260824.1` in
+`dist/homie-dashboard.html`; `test/screen-a.test.cjs`'s config-host regression test updated to
+match and to also assert `:8123` is absent, not just the older mDNS-hostname/literal-IP forbids.
+106/106 tests pass.
+
+**Deploy hit a second break the port change alone didn't explain: SSH stopped working too.**
+`root@hass.ehlke.net:2222`, the address every doc used for SFTP deploys, started refusing the
+connection outright. Not a proxy issue in the way it first looked — Caddy only proxies HTTP, SSH
+was never routed through it — but `hass.ehlke.net` itself now resolves to the proxy's address
+(`192.168.4.143`), which has nothing listening on `2222`. The Home Assistant VM's own LAN address,
+`192.168.4.141`, is required instead — found by testing directly, confirmed against the VM's
+`/config/www/community/homie-dashboard/` over SFTP. Every doc/skill file that hardcoded the old
+SSH target as current instructions (`home-assistant` skill's `SKILL.md` and
+`references/api-access.md` in the sibling `homeassistant` repo, `verify-homie-dashboard`'s
+`SKILL.md` here) now points at `192.168.4.141`.
+
+Deployed via the same pattern as every prior config.js change: SSH & Web Terminal add-on was
+already running (checked via `supervisor/api` before assuming the usual manual-boot
+`Connection refused`), backed up the live `config.js` and `homie-dashboard.html` with a timestamp,
+uploaded both under temp names, spliced the real `HA_TOKEN` out of the backup into the new
+`config.js` with a remote `sed` (token never touched a local shell variable, argument, or this
+tool's output; verified by matching token length before/after, 186 characters both times, never
+by printing it), atomically renamed both into place. `homie-dash`'s Lovelace iframe `?v=` bumped
+`20260817.2` → `20260824.1` via `scripts/apply-card.py` (`HA_MATCH_TYPE=iframe`, dry-run first, one
+match).
+
+Live-verified via Playwright as the `Homie Dashboard` account: `http://hass.ehlke.net/homie-dash/0`
+rendered real live data (87°F Sunny, Main House 77°F, Office Wing 74°F, Solar 3.1kW/3.9kW/0.7kW,
+Robot "Cleaning: Kitchen"), iframe URL confirmed carrying `?v=20260824.1` in the console log, zero
+CORS or WebSocket errors — the five console errors present are the same pre-existing,
+`rss-news-card`/`navigator.vibrate`/`api/states/` ones prior checkpoints already recorded as
+unrelated. Not yet committed to the fork; last pushed commit is still `ac57853`.
+
 ## Checkpoint: 2026-08-20 (credential handoff moved from /Users/pde/tmp files to environment variables)
 
 The three Homie-specific credentials that used to live as flat files under `/Users/pde/tmp` are now

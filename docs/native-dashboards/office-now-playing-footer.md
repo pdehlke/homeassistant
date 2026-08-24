@@ -87,7 +87,7 @@ mention them:
   This exists because the modern Template helper config flow (`config_entries/flow`, handler
   `template`, step `binary_sensor`) has no `delay_on`/`delay_off` fields at all, confirmed by
   reading its live `data_schema`. That option only exists on the legacy YAML `template:` platform,
-  which is not reachable from this machine (no filesystem access to the Pi's `/config`, and no
+  which is not reachable from this machine (no filesystem access to the host's `/config`, and no
   documented API for editing `configuration.yaml`). The automation pair is the API-reachable
   equivalent.
 - **1 new dashboard section** on `dashboard-office`, appended after Weather/News: eight

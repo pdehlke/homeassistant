@@ -1,6 +1,6 @@
 # Music Assistant
 
-Server 2.9.10, schema 31, running as an HA add-on at `http://mass.ehlke.net:8095`.
+Server 2.9.10, schema 31, running as an HA add-on at `http://mass.ehlke.net`.
 
 ## Reaching MA's full API through HA ingress
 
@@ -19,7 +19,7 @@ Add-on slug is `d5369777_music_assistant`. Read `ingress_entry` from its info; *
 ```python
 async with aiohttp.ClientSession(cookies={"ingress_session": SESSION},
                                  cookie_jar=aiohttp.CookieJar(unsafe=True)) as s:
-    async with s.ws_connect(f"ws://hass.ehlke.net:8123{INGRESS_ENTRY}/ws") as ws:
+    async with s.ws_connect(f"ws://hass.ehlke.net{INGRESS_ENTRY}/ws") as ws:
         await ws.receive_json()          # server greeting, no auth command needed
         await ws.send_json({"command": "music/favorites/add_item",
                             "message_id": "f1", "args": {"item": uri}})
@@ -36,7 +36,7 @@ Sessions are cheap. Mint a fresh one per run rather than reusing.
 ## Two APIs, and which one you can use
 
 - **HA-side services** (`music_assistant.*`). This is the usable path. `$HA_TOKEN` authorizes it.
-- **MA server's own WebSocket**, direct at `ws://mass.ehlke.net:8095/ws`. Connecting and reading the greeting works unauthenticated, and `GET /info` over HTTP is open, but any real command returns `Authentication required.` `$HA_TOKEN` is rejected here with `Invalid or expired token`. **Do not go direct.** Reach the same API through HA ingress instead, as described above, which needs no MA credentials at all.
+- **MA server's own WebSocket**, direct at `ws://mass.ehlke.net/ws`. Connecting and reading the greeting works unauthenticated, and `GET /info` over HTTP is open, but any real command returns `Authentication required.` `$HA_TOKEN` is rejected here with `Invalid or expired token`. **Do not go direct.** Reach the same API through HA ingress instead, as described above, which needs no MA credentials at all.
 
 ## Calling the services
 

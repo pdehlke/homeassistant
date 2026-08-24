@@ -20,7 +20,7 @@ REST cannot read or write dashboards. Use WebSocket:
   can silently drop it. Re-run with the same arguments to restore it.
 
 ```bash
-export HA_URL=http://hass.ehlke.net:8123
+export HA_URL=http://hass.ehlke.net
 export HA_BACKUP_DIR=/path/to/scratchpad   # defaults to cwd; never let it default into the skill dir
 export HA_DASHBOARD=dashboard-sound        # defaults to dashboard-sound
 python3 scripts/apply-card.py new-card.json --dry-run   # always dry-run first
@@ -189,7 +189,7 @@ directly.
 The UI/API-driven Template helper (`config_entries/flow`, handler `template`, step `binary_sensor`)
 exposes `name`, `state`, `device_class`, `device_id`, and `availability`, nothing else, confirmed by
 reading its live `data_schema`. `delay_on`/`delay_off` only exist on the legacy YAML `template:`
-platform, which isn't reachable from this machine (no filesystem access to the Pi's `/config`, no
+platform, which isn't reachable from this machine (no filesystem access to the host's `/config`, no
 API for editing `configuration.yaml`). Any hysteresis/anti-flicker delay on a template-derived
 helper needs an automation instead: two state triggers (`to`/`from` the target state(s)) branching
 on `trigger.id` via `choose`, with `mode: restart` so a value flipping back before the delay elapses

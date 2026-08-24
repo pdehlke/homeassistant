@@ -39,7 +39,7 @@ Preconditions:
 - **Baseline.**
 
   ```bash
-  HB="Authorization: Bearer $HA_TOKEN"; U=http://hass.ehlke.net:8123
+  HB="Authorization: Bearer $HA_TOKEN"; U=http://hass.ehlke.net
   curl -s --max-time 8 -H "$HB" "$U/api/states/automation.<slug>" | \
     python3 -c "import json,sys; d=json.load(sys.stdin); print(d['state'], d['attributes'].get('last_triggered'))"
   ```
@@ -55,7 +55,7 @@ Preconditions:
 
   ```bash
   cd /Users/pde/src/github.com/pdehlke/homeassistant   # HA_TOKEN must be in this process's env; see api-access.md's warning about /tmp cwd stripping it
-  export HA_URL=http://hass.ehlke.net:8123
+  export HA_URL=http://hass.ehlke.net
   python3 .claude/skills/home-assistant/scripts/haws.py \
     '{"type":"trace/list","domain":"automation","item_id":"<slug>"}'
   # take the newest run_id from that list, then:

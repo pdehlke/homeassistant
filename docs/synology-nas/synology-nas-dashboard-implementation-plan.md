@@ -18,7 +18,7 @@ storage-mode Lovelace, native cards, UIX 8.0.1, Python 3 standard-library tests,
 
 ## Global Constraints
 
-- Use `http://hass.ehlke.net:8123` for Home Assistant API, WebSocket, and browser access.
+- Use `http://hass.ehlke.net` for Home Assistant API, WebSocket, and browser access.
 - Read `$HA_TOKEN` from the environment. Never print or persist it.
 - Keep the Synology integration's 15-minute default polling interval.
 - Enable only both SMART statuses, maximum disk temperature, volume total size, and uptime.

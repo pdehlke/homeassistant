@@ -227,7 +227,7 @@ used for Homie Dashboard deploys is `boot: manual` and sits stopped between uses
 ## Reproducing
 
 ```bash
-U=http://hass.ehlke.net:8123
+U=http://hass.ehlke.net
 curl -s -H "Authorization: Bearer $HA_TOKEN" \
   "$U/api/config/automation/config/1786812930774"
 curl -s -H "Authorization: Bearer $HA_TOKEN" \

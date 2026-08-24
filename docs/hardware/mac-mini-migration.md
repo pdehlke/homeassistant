@@ -1,7 +1,37 @@
 # Migrating Home Assistant from Raspberry Pi to a Late 2014 Mac mini
 
-**Status: planned, not yet implemented.** Home Assistant currently runs on a Raspberry Pi 4. This
-document is the plan for moving it to a surplus Mac mini; nothing below has happened yet.
+**Status: superseded.** The migration happened, but not the way this document planned it. Home
+Assistant now runs as a VM under Proxmox VE on the Mac mini, not as a bare-metal HAOS install,
+confirmed live 2026-08-24 (`hass.ehlke.net`/`mass.ehlke.net` resolve to the Mac mini's LAN
+address, the Raspberry Pi no longer answers on either hostname). See
+[docs/networking/caddy-reverse-proxy.md](../networking/caddy-reverse-proxy.md) for what changed
+on the networking side, and [ADR-0063](../adr/0063-proxmox-virtualization-over-bare-metal.md) for
+why virtualization replaced the bare-metal plan below. The full build procedure lives in the
+sibling `pdehlke/proxmox` repo's `mac-mini-proxmox-plan.md`, not here; this repo only tracks what
+bears on the Home Assistant instance itself.
+
+One piece of this document's own hardware research paid off directly, one piece was never acted
+on, and one of its hardware assumptions was wrong for the unit actually used:
+
+- The ["check for a PCIe blade first"](#check-for-a-pcie-blade-first) research paid off: this
+  Mac mini has a Fusion Drive (a 128 GB PCIe flash module plus the 1 TB SATA HDD), confirmed by
+  the proxmox repo's own boot-media compatibility table. The Proxmox host and the Home Assistant
+  VM's disk both install to that 128 GB blade; the 1 TB HDD was repurposed for Jellyfin and bulk
+  storage rather than retired. Effort: none, as this document predicted for the blade-present
+  case.
+- The [SSD-buying research below](#which-ssd-to-buy), by contrast, was never acted on. The
+  Proxmox plan uses the Fusion Drive's existing components as found; no drive was purchased.
+  [ADR-0054](../adr/0054-ssd-chosen-for-power-loss-protection.md) is marked superseded
+  accordingly, though the reasoning below (power-loss protection matters more than endurance for
+  this workload) is still sound if a drive purchase ever does become necessary.
+- **RAM is 16 GB, soldered, not the 8 GB this document assumed below.** This unit is a
+  higher-memory configuration than the one the original research priced out; the "cannot be
+  upgraded" part remains true, only the capacity was wrong. Nothing downstream depended on the
+  incorrect 8 GB figure.
+
+The original plan, preserved as it was written, follows.
+
+---
 
 Target hardware: Mac mini Late 2014 (Macmini7,1), Haswell, 8 GB RAM, 1 TB SATA drive.
 Intended deployment: headless, no monitor or keyboard, in a location that is annoying to

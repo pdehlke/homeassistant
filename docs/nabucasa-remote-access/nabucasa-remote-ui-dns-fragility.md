@@ -51,7 +51,11 @@ Even with both upstream resolvers healthy, a Raspberry Pi 4 running HAOS produce
 (observed: single-digit seconds) where DNS UDP queries to the internal `hassio_dns` container are
 dropped somewhere below CoreDNS, most plausibly conntrack/iptables contention from a burst of
 concurrent outbound connections. This is a real, if narrow and hard-to-eliminate, reliability
-characteristic of the platform under load, not a misconfiguration. `hass_nabucasa`'s certificate
+characteristic of the platform under load, not a misconfiguration. (This instance has since moved
+off that Pi to a VM under Proxmox VE on a Mac mini, see
+[docs/hardware/mac-mini-migration.md](../hardware/mac-mini-migration.md); whether the same
+resource-contention windows occur on the new host is unverified, not re-tested as part of that
+move.) `hass_nabucasa`'s certificate
 handler has no defense against landing in one of these windows, and the consequence is total and
 silent: the entire multi-call certificate issuance sequence dies on the first hiccup, on whichever
 call happens to be in flight, and nothing retries until the next full Home Assistant Core restart.
