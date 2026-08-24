@@ -60,7 +60,7 @@ language: auto
 theme_mode: auto
 phone_display_mode: auto
 active_player_helper_entity: input_text.homeii_flow_active_player
-ma_url: "http://mass.ehlke.net"
+ma_url: "https://mass.ehlke.net"
 ma_token: "<redacted>"
 ```
 
@@ -130,6 +130,57 @@ was available to test against. The durable fix for Chrome is putting Home Assist
 HTTPS, which makes `hass.ehlke.net` a secure context and turns the outright block into a
 one-time permission prompt instead.
 
+### Update, 2026-08-24: HTTPS landed, and the predicted fix was half right
+
+Caddy's automatic HTTPS went live the same day as the port-drop migration above (real Let's
+Encrypt certificate; see [docs/networking/caddy-reverse-proxy.md](../networking/caddy-reverse-proxy.md)).
+Re-tested live against `dashboard-sound` in Chromium via Playwright, authenticated as `Pete`:
+
+- **The outright Local Network Access block is gone.** `net::ERR_BLOCKED_BY_LOCAL_NETWORK_ACCESS_CHECKS`
+  did not appear anywhere in the console on either pass below. The prediction above was correct
+  on this specific point: a secure-context page no longer gets refused outright.
+- **First pass (before fixing this card's `ma_url`) surfaced a different, new problem:** the
+  live `dashboard-sound` HOMEii Flow card still had `ma_url: "http://mass.ehlke.net"` (set by the
+  2026-08-24 port-drop migration, before HTTPS existed). Loading that over the now-HTTPS page
+  produced Mixed Content errors instead: `img` elements got silently auto-upgraded to HTTPS by
+  Chrome (and then 400'd, see below), while at least one `fetch()`-based request was hard-blocked:
+  "the content must be served over HTTPS."
+- **Fixed the immediate cause:** updated the live card's `ma_url` to `https://mass.ehlke.net` via
+  `apply-card.py` (`HA_MATCH_TYPE=custom:homeii-music-flow`, dry-run first, one match; the
+  "Configuration used" block above now reflects this). The Mixed Content errors disappeared on
+  reload.
+- **What's left, confirmed still broken over HTTPS with the corrected `ma_url`:**
+  - Artwork: `GET https://mass.ehlke.net/imageproxy?...` (both the auto-upgraded `<img>` requests
+    and direct `fetch()` calls) returns `400`. A `fetch()`-based variant additionally fails CORS
+    preflight: `Response to preflight request doesn't pass access control check: No
+    'Access-Control-Allow-Origin' header is present`, despite Music Assistant returning
+    `Access-Control-Allow-Origin: *` on ordinary `GET` responses (confirmed via direct `curl`
+    against `/info`, not against `/imageproxy` specifically, and not against an `OPTIONS`
+    preflight). The card fell back to its own placeholder art (see
+    `evidence`-style screenshot from this session), not real cover art.
+  - Sendspin: `WebSocket connection to 'wss://mass.ehlke.net/ws' failed: WebSocket is closed
+    before the connection is established.` No longer the outright block from before, but not a
+    working connection either. Plausible cause, not confirmed: Chrome's Local Network Access
+    permission prompt requires a real user gesture and a click Playwright's automated session
+    never produced. A real browser tab with pde clicking through the prompt may behave
+    differently. Not reproduced with a real user gesture; worth a manual re-check before
+    concluding this is a deeper bug.
+  - **Suspected root cause of the artwork half:** Music Assistant's own `base_url` setting
+    (`webserver` config, confirmed via `/info` in the earlier hostname-migration writeup) was
+    last set to `http://mass.ehlke.net` by the port-drop migration and has **not** been updated to
+    `https://`. That setting is what gets baked into the `imageproxy` URLs embedded in library
+    metadata HOMEii Flow reads through Home Assistant, independent of this card's own `ma_url`.
+    Not fixed here: it lives in Music Assistant's own web UI (Settings, not reachable through
+    Home Assistant or `$HA_TOKEN`; see the note above on how the Sendspin token itself was
+    created), which needs pde's own interactive login. Until it moves to `https://`, expect the
+    artwork problem to persist regardless of this card's `ma_url`.
+
+Net effect: HTTPS fixed the browser-level outright block Chrome's Local Network Access imposed,
+exactly as predicted, but did not automatically fix Sendspin or artwork. Those need every
+http-valued setting in the chain (this card's `ma_url`, done; Music Assistant's own `base_url`,
+not done) actually flipped to https, and possibly a real user gesture for the permission prompt
+Sendspin's WebSocket depends on.
+
 ## Installing HOMEii Flow via the HACS WebSocket API
 
 HACS has no REST surface. Installing a custom repository plugin from a script takes two
@@ -174,20 +225,20 @@ Confirm the helper is live:
 
 ```bash
 curl -s -H "Authorization: Bearer $HA_TOKEN" \
-  "http://hass.ehlke.net/api/states/input_text.homeii_flow_active_player"
+  "https://hass.ehlke.net/api/states/input_text.homeii_flow_active_player"
 ```
 
 Confirm Music Assistant's CORS headers directly, bypassing the browser:
 
 ```bash
-curl -s -o /dev/null -D - -H "Origin: http://hass.ehlke.net" \
-  "http://mass.ehlke.net/info" | grep -i access-control
+curl -s -o /dev/null -D - -H "Origin: https://hass.ehlke.net" \
+  "https://mass.ehlke.net/info" | grep -i access-control
 ```
 
 Query Music Assistant's own auth setup:
 
 ```bash
-curl -s -X POST http://mass.ehlke.net/api \
+curl -s -X POST https://mass.ehlke.net/api \
   -H 'Content-Type: application/json' \
   -d '{"message_id":"1","command":"auth/providers"}'
 ```

@@ -21,7 +21,7 @@ import sys
 
 import aiohttp
 
-URL = os.environ.get("HA_URL", "http://hass.ehlke.net")
+URL = os.environ.get("HA_URL", "https://hass.ehlke.net")
 TOKEN = os.environ["HA_TOKEN"]
 WS = URL.replace("http://", "ws://").replace("https://", "wss://") + "/api/websocket"
 BACKUP_DIR = pathlib.Path(os.environ.get("HA_BACKUP_DIR", "."))

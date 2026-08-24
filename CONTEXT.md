@@ -361,11 +361,14 @@ lives in the sibling `pdehlke/proxmox` repo's `mac-mini-proxmox-plan.md`, not he
 
 **Caddy reverse proxy**:
 A small LXC guest on the same Proxmox host that fronts Home Assistant, Music Assistant, and
-Jellyfin on plain HTTP port 80, routing by hostname. Replaced direct `:8123`/`:8095` access,
-which no longer works at all. See
+Jellyfin, routing by hostname. Replaced direct `:8123`/`:8095` access, which no longer works at
+all. Launched on plain HTTP port 80; automatic HTTPS (real Let's Encrypt certificates) went live
+the same day, and plain HTTP now 308-redirects to HTTPS rather than serving directly. See
 [docs/networking/caddy-reverse-proxy.md](./docs/networking/caddy-reverse-proxy.md) and
 [ADR-0064](docs/adr/0064-caddy-reverse-proxy-replaces-direct-ports.md). _Avoid_: don't read `hass.ehlke.net`/`mass.ehlke.net`
-with a port suffix as current; that was true only before 2026-08-24.
+with a port suffix as current; that was true only before 2026-08-24. Don't assume every downstream
+`http://` reference updated itself when HTTPS went live. Music Assistant's own `base_url` setting
+was still `http://` as of the last check; see caddy-reverse-proxy.md's "What's still open."
 
 **HAOS**:
 Home Assistant OS. Still the install method this instance runs, chosen originally for the
@@ -399,11 +402,14 @@ means required evidence is missing. Known Critical conditions outrank Unknown.
 
 **`hass.ehlke.net` / `mass.ehlke.net`**:
 The real DNS names (resolving to the internal LAN address) used for all HA and Music Assistant
-access, replacing the retired `.local` mDNS hostnames. Reached on plain HTTP port 80 through the
-Caddy reverse proxy since 2026-08-24; no port suffix.
+access, replacing the retired `.local` mDNS hostnames. Reached through the Caddy reverse proxy
+since 2026-08-24; no port suffix. Proxy launched on plain HTTP, then automatic HTTPS (real Let's
+Encrypt certificates) went live the same day; use `https://`, not `http://`, as current. Plain
+HTTP now redirects rather than serving directly.
 _Avoid_: `homeassistant.local`, `mass.local` (retired 2026-08-11), literal LAN IP addresses (a
 since-retired workaround that caused a CORS bug), a `:8123`/`:8095` port suffix (retired
-2026-08-24, see [Caddy reverse proxy](#hardware--hosting) above).
+2026-08-24, see [Caddy reverse proxy](#hardware--hosting) above), `http://` as the current scheme
+(superseded the same day by automatic HTTPS).
 
 **Home Assistant Cloud / Nabu Casa / Remote UI**:
 The paid remote-access service (`hass_nabucasa` package) exposing this instance externally via a

@@ -375,9 +375,10 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 - [caddy-reverse-proxy.md](docs/networking/caddy-reverse-proxy.md)
 
-  Home Assistant and Music Assistant moved behind a name-based Caddy reverse proxy on plain HTTP
-  port 80, landing alongside the Proxmox migration below; the old `:8123`/`:8095` ports no longer
-  work at all. What was verified live, every doc/skill/homie-dashboard file it touched, and what's
+  Home Assistant and Music Assistant moved behind a name-based Caddy reverse proxy, landing
+  alongside the Proxmox migration below; the old `:8123`/`:8095` ports no longer work at all.
+  Launched on plain HTTP, then automatic HTTPS (real Let's Encrypt certificates) went live the
+  same day. What was verified live, every doc/skill/homie-dashboard file it touched, and what's
   still open.
 
 ### Hardware

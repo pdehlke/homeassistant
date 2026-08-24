@@ -43,7 +43,7 @@ Preconditions:
 
   ```bash
   cd /Users/pde/src/github.com/pdehlke/homeassistant
-  export HA_URL=http://hass.ehlke.net
+  export HA_URL=https://hass.ehlke.net
   python3 .claude/skills/home-assistant/scripts/haws.py '{"type":"persistent_notification/get"}'
   ```
 
@@ -57,7 +57,7 @@ Preconditions:
 - **Dismiss it** (REST works for this direction):
 
   ```bash
-  HB="Authorization: Bearer $HA_TOKEN"; U=http://hass.ehlke.net
+  HB="Authorization: Bearer $HA_TOKEN"; U=https://hass.ehlke.net
   curl -s -X POST --max-time 8 -H "$HB" -H "Content-Type: application/json" \
     -d '{"notification_id":"<id>"}' "$U/api/services/persistent_notification/dismiss"
   ```

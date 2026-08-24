@@ -835,7 +835,7 @@ and updating two lists by hand. This is a standing decision, not an open TODO.
 ## Reproducing the measurements
 
 ```bash
-U=http://hass.ehlke.net
+U=https://hass.ehlke.net
 HB="Authorization: Bearer $HA_TOKEN"
 
 # Current Rachio integration entities and their config-entry ownership

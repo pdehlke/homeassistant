@@ -1,6 +1,6 @@
 # Music Assistant
 
-Server 2.9.10, schema 31, running as an HA add-on at `http://mass.ehlke.net`.
+Server 2.9.10, schema 31, running as an HA add-on at `https://mass.ehlke.net`.
 
 ## Reaching MA's full API through HA ingress
 

@@ -77,14 +77,81 @@ LAN address behind both hostnames changed too.
 
 - **The Fire HD tablet's Fully Kiosk start URL** was not checked as part of this pass, same gap
   the 2026-08-11 migration left open. If it hardcodes a port anywhere, confirm or fix it next time
-  the tablet is at hand.
+  the tablet is at hand. Now doubly worth checking: if it hardcodes `http://` rather than a
+  bare hostname, it will hit the 308 redirect to `https://` on every load instead of connecting
+  directly.
+- **Music Assistant's own `base_url` setting** is still `http://mass.ehlke.net` (set by this
+  migration, before HTTPS existed) and needs updating to `https://` through Music Assistant's own
+  web UI (Settings; not reachable through Home Assistant or `$HA_TOKEN`). Until it moves, expect
+  the artwork half of the issue below to persist regardless of anything on the HA side. See the
+  2026-08-24 HTTPS update in [homeii-music-flow.md](../music-assistant/homeii-music-flow.md) for
+  the full evidence trail.
 - **The Chrome Local Network Access block on Sendspin and Music Assistant artwork**
-  ([homeii-music-flow.md](../music-assistant/homeii-music-flow.md)) is unrelated to this change
-  and still open. It's a secure-context requirement (HTTPS, or `localhost`), not a port issue;
-  moving off `:8095` doesn't touch it. The proxy does put a TLS termination point in one place for
-  the first time, which is what a durable fix would need, but TLS itself wasn't part of this
-  change.
+  ([homeii-music-flow.md](../music-assistant/homeii-music-flow.md)) is **partially resolved** by
+  the HTTPS work below: the outright block predicted to need HTTPS is confirmed gone. Sendspin's
+  WebSocket and artwork loading both still fail, for different reasons (a CORS-preflight gap and
+  Music Assistant's still-http `base_url`, respectively); see that document's 2026-08-24 update
+  for the full detail. Not closed.
 - **Whether the Raspberry Pi's DNS-under-load flakiness
   ([nabucasa-remote-ui-dns-fragility.md](../nabucasa-remote-access/nabucasa-remote-ui-dns-fragility.md))
   reproduces on the new VM** is unverified. That document's root-cause theory was specific to the
   Pi's resource constraints; nothing here re-tested it against the new host.
+
+## Verified live, 2026-08-24 (HTTPS enabled by default)
+
+Later the same day as the plain-HTTP migration above, Caddy's automatic HTTPS was turned on for
+all three site addresses (`hass.ehlke.net`, `mass.ehlke.net`, `jellyfin.ehlke.net`), the
+possibility the ADR-0064 decision explicitly left open ("a single place to add TLS later").
+
+- `https://hass.ehlke.net/` and `https://mass.ehlke.net/` both return `200` over TLS 1.3, HTTP/2,
+  with a real publicly-trusted certificate: `subject: CN=hass.ehlke.net` (and the `mass` equivalent),
+  `issuer: Let's Encrypt (CN=YE1)`, issued 2026-08-24, valid through 2026-11-22, the standard
+  90-day Let's Encrypt lifetime. This works despite both hostnames resolving only to an internal
+  LAN address (`192.168.4.143`, confirmed from an external resolver too), which means Caddy is not
+  using the HTTP-01 challenge (port 80 on that address isn't reachable from the internet); the
+  exact challenge mechanism (most likely DNS-01 against whatever provider hosts the `ehlke.net`
+  zone) lives in the Caddy config on the LXC itself, not in this repo, and wasn't confirmed directly here.
+- `http://hass.ehlke.net/` and `http://mass.ehlke.net/` now return `308 Permanent Redirect` to the
+  `https://` equivalent, rather than serving plain HTTP as the migration above described. Plain
+  HTTP access still works in the sense that the redirect itself doesn't require TLS, but nothing
+  is served over it directly any more.
+- `alt-svc: h3=":443"` is advertised, meaning Caddy also offers HTTP/3, though this wasn't tested
+  independently of HTTP/2.
+
+### What was updated as a result
+
+- This repo: every doc and skill file (`home-assistant`, `verify-home-assistant`) that used
+  `http://hass.ehlke.net`/`http://mass.ehlke.net` as current instructions now uses `https://`,
+  including script defaults (`scripts/*.py`'s `HA_URL` fallback). Same convention as the port-drop
+  migration: historical narrative that quoted an exact past URL or error message (the 2026-08-10/11
+  checkpoints in [homie-dashboard-install-plan.md](../homie-dashboard/homie-dashboard-install-plan.md),
+  the captured browser console errors and the "Configuration used"-adjacent one-time token-creation
+  note in [homeii-music-flow.md](../music-assistant/homeii-music-flow.md)) was left alone.
+- Live Home Assistant: the `dashboard-sound` Lovelace dashboard's HOMEii Flow card had `ma_url:
+  "http://mass.ehlke.net"` hardcoded (set by the port-drop migration above); updated to
+  `https://mass.ehlke.net` via `apply-card.py`, deployed and Playwright-verified. This is the one
+  that turned out to matter for the Local Network Access investigation below.
+- `homie-dashboard` fork: `dist/config.js`'s `WS_URL` was still `ws://hass.ehlke.net/api/websocket`
+  from the port-drop migration. **This was a live outage, not just a stale doc**: a browser refuses
+  to open a plain `ws://` connection from a page loaded over `https://`, so `homie-dash` was
+  rendering all-dashes ("—") for every value, confirmed by loading it live before the fix.
+  Updated `WS_URL` to `wss://`, bumped `HOMIE_ASSET_VERSION` `20260824.1` → `20260824.2`,
+  `test/screen-a.test.cjs`'s config-host regression test updated to assert `wss://` (106/106 pass),
+  deployed via the same SFTP splice-and-atomic-rename pattern as every prior `config.js` change,
+  `homie-dash`'s Lovelace iframe `?v=` bumped to match. Live-verified via Playwright as the
+  `Homie Dashboard` account: real data rendered again (weather, status grid, solar pill), zero
+  Mixed Content or WebSocket errors. The sibling `verify-homie-dashboard` skill's own hardcoded
+  `http://` URLs (its `SKILL.md`, feature docs, `scripts/doctor.py`/`make-auth-state.py`) were
+  updated too.
+- What was investigated but **not** fixed: Music Assistant's own `base_url` setting, and the
+  Sendspin WebSocket / artwork CORS gap. Both listed under "What's still open" above.
+
+### A credential-handling note from this pass
+
+While inspecting the live `dashboard-sound` Lovelace config to find the HOMEii Flow card's
+`ma_url`, an early, less careful extraction printed the card's full JSON to a tool-output stream
+that included `ma_token`, Music Assistant's own admin-role long-lived token (not `$HA_TOKEN`,
+not a Homie credential). Told to pde immediately; that token should be rotated. Every extraction
+after that point filtered the token out before printing, and the temporary local files that held
+it (Lovelace config backups, the card JSON written to the scratchpad) were deleted once the fix
+was confirmed live.

@@ -1,5 +1,70 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-24, later same day (WS_URL scheme flipped to wss:// for Caddy's automatic HTTPS; this was a live outage, not just a stale doc)
+
+Caddy's automatic HTTPS went live the same day as the checkpoint below, on top of it, not
+instead of it. Full account in
+[docs/networking/caddy-reverse-proxy.md](../networking/caddy-reverse-proxy.md)'s second
+2026-08-24 section; this entry covers only what changed in this fork and this deploy.
+
+**This was found live and broken, not caught by reading the code first.** `dist/config.js`'s
+`WS_URL` was still `ws://hass.ehlke.net/api/websocket` from the checkpoint below. A browser
+refuses to open a plain `ws://` connection from a page loaded over `https://`. Chrome's exact
+console error was "Mixed Content: ... attempted to connect to the insecure WebSocket endpoint
+'ws://hass.ehlke.net/api/websocket'. This request has been blocked; this endpoint must be
+available over WSS," plus a second Mixed Content block on the REST fallback's `http://` calls.
+Loaded `homie-dash` live via Playwright before touching anything: every value on Overview A read
+"—" (Alarm, Lights, Main House, Office Wing, Media, Irrigation, Robot, EV, weather, all of it).
+The live wall dashboard was actually down, for however long elapsed between HTTPS going live and
+this being caught.
+
+Fixed: `WS_URL` → `wss://hass.ehlke.net/api/websocket`, with an updated comment explaining why the
+scheme isn't optional (the comment explaining the `:8123` drop from the checkpoint below stayed,
+extended rather than replaced). `HOMIE_ASSET_VERSION` bumped `20260824.1` → `20260824.2` in
+`dist/homie-dashboard.html`; `test/screen-a.test.cjs`'s config-host regression test updated to
+assert `wss://` instead of `ws://` (still checks for the absence of the old mDNS hostname, literal
+IP, and `:8123`). 106/106 tests pass.
+
+Deployed via the same pattern as every prior `config.js` change: SSH & Web Terminal add-on was
+already running, backed up the live `config.js` and `homie-dashboard.html` with a timestamp,
+uploaded both under temp names, spliced the real `HA_TOKEN` out of the backup into the new
+`config.js` with a remote script (token never touched a local shell variable, argument, or this
+tool's output, verified via the spliced file's byte length and a `placeholder_left` count of
+`0`, never by printing it), atomically renamed both into place. `homie-dash`'s Lovelace iframe
+`?v=` bumped `20260824.1` → `20260824.2` via `scripts/apply-card.py` (`HA_MATCH_TYPE=iframe`,
+dry-run first, one match).
+
+Live-verified via Playwright as the `Homie Dashboard` account, same session that had just proven
+the outage: `https://hass.ehlke.net/homie-dash/0` rendered real live data again (102°F Sunny,
+Main House 77°F/47%, Office Wing 74°F/52%, Solar 3.9kW/1.8kW/2.2kW, Climate "2 On"), zero Mixed
+Content or WebSocket errors. The remaining five console errors are the same pre-existing,
+already-documented, unrelated ones (`navigator.vibrate`, the `rss-news-card` duplicate
+custom-element warning, a benign `scoped-custom-element-registry` 404) plus one new-looking but
+non-blocking `GET /api/states/` 404 not investigated further, since it's a 404 rather than a
+security block and every rendered value was already confirmed correct against it independently.
+Not yet committed to the fork; last pushed commit is still `d9c36fe`.
+
+Also updated in this pass, same convention as the checkpoint below: the sibling `homeassistant`
+repo's docs and skill files, and this fork's own `verify-homie-dashboard` skill (`SKILL.md`,
+every `features/*.md`, `scripts/doctor.py`, `scripts/make-auth-state.py`), all had their current
+`http://hass.ehlke.net`/`http://mass.ehlke.net` instructions updated to `https://`. This fork's
+own `README.md` and the deprecated pre-HACS setup guide were **not** touched: their `http://`
+references are generic placeholders for any HACS user's own instance, not this instance
+specifically.
+
+**Found along the way, not fixed here:** the live `dashboard-sound` Lovelace card's HOMEii Flow
+`ma_url` was also still `http://mass.ehlke.net` and had the same Mixed Content problem; fixed
+separately (see the sibling repo's `docs/music-assistant/homeii-music-flow.md`, 2026-08-24
+update). Music Assistant's own `base_url` setting is still `http://` and needs pde's own login to
+Music Assistant's web UI to fix, not reachable with `$HA_TOKEN` or through Home Assistant.
+
+**Credential-handling incident:** an early, less careful read of the live `dashboard-sound`
+config while chasing the `ma_url` problem above printed Music Assistant's own admin-role
+`ma_token` (not `$HA_TOKEN`, not a Homie credential) to a tool-output stream. Told to pde
+immediately; recommend rotating that token. Every extraction after that point filtered it out
+before printing; the local scratch files that briefly held it were deleted once the fix was
+confirmed live.
+
 ## Checkpoint: 2026-08-24 (WS_URL port dropped for the Caddy proxy migration; SSH target changed too)
 
 Home Assistant and Music Assistant moved behind a name-based Caddy reverse proxy on plain HTTP

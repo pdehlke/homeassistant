@@ -17,7 +17,7 @@ import sys
 
 import aiohttp
 
-URL = os.environ.get("HA_URL", "http://hass.ehlke.net")
+URL = os.environ.get("HA_URL", "https://hass.ehlke.net")
 TOKEN = os.environ["HA_TOKEN"]
 DASHBOARD = os.environ.get("HA_DASHBOARD", "dashboard-sound")
 WS = URL.replace("http://", "ws://").replace("https://", "wss://") + "/api/websocket"

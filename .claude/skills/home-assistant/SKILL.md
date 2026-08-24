@@ -1,8 +1,8 @@
 ---
 name: home-assistant
 description:
-  Work with pde's Home Assistant at http://hass.ehlke.net and the Music
-  Assistant server at http://mass.ehlke.net. Use when asked to inspect or
+  Work with pde's Home Assistant at https://hass.ehlke.net and the Music
+  Assistant server at https://mass.ehlke.net. Use when asked to inspect or
   change Home Assistant - entities, states, automations, scripts, scenes,
   helpers, integrations, Lovelace dashboards and cards, energy or Sense data,
   calendars, weather, or media playback. Tells you which of the three access
@@ -14,9 +14,10 @@ description:
 
 ## Facts that do not change
 
-- Base URL `http://hass.ehlke.net`. Local network only. Reached through a Caddy
-  reverse proxy on plain HTTP port 80; the old `:8123` direct port no longer
-  works at all, from any client. See
+- Base URL `https://hass.ehlke.net`. Local network only. Reached through a
+  Caddy reverse proxy with automatic HTTPS (real Let's Encrypt certificate,
+  confirmed live 2026-08-24); plain HTTP on port 80 redirects to HTTPS, and
+  the old `:8123` direct port no longer works at all, from any client. See
   [references/api-access.md](references/api-access.md) and
   [docs/networking/caddy-reverse-proxy.md](../../../docs/networking/caddy-reverse-proxy.md).
 - `$HA_TOKEN` is always a valid long-lived access token with **full admin
@@ -26,8 +27,8 @@ description:
   confirmed live 2026-08-24 — see
   [docs/hardware/mac-mini-migration.md](../../../docs/hardware/mac-mini-migration.md)).
   Config dir is `/config`, not reachable from this machine.
-- Music Assistant runs as an HA add-on at `http://mass.ehlke.net` (also behind
-  the Caddy proxy, no port). Drive it
+- Music Assistant runs as an HA add-on at `https://mass.ehlke.net` (also
+  behind the Caddy proxy, no port). Drive it
   through the HA-side `music_assistant.*` services; its own API rejects
   `$HA_TOKEN` and needs separate credentials we do not have. **Pandora and
   SiriusXM are both connected.** Pandora surfaces as 36 library radio stations;

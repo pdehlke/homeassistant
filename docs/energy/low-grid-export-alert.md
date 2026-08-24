@@ -117,7 +117,7 @@ Two options were available:
 
 ```bash
 curl -s -X POST -H "Authorization: Bearer $HA_TOKEN" -H "Content-Type: application/json" \
-  "http://hass.ehlke.net:8123/api/services/recorder/get_statistics?return_response" \
+  "https://hass.ehlke.net/api/services/recorder/get_statistics?return_response" \
   -d '{
     "start_time": "2026-08-19T00:00:00-07:00",
     "end_time": "2026-08-20T00:00:00-07:00",
@@ -176,7 +176,7 @@ HTTP Upgrade, not the handshake itself.
 ## Reproducing the measurements
 
 ```bash
-U=http://hass.ehlke.net
+U=https://hass.ehlke.net
 curl -s -X POST -H "Authorization: Bearer $HA_TOKEN" -H "Content-Type: application/json" \
   "$U/api/services/recorder/get_statistics?return_response" \
   -d '{

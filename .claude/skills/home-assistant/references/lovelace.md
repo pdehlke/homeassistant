@@ -20,7 +20,7 @@ REST cannot read or write dashboards. Use WebSocket:
   can silently drop it. Re-run with the same arguments to restore it.
 
 ```bash
-export HA_URL=http://hass.ehlke.net
+export HA_URL=https://hass.ehlke.net
 export HA_BACKUP_DIR=/path/to/scratchpad   # defaults to cwd; never let it default into the skill dir
 export HA_DASHBOARD=dashboard-sound        # defaults to dashboard-sound
 python3 scripts/apply-card.py new-card.json --dry-run   # always dry-run first
