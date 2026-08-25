@@ -414,3 +414,13 @@ since-retired workaround that caused a CORS bug), a `:8123`/`:8095` port suffix 
 **Home Assistant Cloud / Nabu Casa / Remote UI**:
 The paid remote-access service (`hass_nabucasa` package) exposing this instance externally via a
 custom domain and managed TLS certificate.
+
+**Trusted networks auto-login**:
+The `trusted_networks` auth provider entry in `configuration.yaml` that logs the Office wall
+display's Raspberry Pi in as the `office` user purely on its LAN address, with no credential on
+the device. Depends on Home Assistant's trusted proxies list naming only the Caddy proxy, since a
+client inside a trusted proxy range is refused. See
+[trusted-networks-auto-login.md](docs/auth/trusted-networks-auto-login.md) and ADR-0065.
+_Avoid_: reading it as a kiosk or dashboard feature; it decides identity only, not what is
+displayed. The `kiosk_mode` block above is the separate, unrelated thing that hides HA's chrome
+for the same account.

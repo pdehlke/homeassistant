@@ -363,6 +363,17 @@ Notes, planning, and specs for my Home Assistant buildout.
   independent reproduction that caught real, brief DNS packet loss during Core's own startup
   burst.
 
+### Authentication
+
+- [trusted-networks-auto-login.md](docs/auth/trusted-networks-auto-login.md)
+
+  How the Office wall display Pi logs itself in as the `office` user with no login screen, using
+  the `trusted_networks` auth provider mapped to one `/32`. Why each key in the block matters,
+  including the one that would have removed password login for everyone if left out, how the
+  setting hinges on Home Assistant's trusted proxies list being scoped to the Caddy proxy alone,
+  the token-provisioning and manual-login alternatives that were rejected, and the trade-off of
+  making an IP address the credential.
+
 ### Networking
 
 - [hostname-migration-to-ehlke-net.md](docs/networking/hostname-migration-to-ehlke-net.md)
