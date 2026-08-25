@@ -1,5 +1,33 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-08-24, later still (AltNation added as a seventh Music chip station)
+
+pde asked for SiriusXM's AltNation channel added to the Music chip. Full design and verification
+writeup in [homie-music-chip.md](homie-music-chip.md)'s Station catalog and Verification sections;
+this entry covers only the summary and repo state.
+
+`music_assistant.search` found AltNation already resolved and already favorited into the Music
+Assistant library as `library://radio/40`, so no new favoriting step was needed. Added to
+`dist/config.js`'s Music chip `stations[]` using the same shape and shared icon SVG as the existing
+six, per [ADR 0033](../adr/0033-music-stations-addressed-via-library-uri.md)'s `library://`
+addressing convention. `HOMIE_ASSET_VERSION` bumped `20260824.2` → `20260824.3`;
+`test/screen-a.test.cjs`'s station-list and version assertions updated. 106/106 tests pass.
+
+Deployed via the same pattern as every prior `config.js` change: SSH & Web Terminal add-on started,
+live `config.js` and `homie-dashboard.html` backed up with a timestamp, both uploaded under temp
+names, the real `HA_TOKEN` spliced into the new `config.js` entirely on the HA host, atomically
+renamed into place, `homie-dash`'s iframe `?v=` bumped to `.3` via `apply-card.py`, add-on stopped
+again after. `doctor.py` confirmed live bytes, version, and token all matched post-deploy.
+
+Verified without touching Harmony, since `remote.harmony_hub` was mid-`Watch TV` activity at deploy
+time rather than the idle baseline earlier rounds assumed: `music_assistant.play_media` called
+directly on `media_player.crestron` with the new URI produced `state: "playing"`,
+`media_content_id: "library://radio/40"`, `media_album_name: "Alt Nation"`, then `media_player.media_stop`
+restored `idle` -- `remote.harmony_hub` confirmed unchanged throughout. A Playwright popup
+screenshot as the `Homie Dashboard` account showed all seven bubbles rendered, AltNation last,
+without tapping it. Committed to the fork, not pushed, per the standing "commit, don't push without
+being asked" rule.
+
 ## Checkpoint: 2026-08-24, later same day (WS_URL scheme flipped to wss:// for Caddy's automatic HTTPS; this was a live outage, not just a stale doc)
 
 Caddy's automatic HTTPS went live the same day as the checkpoint below, on top of it, not

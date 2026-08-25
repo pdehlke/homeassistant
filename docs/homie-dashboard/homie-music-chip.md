@@ -118,12 +118,24 @@ Assistant library items:
 | The Jam | The Jam Radio | `library://radio/5` | Pandora |
 | 1st Wave | 1st Wave | `library://radio/38` | SiriusXM (favorited into library) |
 | Blues | BB King's Bluesville | `library://radio/39` | SiriusXM (favorited into library) |
+| AltNation | Alt Nation | `library://radio/40` | SiriusXM (favorited into library) |
 
 The "Original label" column is what `music_assistant.search` returned and what shipped first;
 "Label (final)" is pde's shorter relabeling from the same-day follow-up round below. The
 label-to-station mapping needed no clarification: each short label is an unambiguous shortening of
 its original (genre/mood plus artist or era), and the request explicitly named "1st Wave" as
 unchanged.
+
+**Seventh station: AltNation, release `20260824.3`.** pde asked for SiriusXM's AltNation channel
+added to the chip. `music_assistant.search` (`name: "AltNation"`, `media_type: ["radio"]`) found it
+already resolved and already favorited into the Music Assistant library as `library://radio/40`
+("Alt Nation", SiriusXM artwork host), so no `music/favorites/add_item` step was needed this time,
+unlike 1st Wave and Blues' original resolution. Added as a seventh bubble using the exact same
+config shape and shared icon SVG as the other six, following [ADR 0033](../adr/0033-music-stations-addressed-via-library-uri.md)'s
+`library://` addressing convention rather than the station's native `siriusxm://radio/...` URI, for
+the same one-scheme-for-every-entry consistency reason that ADR already settled. `HOMIE_ASSET_VERSION`
+bumped `20260824.2` → `20260824.3`; `test/screen-a.test.cjs`'s station-list assertion updated to the
+seven-entry list. 106/106 tests pass.
 
 ## Verification
 
@@ -166,3 +178,28 @@ passed 85/85, including idle start, hot-switch, and active-station stop ordering
 and `homie-dash`'s iframe URL was updated to `?v=20260813.1`. The Lovelace configuration backup is
 `/tmp/backup-homie-dash-20260813-070101.json`. Deployment integrity was verified; interactive
 browser approval was intentionally left for pde after deployment.
+
+**AltNation round**, 2026-08-24, release `20260824.3`: added as a seventh station, see the Station
+catalog section above for how its `library://radio/40` URI was resolved. Deployed via the same
+pattern as every prior `config.js` change: SSH & Web Terminal add-on started, live `config.js` and
+`homie-dashboard.html` backed up with a timestamp, both uploaded under temp names, the real
+`HA_TOKEN` spliced into the new `config.js` entirely on the HA host (a small remote Python helper
+uploaded and run over SSH, not a local shell substitution), atomically renamed into place,
+`homie-dash`'s iframe `?v=` bumped `20260824.2` → `20260824.3` via `apply-card.py`
+(`HA_MATCH_TYPE=iframe`, dry-run first, one match), add-on stopped again after. `doctor.py` confirmed
+live bytes, version, and token all matched post-deploy.
+
+Verified two ways, deliberately without touching Harmony: at the time of this deploy
+`remote.harmony_hub` was mid-`Watch TV` activity (not the idle/`PowerOff` baseline every earlier
+round assumed), so driving the chip's real tap path would have interrupted whatever the TV was
+doing while pde was AFK to notice. Instead: (1) `music_assistant.play_media` called directly on
+`media_player.crestron` with `media_id: "library://radio/40"` produced `state: "playing"`,
+`media_content_id: "library://radio/40"`, `media_album_name: "Alt Nation"`, exactly the shape
+`musicStationIsOn()` matches on, then `media_player.media_stop` returned it to `idle` --
+`remote.harmony_hub` never called, confirmed unchanged (`on` / `Watch TV`) before and after; (2) a
+Playwright popup screenshot as the `Homie Dashboard` account (`evidence/music-chip-altnation-added.png`
+in the sibling `homie-dashboard` repo's `verify-homie-dashboard` skill) showed all seven bubbles,
+AltNation last, wrapped to a second row, matching every other bubble's icon and styling, without
+tapping it. This proves the new station is correctly wired end to end (config, URI, Music Assistant
+playback, on-state matching, and rendering) without exercising the shared Harmony-routing code
+path, which is unrelated to this change and was already proven live in the round above.
