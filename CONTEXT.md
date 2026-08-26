@@ -101,6 +101,8 @@ toggle — deliberately tied to who's actually looking, not which browser they'r
 **Bubble**:
 A round icon button inside a chip's overlay: one per scene (Scenes chip), or one per Station or
 Playlist (Music chip). Nested inside a chip, not the same thing as one.
+_Avoid_: don't call the Music chip's "All Off" row a bubble; it's a static action row sitting
+alongside the Stations/Playlists category rows, not a round icon inside an expanded category.
 
 **Overlay**:
 The panel a chip opens on tap, hand-rolled by Homie itself.

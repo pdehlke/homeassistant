@@ -5,8 +5,10 @@ pre-configured radio station. Tapping a bubble plays that station through Music 
 Crestron media player and toggles back off (stops) on a second tap, the same on/off chip language
 every other control on the dashboard uses. Since 2026-08-26 the popup is a two-category accordion,
 "Stations" (the original radio presets) and "Playlists" (Music Assistant library playlists sourced
-from Jellyfin); see the Playlists round near the end of this document for that redesign, the real
-bugs it surfaced, and why Playlists always shuffle.
+from Jellyfin), plus a third row, "All Off," that stops whatever is playing without needing to know
+which bubble it is; see the Playlists round and the All Off row section near the end of this
+document for those additions, the real bugs the first one surfaced, and why Playlists always
+shuffle.
 
 ## Goal
 
@@ -334,3 +336,41 @@ restarting; expanding "Stations" and playing "Jazz: Hiromi" afterward confirmed 
 through the generalized accordion code path, and read `shuffle: false`, confirming a Stations tap
 clears a Playlists-tap's shuffle setting. Every mutating check restored the player to its prior
 `idle`/Harmony-`PowerOff` state before moving to the next one.
+
+## All Off row, 2026-08-26
+
+Same-day follow-up ask, after the Playlists round above shipped: a way to stop whatever is playing
+without having to remember or find which Stations or Playlists bubble started it. The prior design
+made this awkward on purpose, by omission: on-state was only ever surfaced on the specific bubble
+that was playing, so stopping meant opening the right category first.
+
+### Chosen design
+
+A third row, "All Off," appended below the Stations and Playlists category rows inside the same
+accordion popup, not inside either category and not a category itself: no chevron, no expanding
+panel, always present regardless of which (if any) category is expanded. Tapping it calls
+`stopAllMusic()`, which runs the identical `media_player.media_stop` + `remote.turn_off` sequence
+`togglePopupMusic`'s own off branch already used, factored out into a shared `stopPopupMusic()` so
+there is exactly one stop sequence in the code, not two that could drift apart. Styling and the
+power icon are reused verbatim from the TV control overlay's own pre-existing "ALL OFF" button
+(Harmony's built-in `PowerOff` activity), rather than invented fresh, so the same word means the
+same thing visually everywhere it appears in the app.
+
+No alternative design was seriously considered: the ask was narrow and the accordion mechanism
+already had an obvious, uncontested place to hang a third static row.
+
+### Verification
+
+`node --test test/screen-a.test.cjs`: 113 → 115. New coverage: `stopAllMusic` runs the same two
+calls in the same order as tapping an active bubble; it clears a playing Playlist's
+`_lastPlaylistStarted` marker too, not just a Station's live `media_content_id` match; it no-ops
+against an `unavailable` or never-cached target, same guard `togglePopupMusic` already has; and the
+accordion's HTML-building code only emits the row when `isMusicControl` is true.
+
+`HOMIE_ASSET_VERSION` `20260826.4` → `20260826.5`, deployed via the same SSH-add-on-start /
+backup / upload / splice / rename / add-on-stop pattern as every prior round, `homie-dash`'s
+Lovelace iframe `?v=` bumped to match via a direct `lovelace/config/save`. Live-verified via
+Playwright against real `/api/states` reads: started "Jazz: Hiromi" (confirmed
+`media_player.crestron` `state: "playing"`), tapped the new "All Off" row, confirmed via the real
+entity that it returned to `idle` and `remote.harmony_hub`'s `current_activity` returned to
+`PowerOff`, and the bubble's on-ring cleared in a follow-up screenshot.
