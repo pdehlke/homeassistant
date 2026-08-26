@@ -142,6 +142,48 @@ To identify a provider, use the `image` host, or resolve the `uri`. `uri` is `li
 
 MA's WebSocket rejects `$HA_TOKEN` with `Invalid or expired token`, and `/api/hassio/addons` through the HA proxy returns nothing usable. The provider's instance id and domain therefore cannot be read programmatically right now. Identification rests on artwork hosts and station naming, which is circumstantial but conclusive.
 
+## Genre browsing lives outside the HA service wrapper, not outside MA
+
+`music_assistant.get_library`'s `media_type` selector only lists the seven enum values from the
+table above. There is no `genre` option, and MA's generic `music/browse` tree has no Genre node
+anywhere either. That is easy to mistake for "MA has no genre concept", a mistake made here once,
+corrected 2026-08-26 after the initial wrong answer was challenged. It isn't true. MA has a
+dedicated native genre subsystem that the HA integration simply never forwards, because genre
+isn't one of MA's `MediaType` values, so the generic wrapper has nothing to attach it to.
+
+Found by pulling MA's frontend bundle directly and grepping it, not by guessing at command names:
+
+```bash
+curl -s https://mass.ehlke.net/ | grep -o 'assets/index-[A-Za-z0-9]*\.js'   # filename hash changes per build
+curl -s https://mass.ehlke.net/assets/index-<hash>.js -o ma-bundle.js
+grep -o '"music/genres/[a-z_]*"' ma-bundle.js | sort -u
+```
+
+That surfaces `music/genres/library_items`, `get`, `add`, `remove`, `merge`, `add_alias`,
+`promote_alias`, `global_exclusions`, `remove_global_exclusion`,
+`exclude_genre_from_media_item`, `genre_exclusions_for_media_item`, `genres_for_media_item`,
+`media_counts`, `count`, `scan_mappings`, `scanner_status`, `radio_mode_base_tracks`, and
+`overview`. Reach them the same way as `music/favorites/*` and `music/library/*` above, over the
+ingress WebSocket. `overview` timed out with no reply when tried 2026-08-26; args untested
+further.
+
+Checked 2026-08-26: `music/genres/count` reports 110. `music/genres/library_items` (top-level
+`limit`/`offset`, confirmed nothing past the first page) returns only 60 distinct entries:
+mostly-sequential item_ids 1-59, lowercase names, several with a parenthetical description
+("afrobeats (West African urban/pop music)"), plus one outlier (`Alternative`, id 66). That shape,
+plus the existence of `merge`/`add_alias`/`global_exclusions`, points to a shipped canonical genre
+taxonomy that MA maps raw tag variants into, not a mirror of whatever strings sit in file metadata.
+The 110-vs-60 gap between `count` and `library_items` is unexplained. Don't invent a reason for it
+if asked again; re-query instead.
+
+This matters when comparing MA's genre list against a raw-tag consumer reading the same files.
+Jellyfin, pointed at the same NAS share, lists 248 genres because it passes ID3 tags through
+unnormalized: tag variants like *Alternative*, *Alternative Rock*, *AlternRock*,
+*Alternative & Punk*, *Alternative Country*, *Alternative Dance*, and *Alternative Metal* all show
+up as separate entries. MA's much smaller number is not a missing feature. It is deliberate
+normalization, and forcing MA to match Jellyfin's raw list would mean fighting that on purpose, not
+flipping a setting that doesn't exist.
+
 ## Players
 
 11 MA devices. 7 enabled, 4 disabled at the device level (`disabled_by: device`).
