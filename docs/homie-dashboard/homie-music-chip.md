@@ -1,9 +1,12 @@
-# Music chip: radio presets on Crestron, the Scenes chip's shape adapted for playback
+# Music chip: radio presets and library playlists on Crestron, adapted from the Scenes chip
 
-A bottom-row "Music" chip that opens a popup of six labeled bubbles, one per pre-configured radio
-station. Tapping a bubble plays that station through Music Assistant on the Crestron media player
-and toggles back off (stops) on a second tap, the same on/off chip language every other control on
-the dashboard uses.
+A bottom-row "Music" chip that opens a popup of, originally, six labeled bubbles, one per
+pre-configured radio station. Tapping a bubble plays that station through Music Assistant on the
+Crestron media player and toggles back off (stops) on a second tap, the same on/off chip language
+every other control on the dashboard uses. Since 2026-08-26 the popup is a two-category accordion,
+"Stations" (the original radio presets) and "Playlists" (Music Assistant library playlists sourced
+from Jellyfin); see the Playlists round near the end of this document for that redesign, the real
+bugs it surfaced, and why Playlists always shuffle.
 
 ## Goal
 
@@ -26,10 +29,10 @@ physical player rather than to independent HA entities.
 exactly, but as `isMusicChip`/`subGroups[].stations[]`. The one structural difference: every scene
 bubble carries its own `entities` (the scene(s) it activates), but every Music bubble targets the
 same physical player, so the chip has one fixed `entity: "media_player.crestron"` at the top level
-instead. Stations are a single flat `subGroups` entry with no room-style label, since there's no
-grouping dimension yet with six items — group by mood or genre later if the list grows enough to
-want it, the same way Scenes only introduced multi-scene grouping once a real third case (Primary
-Suite) showed up.
+instead. Originally Stations were a single flat `subGroups` entry with no room-style label, since
+there was no grouping dimension yet with six items. The Playlists round below introduced the
+grouping dimension pde actually wanted first (content type, not mood or genre): two labeled
+`subGroups` entries, "Stations" and "Playlists", rendered as an accordion.
 
 **On-state, derived live, not tracked.** `musicStationIsOn(entity, uri)` reads the target player's
 own `state` and `media_content_id` directly: "on" means `state === "playing"` and
@@ -203,3 +206,131 @@ AltNation last, wrapped to a second row, matching every other bubble's icon and 
 tapping it. This proves the new station is correctly wired end to end (config, URI, Music Assistant
 playback, on-state matching, and rendering) without exercising the shared Harmony-routing code
 path, which is unrelated to this change and was already proven live in the round above.
+
+## Playlists round, 2026-08-26: a second accordion category, real bugs live testing caught, and shuffle
+
+pde's actual ask started as "genre buttons," using MA's browsable Genre concept, and ended up
+somewhere else entirely once investigation showed what was and wasn't reachable. Recording the path
+because it's the expensive part to reconstruct later.
+
+### What was asked, and what it turned into
+
+The stated goal was genre-driven buttons on the Music chip, modeled visually on how the Climate
+chip already lets you pick a category before drilling in. Two things surfaced during grilling that
+changed the design before any code was written:
+
+- **MA's Genre objects aren't playable through the API Homie uses.** MA models Genre as a real,
+  playable internal type (`library://genre/<n>`, `is_playable: true`, with its own
+  `radio_mode_base_tracks` mechanism), but that's only reachable through MA's *native* WebSocket
+  API. Both `music_assistant.get_library` and `music_assistant.play_media`, the HA-side services
+  Homie already calls, hard-list `media_type` to
+  artist/album/track/playlist/podcast/audiobook/radio/folder. Genre isn't in either enum, checked
+  directly against the live service schemas, not assumed.
+- **pde's actual intent was Jellyfin playlists, not raw MA genres.** He clarified the goal was to
+  surface Jellyfin playlists, some of which happen to represent a genre (a large "Alternative"
+  playlist already existed, sourced from the same Jellyfin library MA reads). MA already ingests a
+  Jellyfin playlist into its regular library, `library://playlist/10` for "Alternative", confirmed
+  via `music_assistant.get_library`, so this needed no bridge to MA's native API at all: the exact
+  same `music_assistant.play_media` call Stations already use, just `media_type: "playlist"`
+  instead of `"radio"`.
+
+### Rejected alternatives, and why
+
+- **Climate's own two-level picker, as the model to copy.** Rejected once its actual mechanism was
+  read: `openThermostat()`/`openThermostatNative()` is a bespoke handoff that closes Homie's own
+  overlay and dispatches `hass-more-info` into the parent HA frame to open HA's native thermostat
+  dialog. There's no HA "more-info dialog" for a station or playlist URI, so nothing about this
+  mechanism was reusable; copying it would have meant writing an entirely new, unproven navigation
+  system for a distinction (a full second screen with a back button) pde never actually asked for.
+- **Raw Jellyfin genre tags as the button source**, bypassing MA. Rejected: it would give Homie a
+  second, parallel connection to Jellyfin that has never existed, instead of keeping Music Assistant
+  as the single hub the rest of this dashboard already relies on.
+- **A dynamic pull of MA's live playlist library**, instead of a hand-curated config list. Rejected:
+  `music_assistant.get_library` for playlists returns MA's own 8 built-in smart playlists (500
+  Random tracks, Infinite Mix, etc.) alongside real ones, and the item schema has no `provider`
+  field, so there is no reliable way to filter "Jellyfin-sourced" from "MA-generated" automatically.
+  A hand-picked list, exactly like Stations, sidesteps the filtering problem entirely and matches
+  the chip's existing "curated shortcuts, not an exhaustive browser" philosophy.
+
+### Chosen design
+
+**Accordion, not new navigation.** The Lights chip already had a genuinely reusable two-level
+pattern: `subGroups` render as category rows inside `openPopup()`, and tapping one expands it in
+place via `toggleRoomAccordion()`, one category open at a time, no page navigation. Generalized
+that function with an `isMusicControl` branch that renders Music's bubble grid
+(`popup-scene-bubble`/`popup-scene-icon`, unchanged markup) instead of a Mushroom card, reusing the
+identical CSS the flat popup already used. `dist/config.js`'s Music `subGroups` became two labeled
+entries, "Stations" (the existing seven, untouched) and "Playlists" (one entry so far, "Alternative"
+→ `library://playlist/10`, `mediaType: "playlist"`). `togglePopupMusic` gained a fourth parameter,
+`mediaType`, defaulting to `"radio"` so every Station entry needed no config change at all.
+
+### Two real bugs, found only by driving the deployed page, not by design review
+
+The proof standard this project already holds every Homie change to (`verify-homie-dashboard`'s
+"screenshot the real state, independently read the entity, don't trust a save/tap alone") earned
+its keep twice in one session:
+
+1. **`refreshOpenAcCards` crashed** (`Cannot read properties of undefined (reading 'startsWith')`)
+   the moment the Music popup was left open. Music now shares `c._flatSubs` with every other
+   accordion chip as a side effect of the generalization above, but this unrelated function assumed
+   every `_flatSubs` owner is entity-keyed (`s.entity.startsWith("climate.")`) and Music's entries
+   carry a `uri`, not an `.entity`. One-line guard fix (`!s.entity || !s.entity.startsWith(...)`),
+   caught from the browser console during the first live pass, before pde would have seen it.
+2. **A playing Playlist could never be detected as "on," and a second tap would restart it instead
+   of stopping it.** `musicStationIsOn()` matches `media_content_id === uri`, which works for radio
+   because a station never stops being its own URI. Playing "Alternative" live showed MA rewrites
+   `media_content_id` to the currently-playing *track's* own URI (`library://track/851`, "Homicide"
+   by 999) the instant playback starts, never the playlist's URI again. Checked every other
+   candidate attribute on the entity (`active_queue`, `source`, `app_id`); none of them name the
+   source playlist either. Fixed with `_lastPlaylistStarted`, an in-memory `entity -> uri` map
+   `togglePopupMusic` maintains directly (set on a Playlists start, cleared on any stop or Stations
+   switch), the same class of "server state doesn't say what the UI needs" workaround `_acCardState`
+   already uses for AC cards. Accepted limitation, same as that precedent: this can drift from truth
+   if something outside Homie (another dashboard, an HA automation) redirects the player without
+   going through `togglePopupMusic` again.
+
+### Shuffle, added as a same-day follow-up ask
+
+pde asked, after the above shipped and was confirmed live, that Playlists always play shuffled.
+`music_assistant.play_media` has no shuffle parameter of its own; the standard HA
+`media_player.shuffle_set` service does, and `media_player.crestron`'s `supported_features` bitmask
+confirmed it supports `SHUFFLE_SET` (bit `32768`). One live question needed answering before writing
+the call: does `shuffle_set` need to run before or after `play_media`, given shuffle is a
+player-level setting that might get reset when a new queue starts? Tested directly: setting
+`shuffle: true` while idle, then calling `play_media` for the same playlist, kept `shuffle: true`
+*and* changed which track played first (a different opening track than the two prior unshuffled
+test plays). Setting shuffle after `play_media` would have shuffled everything from the second track
+onward, but not the deterministic first pick. Chosen: `shuffle_set` runs immediately before
+`play_media`, `true` for a Playlists bubble, explicit `false` for a Stations bubble so a stale
+`true` from an earlier Playlists tap can't silently carry over onto radio, where shuffle is
+meaningless.
+
+### Verification
+
+`node --test test/screen-a.test.cjs`: 110 → 113 across the two changes (accordion + on-state fix,
+then shuffle). New coverage: the accordion's Music branch renders inside `toggleRoomAccordion()`
+now, not the old flat `openPopup()` branch; a Playlists bubble's `mediaType` reaches `play_media`
+correctly and a Stations bubble still defaults to `"radio"`; a playing Playlist reads "on" via the
+tracker even though `media_content_id` never matches its URI, and a second tap stops it rather than
+restarting it; switching to a Station clears a stale playlist marker; `shuffle_set(true)` fires
+before `play_media` for a Playlists tap and `shuffle_set(false)` fires for a Stations tap.
+
+Deployed across four releases as the bugs surfaced (`20260826.1` through `.4`), same pattern as
+every prior round: SSH & Web Terminal add-on started, live `config.js`/`homie-dashboard.html`
+backed up with a timestamp, uploaded under temp names, real `HA_TOKEN` spliced into the new
+`config.js` on the HA host, atomically renamed into place, `homie-dash`'s Lovelace iframe `?v=`
+bumped to match via a direct `lovelace/config/save` (`apply-card.py`'s underlying mechanism, called
+directly since only the version query string changed), add-on stopped again after. `doctor.py`
+confirmed live bytes, version, and token matched at each step.
+
+Live-verified via Playwright against real `/api/states` reads, restoring state after each check:
+opening the Music popup showed the "Stations"/"Playlists" category rows with no bubbles rendered
+yet (proving the accordion, not a flat grid, is what's live); expanding "Playlists" and tapping
+"Alternative" produced `state: "playing"`, `media_title` naming an actual track from that playlist,
+and (after the shuffle round) `shuffle: true`; the bubble's own DOM class read
+`"popup-scene-icon on"` while playing, confirming the on-state tracker; tapping it again produced
+`state: "idle"` and Harmony `PowerOff`, confirming the stop path actually stops rather than
+restarting; expanding "Stations" and playing "Jazz: Hiromi" afterward confirmed radio still works
+through the generalized accordion code path, and read `shuffle: false`, confirming a Stations tap
+clears a Playlists-tap's shuffle setting. Every mutating check restored the player to its prior
+`idle`/Harmony-`PowerOff` state before moving to the next one.

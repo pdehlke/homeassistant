@@ -99,8 +99,8 @@ toggle — deliberately tied to who's actually looking, not which browser they'r
 [homie-nas-chip.md](docs/homie-dashboard/homie-nas-chip.md).
 
 **Bubble**:
-A round icon button inside a chip's overlay — one per scene (Scenes chip) or one per station
-(Music chip). Nested inside a chip, not the same thing as one.
+A round icon button inside a chip's overlay: one per scene (Scenes chip), or one per Station or
+Playlist (Music chip). Nested inside a chip, not the same thing as one.
 
 **Overlay**:
 The panel a chip opens on tap, hand-rolled by Homie itself.
@@ -144,8 +144,22 @@ own, only a last-activated timestamp.
 
 **Station**:
 A Music chip bubble representing one pre-configured Music Assistant radio stream (a
-`library://radio/<n>` URI), not an HA entity in its own right. All six target the single fixed
-player `media_player.crestron`.
+`library://radio/<n>` URI), not an HA entity in its own right. Lives under the Music chip's
+"Stations" accordion category. All seven target the single fixed player `media_player.crestron`.
+_Avoid_: don't use "station" for a Playlist bubble; they're a different URI scheme and a different
+on-state mechanism (see Playlist).
+
+**Playlist** (Homie sense):
+A Music chip bubble representing one Music Assistant library playlist (a `library://playlist/<n>`
+URI), sourced from a Jellyfin playlist that MA has ingested into its own library, not a raw
+Jellyfin API call. Lives under the Music chip's "Playlists" accordion category, alongside but
+distinct from Station. Always plays shuffled; a Station always plays unshuffled, and starting one
+turns shuffle back off regardless of what a prior Playlist tap left it as. Its on state can't be
+read the way a Station's can: Music Assistant rewrites the player's `media_content_id` to the
+current track's own URI the moment a playlist starts, never the playlist's URI again, so Homie
+tracks "this bubble is the one that's on" in memory instead of matching live state.
+_Avoid_: don't conflate with the stock HA `scene.*`-adjacent "Scene" (Homie sense) above; a
+Playlist has no synthetic derived state at all, only this tracked marker.
 
 **Floors card**:
 A card on Overview C with one face per floor/zone (Main House, Office Wing), each with an expand
