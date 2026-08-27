@@ -1,5 +1,9 @@
 # Mobile-first Homie Dashboard reimplementation: paused design
 
+> **Resume the actual session**: `5c9b2b50-d809-4ddc-be34-f0697c809ef2`. This is the live Claude
+> Code session the original `/grill-with-docs` conversation ran in; resuming it directly carries
+> the full conversation, not just this summary.
+
 This records an in-progress `/grill-with-docs` design session (2026-08-16) for a mobile-first
 rebuild of Homie Dashboard's functions, paused mid-round at pde's request while he was away from
 keyboard. It is not a finished decision: no ADR exists yet, and several open questions below are
