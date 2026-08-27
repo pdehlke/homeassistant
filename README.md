@@ -346,9 +346,10 @@ Notes, planning, and specs for my Home Assistant buildout.
   Replaces the Music chip's hand-maintained Playlists array with a periodically-synced list of
   Jellyfin-sourced Music Assistant playlists. Why the Jellyfin-vs-MA-builtin distinction needs MA's
   own `provider_mappings` field (not the HA-side `get_library` service, which has no provider
-  field at all), why the sync runs from a cron job inside the SSH & Web Terminal add-on's own
-  Alpine container rather than as a Home Assistant automation, and what's verified versus still
-  needing a durability fix so that cron job survives an add-on update.
+  field at all), the sync script and dashboard-side merge that are built and verified, and the
+  still-unsolved scheduling problem: a first attempt scheduled it via cron inside the SSH & Web
+  Terminal add-on, which turned out to do nothing at all, since no `crond` process actually runs
+  in that container.
 
 - [homie-nas-chip.md](docs/homie-dashboard/homie-nas-chip.md)
 

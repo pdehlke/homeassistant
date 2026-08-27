@@ -5,8 +5,9 @@ Until 2026-08-26, the Music chip's Playlists accordion row (see
 `homie-dashboard`'s `dist/config.js`: one entry, "Alternative"
 (`library://playlist/10`). Adding or removing a Jellyfin playlist meant editing
 that file and redeploying the whole dashboard. This document records the design
-that replaced it with a periodically-refreshed value, the investigation that
-shaped it, and what is and is not actually running yet.
+that replaced it with a value meant to refresh periodically on its own, the
+investigation that shaped it, and what is and is not actually running yet —
+including a scheduling attempt that turned out not to work at all.
 
 ## The ask
 
@@ -126,62 +127,53 @@ This was a same-day extension of the 2026-08-26 Playlists round and the All
 Off row (see [homie-music-chip.md](./homie-music-chip.md)); `homie-dashboard`
 `HOMIE_ASSET_VERSION` moved `20260826.5` → `20260826.6`.
 
-## How it's actually scheduled
+## Scheduling: attempted via cron in the SSH add-on, does not work
 
-Not inside Home Assistant Core at all, and not on pde's own workstation
-either. The SSH & Web Terminal add-on (`root@192.168.4.141:2222`, already
-used for every Homie deploy in this repo) is its own separate container, a
-full Alpine Linux system with a `crond` already running the OS's own
-daily/weekly/monthly maintenance jobs. That gives it everything
-`sync-homie-playlists.py` needs — real Python, `apk` to install `aiohttp`,
-and a working cron — without touching `configuration.yaml`, `command_line`,
-or Home Assistant's own process at all.
+A first attempt tried to schedule `sync-homie-playlists.py` via `cron`
+inside the SSH & Web Terminal add-on's own container
+(`root@192.168.4.141:2222`), reasoning that its Alpine Linux environment has
+real Python and `apk`, unlike Home Assistant Core's own `command_line`
+environment. That part of the reasoning was fine. The setup itself —
+`apk add py3-aiohttp`, the script and a token-wrapper deployed under
+`/config/scripts/`, one `crontab` line — was completed and even persisted
+across a real add-on restart via that add-on's own `packages`/
+`init_commands` config options.
 
-Setup, done 2026-08-26:
+**None of it does anything.** There is no `crond` process actually running
+in that container. The `crond` and `crontab` *binaries* exist, `crontab -l`
+happily shows an installed schedule, and Alpine's default periodic jobs
+(`/etc/periodic/*`) are configured the same way — but a crontab file being
+present does not mean anything is reading it. Nothing starts `crond` as a
+service in this add-on's container, so the schedule is inert: no `crond`
+process, no job ever fires, on any schedule, ever.
 
-1. `apk add py3-aiohttp` (Alpine's own aiohttp package, version 3.13.5 at
-   the time).
-2. `/config/scripts/sync-homie-playlists.py` deployed (this repo's copy,
-   under `.claude/skills/home-assistant/scripts/`).
-3. `/config/scripts/homie-playlists-env.sh` deployed: a one-line wrapper
-   exporting `HA_TOKEN`, mode 600, so the crontab line itself never carries
-   the token in plain sight. The checked-in template (same directory,
-   `.example` suffix) has the token blanked out; never commit a filled-in
-   copy.
-4. One crontab line added directly (`crontab -l` / `crontab -` via the SSH
-   session, not through the add-on's own persistent config):
+This should have been caught immediately: a `ps aux | grep -i cron` was run
+while checking this container out on 2026-08-26, and it did not list a
+`crond` process — only the shell running the check. That absence was the
+actual disqualifying fact and was missed at the time, in favor of the
+weaker signal (the binaries and the crontab file being present). The lesson
+generalizes: confirming a scheduler's *configuration* exists is not the
+same as confirming its *daemon* is running, and only the latter proves
+anything will actually fire.
 
-   ```
-   0 */12 * * * . /config/scripts/homie-playlists-env.sh && python3 /config/scripts/sync-homie-playlists.py >> /config/.homie-playlists-sync.log 2>&1
-   ```
-
-   Runs at 00:00 and 12:00 daily.
-
-**What's persistent versus what isn't.** `/config` is a real, host-backed
-volume — the script and the token wrapper survive an add-on update or
-restart. The `apk`-installed `py3-aiohttp` package and the crontab
-registration itself do **not** — both live in the add-on container's own
-writable overlay (confirmed via `df -h`: `/` is `overlay`, only `/config`,
-`/data`, and `/ssl` are real mounted volumes), so either one would need
-redoing after the add-on's container is recreated (an add-on update, a
-Supervisor-triggered rebuild). This add-on's own configuration schema has
-`packages` and `init_commands` list options seemingly built for exactly this
-— re-applying an `apk` package list and a set of boot-time shell commands on
-every container start, which would make both durable — but setting those
-options via Supervisor's API hit the same unattended-session classifier
-block `configuration.yaml` did, and wasn't completed. Doing it by hand takes
-two minutes: Settings > Add-ons > Advanced SSH & Web Terminal >
-Configuration, add `py3-aiohttp` to `packages` and the crontab line above
-(as one `init_commands` entry) to `init_commands`, save, restart the add-on
-once to confirm both re-apply cleanly.
+**Left in place on the host, for whatever the next design turns out to
+be:** the `/config/scripts/sync-homie-playlists.py` script and its
+`/config/scripts/homie-playlists-env.sh` token wrapper, and the SSH add-on's
+`packages: [py3-aiohttp]` / `init_commands` (the now-inert crontab-install
+line) config. None of this is doing any harm sitting there, and the script
+and Python environment are still exactly correct and reusable for a real
+scheduling mechanism, whatever that turns out to be — it is specifically
+the "install a crontab line and assume cron runs it" idea that is dead, not
+the script or the container setup around it.
 
 ## What is verified, and what is still open
 
-Verified live on 2026-08-26:
+Verified live on 2026-08-26 and 2026-08-27:
 
 - The full enumerate-and-filter chain, run against the real MA library,
-  correctly returns exactly the one real Jellyfin playlist ("Alternative")
-  and excludes all eight MA builtins.
+  correctly returns the real Jellyfin-sourced playlists and excludes every
+  MA builtin. Run a second time on 2026-08-27, it picked up a playlist added
+  to Jellyfin in the interim ("Crazy Train") with no code change.
 - Writing that result to `sensor.homie_dynamic_playlists` via REST and
   reading it back returns the expected `state`/`attributes` shape.
 - The actual deployed `syncDynamicPlaylistsFromHA()` (sliced directly out of
@@ -192,29 +184,26 @@ Verified live on 2026-08-26:
   the merge itself; a failed fetch leaving Playlists untouched rather than
   throwing; a thrown network error not propagating; a no-op when `CONFIG`
   has no Music chip; and `config.js` no longer hand-maintaining the list.
-- `py3-aiohttp` imports cleanly in the SSH add-on's container, and the
-  crontab line is confirmed present via `crontab -l`.
+- `sync-homie-playlists.py` itself, run by hand from inside the SSH add-on's
+  container with `py3-aiohttp` installed, completes cleanly end to end.
 - A full HA backup was taken before any host-side changes were attempted
   (Supervisor backup slug `db9576c7`, 2026-08-26, unencrypted, local
-  storage), out of caution before the `configuration.yaml` edit that was
-  expected to need a restart; unused, since that edit never landed.
+  storage), out of caution before an earlier `configuration.yaml` edit
+  attempt that was expected to need a restart; unused, since that edit
+  never landed.
 
-**Not yet verified**:
+**Still open**:
 
+- **A working scheduler.** This is the actual unsolved part of the original
+  ask. Cron inside the SSH add-on's container does not work (see above,
+  no `crond` process). pde is designing a different approach; the deployed
+  script, token wrapper, and `py3-aiohttp` install are left in place to
+  support that.
 - A real browser/Playwright pass tapping into the Playlists row and
   confirming the bubble renders and plays correctly. `playwright-cli` was
-  not available in this session (no global install, no local
-  `node_modules`, `npx playwright-cli` failed to resolve an executable).
-  Given "Alternative" is the only entry either before or after this change,
-  and it now round-trips through the exact REST call the real page will
-  make, regression risk is low, but this should still be confirmed visually
-  next time `playwright-cli` is available.
-- **A cron-triggered run actually succeeding.** The crontab line is
-  installed and the script itself is proven correct (run manually, multiple
-  times, against the real live data), but a manual end-to-end run of the
-  exact cron command (`. homie-playlists-env.sh && python3
-  sync-homie-playlists.py`) was interrupted before completing. Check
-  `/config/.homie-playlists-sync.log` and
-  `sensor.homie_dynamic_playlists`'s `last_updated` after the next 00:00 or
-  12:00 UTC boundary to confirm it actually fired and succeeded on its own.
-- The durability step above (`packages`/`init_commands`) — not done yet.
+  not available in the session that built this feature (no global install,
+  no local `node_modules`, `npx playwright-cli` failed to resolve an
+  executable). Given "Alternative" is the only entry either before or after
+  this change, and it now round-trips through the exact REST call the real
+  page will make, regression risk is low, but this should still be
+  confirmed visually next time `playwright-cli` is available.

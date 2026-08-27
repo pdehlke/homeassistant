@@ -28,13 +28,12 @@ removing an item for any reason other than pde saying it's done or cancelled.
    `docs/pdehlke-customizations.md`.
 5. Water meter monitoring: https://github.com/gunnaraas/watermeter.git
 6. Build a remotely accessible Homie Dashboard.
-7. Confirm `sync-homie-playlists.py`'s new cron job (in the SSH & Web Terminal add-on's own
-   container, see [homie-dynamic-playlists.md](./homie-dashboard/homie-dynamic-playlists.md))
-   actually fires and succeeds on its own at the next 00:00 or 12:00 UTC boundary
-   (`/config/.homie-playlists-sync.log`, `sensor.homie_dynamic_playlists`'s `last_updated`) — the
-   crontab line is installed but a full unattended run was never observed end to end.
-8. Make the playlist-sync cron job durable across an SSH add-on update: add `py3-aiohttp` to that
-   add-on's `packages` option and the crontab line to its `init_commands` option (Settings >
+7. Give `sync-homie-playlists.py` an actual working scheduler. A cron job inside the SSH & Web
+   Terminal add-on's own container was set up and even made to survive a container restart, but
+   turned out to do nothing at all: no `crond` process runs in that container, so the installed
+   crontab line never fires. The script, its token wrapper, and the add-on's `py3-aiohttp` package
+   are left in place on the host for whatever the next design turns out to be. See
+   [homie-dynamic-playlists.md](./homie-dashboard/homie-dynamic-playlists.md).
    Add-ons > Advanced SSH & Web Terminal > Configuration). Both currently live only in the running
    container's own overlay and would be lost if that container is ever recreated. See
    [homie-dynamic-playlists.md](./homie-dashboard/homie-dynamic-playlists.md).

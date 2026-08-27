@@ -28,17 +28,15 @@ ingress session and for the final REST write of the result. It does not need
 Home Assistant's own process at all -- it just needs network access to
 hass.ehlke.net and a Python with aiohttp.
 
-Where this actually runs: the SSH & Web Terminal add-on's own container
-(root@192.168.4.141:2222), via a cron entry, not the HA host's
-`configuration.yaml`/`command_line` mechanism at all. That add-on's container
-is a full Alpine Linux environment with its own `crond` already running
-(confirmed 2026-08-26), so `apk add py3-aiohttp` plus one crontab line was
-enough -- no new HA config, no restart of Home Assistant itself. See
-homie-playlists-env.sh.example (same directory) for the token wrapper the
-cron line sources, and homie-dynamic-playlists.md for the exact crontab line,
-what's persistent versus ephemeral in that add-on's container, and the
-one-time durability step (the add-on's own `packages`/`init_commands` config
-options) still worth doing so this survives an add-on update.
+Where this runs, and the still-open scheduling problem: this script and its
+token wrapper (homie-playlists-env.sh.example, same directory) are deployed
+to /config/scripts/ on the HA host, and the SSH & Web Terminal add-on's own
+container (root@192.168.4.141:2222) has py3-aiohttp installed via that
+add-on's `packages` config option. A cron entry was also installed there,
+but does nothing: that container has no `crond` process actually running,
+so nothing ever reads the crontab. See homie-dynamic-playlists.md for that
+finding in full and for whatever scheduling mechanism replaces it. Until
+then, this script only runs when invoked by hand.
 
 Usage:
     python3 sync-homie-playlists.py [--dry-run]
