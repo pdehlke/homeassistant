@@ -341,6 +341,15 @@ Notes, planning, and specs for my Home Assistant buildout.
   uses its `library://` URI rather than mixing in the native SiriusXM form for two of them. Includes
   a same-day follow-up round lowering the reset volume and shortening five of six station labels.
 
+- [homie-dynamic-playlists.md](docs/homie-dashboard/homie-dynamic-playlists.md)
+
+  Replaces the Music chip's hand-maintained Playlists array with a periodically-synced list of
+  Jellyfin-sourced Music Assistant playlists. Why the Jellyfin-vs-MA-builtin distinction needs MA's
+  own `provider_mappings` field (not the HA-side `get_library` service, which has no provider
+  field at all), why the sync runs from a cron job inside the SSH & Web Terminal add-on's own
+  Alpine container rather than as a Home Assistant automation, and what's verified versus still
+  needing a durability fix so that cron job survives an add-on update.
+
 - [homie-nas-chip.md](docs/homie-dashboard/homie-nas-chip.md)
 
   An admin-only "NAS" chip reproducing the live native `dashboard-nas` Overview inside Homie Dash:

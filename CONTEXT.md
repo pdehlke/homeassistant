@@ -337,6 +337,14 @@ blocked by Chrome's Local Network Access restriction over plain HTTP.
 A Music Assistant long-lived access token, distinct from an HA token. Required for Sendspin and
 artwork proxying.
 
+**Provider mapping**:
+The field on a Music Assistant library item (`provider_mappings[].provider_domain`) naming which
+backend actually supplies it, e.g. `jellyfin` or `builtin`. Only visible through MA's own API
+(`music/get_library_item` over the HA ingress WebSocket), not through the HA-side
+`music_assistant.get_library` service, whose response schema has no provider field at all. This is
+the one reliable way to tell a Jellyfin-sourced playlist apart from one of MA's own built-in smart
+playlists; see [docs/homie-dashboard/homie-dynamic-playlists.md](docs/homie-dashboard/homie-dynamic-playlists.md).
+
 ### Harmony Hub
 
 **Activity**:

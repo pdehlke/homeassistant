@@ -8,7 +8,10 @@ every other control on the dashboard uses. Since 2026-08-26 the popup is a two-c
 from Jellyfin), plus a third row, "All Off," that stops whatever is playing without needing to know
 which bubble it is; see the Playlists round and the All Off row section near the end of this
 document for those additions, the real bugs the first one surfaced, and why Playlists always
-shuffle.
+shuffle. Since the same day, the Playlists row's contents are no longer hand-maintained in
+`config.js` at all — they're synced from Jellyfin via Music Assistant on a schedule; see
+[homie-dynamic-playlists.md](./homie-dynamic-playlists.md) for that design and what is and isn't
+actually running yet.
 
 ## Goal
 

@@ -1,0 +1,13 @@
+#!/bin/sh
+# Template for /config/scripts/homie-playlists-env.sh on the HA host (inside
+# the SSH & Web Terminal add-on's own container, not Home Assistant Core's).
+# The cron line in homie-dynamic-playlists.md sources this before running
+# sync-homie-playlists.py, so HA_TOKEN never needs to sit in the crontab line
+# itself.
+#
+# To deploy: copy this file to /config/scripts/homie-playlists-env.sh, fill in
+# the real token below, then `chmod 600` it. Root-only, same trust level
+# homie-dashboard's own config.js already has for its embedded token on this
+# host -- see docs/homie-dashboard/homie-dynamic-playlists.md in the
+# pdehlke/homeassistant repo. Never commit a filled-in copy of this file.
+export HA_TOKEN="YOUR_LONG_LIVED_ACCESS_TOKEN"
