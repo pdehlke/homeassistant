@@ -357,6 +357,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   (admin and the kiosk account) against the real instance; a real popup-overflow bug was found and
   fixed before pde's review, not after.
 
+- [homie-mobile-reimplementation.md](docs/homie-dashboard/homie-mobile-reimplementation.md)
+
+  Paused mid-design record of a mobile-first rebuild of Homie Dashboard's functions: the code
+  audit and Playwright evidence showing the existing fork was never architected for a phone
+  viewport, why a new build was chosen over a retrofit, the no-single-user auth requirement, and
+  the still-unanswered questions (wife's phone platform, and whether "native" needs more than a
+  PWA can give) it's waiting to resume from. Tracked as issue #13.
+
 ### Cloud and Remote Access
 
 - [nabucasa-remote-ui-dns-fragility.md](docs/nabucasa-remote-access/nabucasa-remote-ui-dns-fragility.md)
