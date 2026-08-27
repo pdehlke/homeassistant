@@ -3,7 +3,7 @@
 ## Context
 
 Every prior Rachio decision in this repo ([rachio-zone-disabled-alert.md](./rachio-zone-disabled-alert.md),
-[project-todo.md](../project-todo.md) item 4) was made under one hard constraint: this Home
+`project-todo.md` item 4) was made under one hard constraint: this Home
 Assistant instance had no `external_url` and was not reachable from the
 internet, so Rachio's cloud could never deliver the webhook its integration
 depends on for zone state. That constraint is now gone: Home Assistant Cloud
@@ -16,7 +16,7 @@ untouched here.
 This plan revisits the two Rachio limitations that were previously written off
 as permanent, and lays out what's now achievable in `homie-dashboard`:
 
-1. **Zone on/off state staleness** ([project-todo.md](../project-todo.md) item 4): caused directly
+1. **Zone on/off state staleness** (`project-todo.md` item 4): caused directly
    by the unreachable webhook. Should now resolve itself once confirmed live,
    since `homie-dashboard`'s WebSocket pipeline already reflects HA state
    changes within milliseconds; no dashboard code changes are needed for this
@@ -91,7 +91,7 @@ just unfinished and partly overtaken by the disabled-zone fix.
 - **Verification of the webhook itself**: an active test (start a real zone
   briefly from the Rachio app, bypassing Homie, and watch
   `switch.main_irrigation_*` flip within seconds, the same method that
-  originally proved the bug in [project-todo.md](../project-todo.md) item 4). Explicitly **not** a
+  originally proved the bug in `project-todo.md` item 4). Explicitly **not** a
   blocker for the rest of this plan; pde may run it later today. Record the
   result in [rachio-zone-disabled-alert.md](./rachio-zone-disabled-alert.md) or the new doc (see below) once run.
 - **New dashboard UX in scope**: a rain-delay/standby banner surfaced on the
@@ -163,7 +163,7 @@ just unfinished and partly overtaken by the disabled-zone fix.
     remains a real but lower-priority option than it looked when written. Still
     needs pde's own API key to register the webhook regardless of when it's
     built.
-- **New backlog item**: add a [project-todo.md](../project-todo.md) entry reminding pde to actually
+- **New backlog item**: file a tracker issue reminding pde to actually
   fix the root cause upstream, HA core's `rachio` integration never subscribing
   to Rachio's config-change webhook category at all. This is a separate,
   longer-horizon item (patch or upstream PR against `home-assistant/core`),
@@ -248,7 +248,7 @@ already used for [rachio-zone-disabled-alert.md](./rachio-zone-disabled-alert.md
   instruction rather than spinning off a new one, since nothing in the original
   Context/Graceful-degradation reasoning turned out wrong. Added to [README.md](../../README.md)
   under this file's existing name.
-- Update [project-todo.md](../project-todo.md): resolve/update item 4 (webhook limitation, now fixed
+- Update the issue tracker: resolve/update item 4 (webhook limitation, now fixed
   for on/off state), add the Track B research-spike/build item, and add the new
   upstream-fix reminder item for HA core's `rachio` integration never
   subscribing to config-change webhooks. **Not done.** Not asked for this

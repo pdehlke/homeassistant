@@ -4,11 +4,6 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 ## Contents
 
-- [project-todo.md](docs/project-todo.md)
-
-  A live, ordered backlog for ongoing work, unlike the rest of this archive which records
-  finished reasoning. Check it for what's next.
-
 ### Areas and Entities
 
 - [area-floor-layout.md](docs/areas-and-entities/area-floor-layout.md)

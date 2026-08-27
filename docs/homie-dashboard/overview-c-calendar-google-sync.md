@@ -1,6 +1,6 @@
 # Overview C calendar card: Google Calendar added, SYSTM deferred
 
-[docs/project-todo.md](../project-todo.md) item 2 ("Fix Overview C calendar entries") was really "the calendar card
+`docs/project-todo.md` item 2 ("Fix Overview C calendar entries") was really "the calendar card
 only ever shows Rachio's irrigation schedule." This document covers adding pde's Google Calendar
 to the same card, shipped 2026-08-12, and the record of why Wahoo SYSTM's workout calendar was
 investigated and set aside rather than built.
@@ -143,7 +143,7 @@ single `google` config entry titled `pde@rfc822.net`, state `loaded`.
 5. Showed pde the live screenshots; he approved.
 6. Committed the fork's `dist/config.js` change (`80431bc`). The live copy's spliced token was
    never copied back to git, same as every prior deploy.
-7. Updated this document with what shipped, removed item 2 from [docs/project-todo.md](../project-todo.md), confirmed
+7. Updated this document with what shipped, removed item 2 from `docs/project-todo.md`, confirmed
    this file's entry is in [README.md](../../README.md).
 
 ## Verification

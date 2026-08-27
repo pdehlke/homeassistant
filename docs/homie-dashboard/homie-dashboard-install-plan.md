@@ -364,7 +364,7 @@ on a second tap of the active bubble, and the chip glow/popup ring both reflecti
 
 ## Checkpoint: 2026-08-12 (Scenes chip: toggle + Bathroom + grouped Primary Suite scene)
 
-[project-todo.md](../project-todo.md) item 6: pde's HA scenes now surface as a "Scenes" chip, bottom row, using a
+`project-todo.md` item 6: pde's HA scenes now surface as a "Scenes" chip, bottom row, using a
 stock Homie Dashboard mechanism (`isSceneChip`/`subGroups[].scenes[]`) that turned out to
 already exist in the fork but had never been configured. Three rounds landed as one uncommitted
 body of work: (1) wire the popup bubble to fire a scene one-way, (2) rewrite that into a real
@@ -430,7 +430,7 @@ This was the second silent break of the same +/- control in five days (first pos
 [homie-thermostat-control-fix.md](homie-thermostat-control-fix.md), 2026-08-07; the
 2026-08-11 native-parity rebuild below broke it again by the next morning). Full account,
 including the live spike that proved the cross-frame approach before any implementation code
-was written, the options rejected, and the side effect of resolving [project-todo.md](../project-todo.md) item 1's
+was written, the options rejected, and the side effect of resolving `project-todo.md` item 1's
 history-graph request for free, in
 [homie-climate-native-dialog.md](homie-climate-native-dialog.md).
 
@@ -502,7 +502,7 @@ Two real bugs found live, not just missing content:
   the dial is decorative and every real control on it is a separate `<button>`.
 
 Deferred: a temperature/humidity history graph matching the native dialog's history-graph
-icon, tracked as item 1 on [project-todo.md](../project-todo.md) (new charting surface, real scope beyond this
+icon, tracked as item 1 on `project-todo.md` (new charting surface, real scope beyond this
 session).
 
 Commit `b38a3c8` on `main` (not pushed), bundled with the `hass.ehlke.net` hostname migration
@@ -701,7 +701,8 @@ made the original 21px overflow hard to notice in the first place.
 
 Side discovery, not yet fixed: with no purifier entity configured, `.ov3-col3`'s
 `justify-content: space-between` stretches a large, visually awkward gap between the security card
-and the floors card. Cosmetic only, does not overflow. Noted on [project-todo.md](../project-todo.md) as a follow-up.
+and the floors card. Cosmetic only, does not overflow. Tracked as
+[issue #11](https://github.com/pdehlke/homeassistant/issues/11).
 
 Resume work in the fork, directly on `main` unless the user changes that instruction. The next
 design area is the remainder of Overview C; Solar and the Overview C A/V sidebar icon are accepted.

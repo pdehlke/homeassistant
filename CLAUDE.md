@@ -66,12 +66,9 @@ same not-useful-without-network-access exception as the IP addresses above.
 Topical documents live under `docs/<topic>/`, grouped by subject (`crestron/`,
 `homie-dashboard/`, `rachio/`, and so on). [README.md](./README.md) and [CLAUDE.md](./CLAUDE.md) stay at
 repo root: [README.md](./README.md) because it is the top-level table of contents, and
-[CLAUDE.md](./CLAUDE.md) because Claude Code only auto-loads it from the project root.
-[project-todo.md](./docs/project-todo.md) also lives at [docs/project-todo.md](./docs/project-todo.md), directly under `docs/`
-rather than in a topic subdirectory, since it is a live cross-cutting backlog
-rather than a single topic. When a new document doesn't fit an existing
-subdirectory, create a new one named after the topic rather than adding to an
-unrelated one or leaving it loose at the top of `docs/`.
+[CLAUDE.md](./CLAUDE.md) because Claude Code only auto-loads it from the project root. When a new
+document doesn't fit an existing subdirectory, create a new one named after the topic rather than
+adding to an unrelated one or leaving it loose at the top of `docs/`.
 
 ## Maintaining the README
 
@@ -182,7 +179,7 @@ Two things intentionally deferred, unrelated to the above:
   it. Still open.
 - `.ov3-col3`'s `justify-content: space-between` leaves an ugly gap between the
   security and floors cards when no purifier entity is configured. Cosmetic, not
-  overflow. On [docs/project-todo.md](./docs/project-todo.md).
+  overflow. Tracked as [issue #11](https://github.com/pdehlke/homeassistant/issues/11).
 
 No secrets were copied into either repository. The Homie user's password file
 was not touched; the fix used the Homie Dashboard's own long-lived token

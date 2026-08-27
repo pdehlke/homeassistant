@@ -6,7 +6,7 @@ Home Assistant's own native more-info dialog instead of a Homie-drawn reimplemen
 dialog already has a real, recorder-backed history graph built in. The analysis below is kept as
 the record of what this would have taken under the approach that was in place at the time.
 
-Feasibility analysis for [project-todo.md](../project-todo.md) item 1: adding a temperature/humidity history
+Feasibility analysis for `project-todo.md` item 1: adding a temperature/humidity history
 graph to the Climate chip's thermostat overlay, matching the history-graph icon on Home
 Assistant's native climate more-info dialog. The item was deferred out of the 2026-08-11
 native-parity overlay rebuild (see [homie-dashboard-install-plan.md](./homie-dashboard-install-plan.md)'s checkpoint of that
