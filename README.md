@@ -37,9 +37,11 @@ Notes, planning, and specs for my Home Assistant buildout.
 - [cresnet-frame-decode.md](docs/crestron/cresnet-frame-decode.md)
 
   What the Cresnet bus frames actually mean, decoded from the first live capture: the three-byte
-  keypad button and LED format, the `1D` CLX channel command and its argument structure, the
-  readings that were rejected, and the partial CLX channel map that fell out of it. Assesses
-  whether this class of capture is sufficient to start Path B, and what is still missing.
+  keypad button and LED format, the `1D` CLX channel command with its (channel, level) arguments,
+  the readings that were rejected, and the partial CLX channel map that fell out of it. Why a
+  keypad press and a touch panel press put different things on the wire, and why that means a
+  touch panel capture alone cannot define a load's endpoint. Assesses whether this class of
+  capture is sufficient to start Path B, and what is still missing.
 
 - [crestron-apex-control-plane.md](docs/crestron/crestron-apex-control-plane.md)
 
