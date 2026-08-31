@@ -34,6 +34,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   from a fabricated tool reference), and direct verification done over telnet and by physical
   inspection.
 
+- [cresnet-frame-decode.md](docs/crestron/cresnet-frame-decode.md)
+
+  What the Cresnet bus frames actually mean, decoded from the first live capture: the three-byte
+  keypad button and LED format, the `1D` CLX channel command and its argument structure, the
+  readings that were rejected, and the partial CLX channel map that fell out of it. Assesses
+  whether this class of capture is sufficient to start Path B, and what is still missing.
+
 - [crestron-apex-control-plane.md](docs/crestron/crestron-apex-control-plane.md)
 
   Feasibility of a bidirectional Home Assistant to Crestron to Apex Destiny 6100 alarm control
