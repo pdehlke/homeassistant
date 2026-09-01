@@ -15,10 +15,13 @@ occupies. Registering on it over CIP (TCP 41794) gives:
   and drives the Cresnet dimmers itself in response.
 
 No SIMPL reprogramming, no Crestron programmer, and no fight with Cresnet bus
-timing. The processor does the transmitting.
+timing. The processor does the transmitting. Lights were physically turned on and
+off this way, confirmed in the room.
 
-One thing is unresolved: the single press we tried moved the program's state and
-put a command on the wire, but the lamp did not light. See "The open question".
+**The limit: this panel reaches only the Kitchen.** All 75 press joins were
+scanned by pressing each one and recording what the processor drove. Joins 21-35
+address five Kitchen loads; joins 36-95 drive no dimmer at all. The `.dsc`
+describes the panel as `101-Kitchen`, and that is exactly what it is.
 
 ## Why Cresnet injection was abandoned
 
@@ -65,24 +68,46 @@ that light on, the join read 50069 = `0xC395`, whose high byte is exactly the
 analog join is the 8-bit dimmer level scaled to 16 bits, which is directly usable
 as a Home Assistant brightness value.
 
+## The Kitchen join map
+
+| join | drives | effect |
+|---|---|---|
+| 21 | `0x71` ch4 | on, instant |
+| 22 / 23 | `0x71` ch3 | raise / lower |
+| 25 | `0x75` ch0 | on |
+| 26 | `0x72` ch3 | on |
+| 27 / 28 / 29 | `0x72` ch2 | raise / lower / off |
+| 30 | all five | full (`FF`) |
+| 31 | all five | off (`00`) |
+| 32 / 33 / 34 | all five | 75% / 50% / 25% |
+| 35 | all five | toggle |
+
+The five loads are Island, Range, Kitchen Pathway, Powder and Cabinet. `0x71`
+ch3 is almost certainly Powder: it is the only channel appearing in both the
+Kitchen group and the Great Room keypad's Living Pathway pair, which is why
+pressing join 24 lit a lamp that could not be seen from the living room and was
+briefly mistaken for a failure.
+
+## The `1D` frame, corrected
+
+`<dest> <size> 1D 00 <fade hi> <fade lo> <channel> <level>`, channel/level
+repeating for multi-channel loads. The fade field is 16 bits: `00 00` instant
+(keypad and XPanel "on"), `00 C8` for presets (about two seconds), `01 F4` for
+raise, `00 18` for lower.
+
 ## The open question
 
-Pressing digital join 24 was received by the processor, which then sent
-`71 06 1d 00 00 c8 03 ff` to dimmer `0x71` channel 3. Our independent Cresnet tap
-caught that frame on the wire. The lights did not come on.
+How to reach the other thirteen rooms. Their loads answer to keypads and touch
+panels, not to this XPanel slot. Two candidate routes, neither explored:
 
-Two differences from a keypad press, which does work:
+1. Another free IP-ID with a wider join map. The `.dsc` lists only `IP-ID-03`
+   and `IP-ID-05` on the MC2E, so this may require a slot that does not exist.
+2. The EISC at `Slot-05.IP-ID-05`, which carries whole-house joins (`d58` Entry
+   Center, `d99` Sink Area, `d103` Pool Bath, confirmed 2026-08-31). It is
+   occupied by the AADS and displacing it breaks audio and the ST-IO.
 
-| | keypad | XPanel join 24 |
-|---|---|---|
-| frame to `0x70` | `70 06 1d 00 00 00 04 c3` | none sent |
-| frame to `0x71` | `71 06 1d 00 00 00 03 c3` | `71 06 1d 00 00 c8 03 ff` |
-
-Living Pathway is two dimmer channels. The keypad drives both; our press drove
-only one. Digital join 35 also went high alongside 24, and may be the other half.
-Byte 5 differing (`00` versus `C8`, plausibly a fade rate) is the other lead.
-
-Next test: press join 35 alone and see whether it drives `0x70` channel 4.
+The second route already has part of a whole-house join map. It is worth
+establishing precisely what breaks before writing it off.
 
 ## Safety: there is no alarm in this processor
 
@@ -113,10 +138,17 @@ program for a private residence. It re-fetches in about four seconds.
 
 ## What this changes for the programmer scope
 
-`crestron-xsig-programmer-scope.md` should be read with this in mind: a working
-read *and* write interface to the lighting now exists, reachable from a free
-XPanel slot, with authoritative state feedback and brightness. Any proposal that
-prices in building that from scratch is pricing work already done.
+`crestron-xsig-programmer-scope.md` should be read with this in mind, and with
+its limit stated honestly.
+
+What exists: a working read *and* write interface to the **Kitchen**, reachable
+from a free XPanel slot, with authoritative state feedback and brightness. A
+proposal that prices in inventing that mechanism from scratch is pricing work
+already done, and the mechanism is the hard part.
+
+What does not exist: any route to the other thirteen rooms. That is still the
+job, and it is the part a programmer is actually needed for — either exposing
+the remaining loads on a slot we can reach, or freeing the EISC the AADS holds.
 
 ## Correction to the record
 
