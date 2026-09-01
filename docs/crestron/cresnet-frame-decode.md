@@ -31,6 +31,43 @@ Source data: `20260831T075334.jsonl`, produced by CresnetMon's labeling mode. Pe
 `STRATEGY.md`, capture files are session data from a real house and are not committed; the file
 lives in the CresnetMon working tree at `mac/captures/`.
 
+## Update, 2026-08-31 evening: several open questions below are now settled
+
+This document was written from a three-record capture taken that morning. Later captures the same
+day, totalling over a million bytes and several labelled events, settle a number of the unknowns
+recorded further down. Where this section and the original text disagree, this section is correct.
+
+**Framing carries no checksum and no delimiter.** Frames are `<dest> <size> <payload>` back to
+back. Verified by walking 815,866 bytes under that assumption: 406,975 frames with 43 unexplained
+bytes, 0.005%. The original text lists the checksum as an open unknown and treats it as a blocker
+for writing to the bus. It is not a blocker and there is no checksum.
+
+**CLX channel numbering is 0-based.** Listed below as open.
+
+**Level `00` is off, and `11` is a third observed magnitude.** The original text records only `FF`
+and `1C`. Off is the same opcode and channel list with levels zeroed, not a separate command.
+
+**Button and LED state is active-low.** `00` means pressed or lit, `80` means released or dark. The
+original text leaves press versus release undetermined.
+
+**`00 07 xx` is real LED feedback** for the "Good Bye" button on keypads `62`, `66`, `67`, `6A` and
+`6F`, lit when the house is all-off. Not a heartbeat.
+
+**Opcode `1C` is module re-initialisation**, distinct from `1D`. Two header bytes then one
+`(channel, on/off)` pair per channel ascending from zero. It appears only while the master
+re-establishes a module it believes has dropped off the bus, which makes it the only state readback
+the protocol offers.
+
+**The poll discipline is fully observable.** The master polls nine keypads every round at roughly
+24 rounds/s; CLX modules `70`-`76` get one slot per round on a rotation, so each sees about 2.2
+polls/s. Bus utilisation is about 19%. The original text lists this as unobservable.
+
+Two further notes. The three-record capture this document analyses has since been deleted, so the
+transcript below is the only surviving record of it. And a much more productive observation point
+than the Cresnet bus has since been found: see
+[crestron-eisc-join-discovery.md](crestron-eisc-join-discovery.md), which maps lighting joins by
+reading the AADS-to-MC2E intersystem link instead.
+
 ## The capture
 
 Each record is a single action captured as a silence-bounded burst.

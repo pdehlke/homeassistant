@@ -48,6 +48,37 @@ deliverables.
 8. Leave the owner with complete, editable source and a documented interface
    that another Crestron or Home Assistant programmer can maintain.
 
+## Update, 2026-08-31: a working lighting interface already exists internally
+
+Before commissioning any of the work below, read
+[crestron-eisc-join-discovery.md](crestron-eisc-join-discovery.md).
+
+The MC2E and the AADS are linked by an Ethernet Intersystem Communications symbol at IP-ID 05 on
+both sides. Every lighting command and every lighting state change crosses that link, in both
+directions, with digital joins that carry a momentary press inbound and an authoritative level
+outbound. Three loads have been mapped end to end, from EISC join through CLX module and channel to
+keypad and button index, and the discovery method is passive and repeatable for the rest.
+
+Critically, the feedback on that link **originates from real device state, not from an echo of the
+command**. State changes made at a physical keypad, with no panel involved anywhere in the path,
+are published on it. That is the specific property this document requires in
+[Commands and authoritative feedback](#commands-and-authoritative-feedback) and assumes has to be
+built from nothing.
+
+This does not remove the need for the work below, for two reasons. The EISC slot is occupied by the
+AADS and cannot be taken over without breaking audio and the ST-IO's bus master. And the joins
+observed are the existing program's internal numbering, which carries none of the stability,
+documentation, or non-recycling guarantees this document rightly insists on.
+
+What it changes is the nature of the job. Exposing or duplicating an existing, working, already
+wired interface is a smaller and better understood task than designing one, and a bidding
+programmer should be told it exists. The capture and the method are in the linked document.
+
+Separately, note that the TSW-752 panels are write-only for lighting: they send commands and
+display no state. Three unoccupied panel and app slots were tested and none carries lighting
+feedback. Any proposal that assumes the existing panel interface can be observed or reused for
+state is mistaken.
+
 ## Verified existing system
 
 ### MC2E lighting processor

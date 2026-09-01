@@ -186,6 +186,29 @@ The raw `.dsc`/`.dip`/manifest text pulled from both consoles via `TYPE` is save
 
   This bus-reported inventory supersedes the memory-based counts used earlier in this document. No
   ST-IO appears on this leg; see below for where the ST-IO actually lives.
+
+  **Update, 2026-09-01: per-channel configuration read off the wire.** Each module answers a
+  re-initialisation (`1C`) message from the processor carrying a `(channel, flag)` map. Provoking that
+  message on all seven modules yields the following, and the channel counts corroborate the model
+  identifications above independently of `REPORTCRESNET`:
+
+  | Cresnet ID | Model | Channels in the `1C` map | Channels flagged `01` |
+  | :--- | :--- | :--- | :--- |
+  | 70 | CLX-1DIM8 | 8 (ch0-7) | 0, 1, 2, 4 |
+  | 71 | CLX-1DIM8 | 8 (ch0-7) | 3, 5 |
+  | 72 | CLX-1DIM8 | 7 (ch0-6) | 1, 2 |
+  | 73 | CLX-1DIM4 | 4 (ch0-3) | none |
+  | 74 | CLX-4HSW4 | no `1C` map; reports Digital Joins instead | n/a |
+  | 75 | CLX-1DIM4 | 3 (ch0-2) | none |
+  | 76 | CLX-1DIM4 | 3 (ch0-2) | none |
+
+  The flag reads as *this channel dims* rather than switches. It holds for every channel with
+  independent evidence: Living Pathway is driven on `70` ch4 and `71` ch3, both flagged `01`, and is
+  commanded to level `C3`; Entry Center (`71` ch1), Sink Area (`71` ch6) and Pool Bath (`72` ch6) are
+  all flagged `00` and are commanded `FF` or `00`. `74` fits as the non-dimming switch module: it has
+  no channel map at all and speaks in Digital Joins. Where a module reports fewer channels than its
+  model provides (`72`, `75`, `76`), the shortfall is most likely channels the program does not use,
+  not missing hardware.
 - The program's descriptor file (`TYPE <program>.dsc` at the console) goes further and names a room for
   every device, resolving the keypad count discrepancy in the process:
 
