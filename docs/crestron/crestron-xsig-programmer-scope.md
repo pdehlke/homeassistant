@@ -171,9 +171,14 @@ the audio matrix and amplifier, the Apex serial connection, an ST-IO at Cresnet 
 physically separate AADS-owned Cresnet leg, and two stale offline `CHV-TSTAT` definitions at `E1`
 and `E2`.
 
-The TSW-752 panels are write-only for lighting: they send commands and display no state. Panel room
-assignments are Primary Bedroom, Kitchen, Office, and Guest Room, which the `.dsc` does not record,
-so panel identity must be verified against the recovered projects.
+**Corrected 2026-09-02.** The TSW-752 panels are not write-only for lighting: a panel slot reports
+load and scene state unprompted, and only brightness is absent. Nor can panel identity be recovered
+from a project, because all four panels run the identical `Favela-TSW752 v3.vtz`. A panel does
+report its own room as a serial join at runtime, which is how `IP-ID 0x13` was identified as the
+Studio. Panel room assignments were recorded as Primary Bedroom, Kitchen, Office and Guest Room,
+which the `.dsc` does not confirm and which the Studio result contradicts, so that list needs
+rechecking against what each panel reports. See
+[crestron-tsw-panel-control-path.md](crestron-tsw-panel-control-path.md).
 
 ### Evidence supplied to the programmer
 

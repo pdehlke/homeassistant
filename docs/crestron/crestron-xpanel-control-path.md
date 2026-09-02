@@ -146,10 +146,12 @@ repeating for multi-channel loads. The fade field is 16 bits: `00 00` instant
 (keypad and XPanel "on"), `00 C8` for presets (about two seconds), `01 F4` for
 raise, `00 18` for lower.
 
-## The open question
+## The open question, answered 2026-09-02
 
 How to reach the other thirteen rooms. Their loads answer to keypads and touch
-panels, not to this XPanel slot. Three candidate routes, all now explored:
+panels, not to this XPanel slot. Four candidate routes. The first three are
+closed; the fourth works and is written up in
+[crestron-tsw-panel-control-path.md](crestron-tsw-panel-control-path.md).
 
 1. Another free IP-ID with a wider join map. The `.dsc` lists only `IP-ID-03`
    and `IP-ID-05` on the MC2E, so this would require a slot that does not exist.
@@ -167,11 +169,18 @@ panels, not to this XPanel slot. Three candidate routes, all now explored:
    only route with part of a whole-house join map already in hand, and still
    unpriced in terms of what exactly breaks.
 
-Whole-house **observation** is not blocked by any of this: the passive Cresnet
-tap already sees `1D` command frames for every room. It is whole-house
-**control** that has no route which avoids a programmer. That conclusion now
-rests on tests rather than on argument, which is the useful part when briefing
-one. See
+4. A real TSW-752 panel slot, taken by unplugging the panel. **This one works.**
+   The panel hands over its own compiled project on request, which yields the
+   whole-house join map by name without pressing anything, and the slot then
+   accepts writes for every room, returns load and scene feedback, and drives
+   the wall keypad LEDs correctly. Proven on `IP-ID 0x13` on 2026-09-02. Full
+   record and the join map in
+   [crestron-tsw-panel-control-path.md](crestron-tsw-panel-control-path.md).
+
+Whole-house **observation** was never blocked by any of this: the passive Cresnet
+tap already sees `1D` command frames for every room. Whole-house **control** now
+has a route that avoids a programmer entirely, at the price of one touch panel
+held permanently. What remains of the programmer scope is in
 [crestron-xsig-programmer-scope.md](crestron-xsig-programmer-scope.md).
 
 ## Safety: there is no alarm in this processor

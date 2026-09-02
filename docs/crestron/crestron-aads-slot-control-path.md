@@ -9,6 +9,13 @@ page-gated, so the join map cannot be recovered by watching, and recovering it a
 writing joins to the one processor that also carries the alarm interface. Nothing has been written
 to any processor. Details in [the 2026-09-02 test](#the-2026-09-02-test-and-what-it-showed).
 
+**Superseded later the same day.** The question this document asks was answered by a different
+slot on the same processor. A real TSW-752 panel slot, freed by unplugging the panel, gives
+whole-house control with feedback and needs no program change. This document stays because the
+app-slot result is a genuine negative worth not repeating, and because the reason it failed, page
+gating, turned out to be specific to the phone project rather than a property of the AADS. See
+[crestron-tsw-panel-control-path.md](crestron-tsw-panel-control-path.md).
+
 It assumes the AADS is **not** being retired. Every other document in this directory treats the
 AADS as a subsystem on its way out, which is why this route was never considered: a control path
 that depends on the AADS looked like a dead end by definition. If the AADS stays, it stops being
@@ -208,7 +215,8 @@ pressing joins inverts that ordering in the worst possible way. Full rule in
    a join by name before writing to it. Writing now would be the sweep the safety rule forbids.
 4. ~~If `0x15` is genuinely empty, repeat with `0x16`.~~ **Done in the same run, same result.** A
    TSW-752 slot is not a way around this: claiming one costs a working panel and it would be
-   page-gated identically.
+   page-gated identically. **The second half of that was wrong.** A TSW-752 slot is not page-gated,
+   and claiming one is exactly the way around this. It does still cost a working panel.
 
 ## What would kill this
 
@@ -222,7 +230,10 @@ Written before the test, and one of them landed:
 - The `Lights` menu label may turn out to be exactly what the original test said: a page that was
   designed and never connected to a subsystem. Still open for the same reason.
 - Lighting joins on the AADS may be inseparable from alarm joins in a way that makes writing to the
-  slot unacceptably risky regardless of coverage.
+  slot unacceptably risky regardless of coverage. **Half landed.** On the panel project the Kitchen
+  block `d141`-`d148` collides with Arm ToHome, Fire, Medical and Panic. The other seven zones are
+  clean, and the Kitchen already has a safe route on MC2E `IP-ID 0x03`, so it is survivable rather
+  than disqualifying.
 
 The obvious fallback was pulled the same afternoon and it closed too. MC2E `IP-ID 0x03` was
 watched listen-only while the same three loads were switched from the same panel, and it reported
@@ -231,11 +242,11 @@ which turns that silence into a real negative rather than an ambiguous one. The 
 boundary holds for observation as well as control. See
 [crestron-xpanel-control-path.md](crestron-xpanel-control-path.md#the-slot-mirrors-the-wall-panels).
 
-So the whole question returns to
-[crestron-xsig-programmer-scope.md](crestron-xsig-programmer-scope.md) and a programmer. Note what
-is and is not blocked: whole-house *observation* already works through the passive Cresnet tap and
-its `1D` frames. It is whole-house *control* that has no remaining route which avoids a program
-change.
+That returned the whole question to
+[crestron-xsig-programmer-scope.md](crestron-xsig-programmer-scope.md) and a programmer, and it
+stayed there for about an hour. The panel-slot route then removed the programmer from the control
+path entirely. Whole-house *observation* already worked through the passive Cresnet tap and its `1D`
+frames; whole-house *control* now works too, through a slot that costs one touch panel.
 
 ## Loose end
 

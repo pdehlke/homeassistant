@@ -157,14 +157,16 @@ elsewhere and because a retracted finding is more useful than a deleted one. Cor
 | Slot | Recorded 2026-08-31 | After the decoder fix |
 |---|---|---|
 | MC2E IP-ID `0x03`, XPanel | Silent. Not wired to lighting. Carries a leftover scheduling page. | **False negative.** Reports state promptly and in detail, accepts writes, and drives five Kitchen loads. |
-| AADS IP-ID `0x15`, `0x16`, Crestron App | Silent. Menu labels only, including a `Lights` entry whose subsystem was never connected. | Unproven. Never re-tested with the fixed decoder. |
-| AADS IP-ID `0x11`, a real TSW panel slot | Silent. Panel freed by unplugging it. | Unproven. Never re-tested with the fixed decoder. |
+| AADS IP-ID `0x15`, `0x16`, Crestron App | Silent. Menu labels only, including a `Lights` entry whose subsystem was never connected. | **Confirmed silent, 2026-09-02.** Page-gated: a whole-house menu on registration, then nothing for 300s while lights were switched. |
+| AADS IP-ID `0x11`, a real TSW panel slot | Silent. Panel freed by unplugging it. | **Not a test.** A panel slot returns no unsolicited lighting state until a load changes, so silence proved nothing. Retested as a write on `0x13` and it works: see [crestron-tsw-panel-control-path.md](crestron-tsw-panel-control-path.md). |
 
-The TSW-752 panel projects are write-only for lighting: they send commands and display no state.
-That part stands, confirmed independently by the panels' own behavior. The stronger claim made here
-originally, that listening at the panel layer cannot work at all, does not survive the `0x03`
-result and is withdrawn. What remains true is narrower: the EISC is the only observation point so
-far confirmed to carry whole-house joins, and `0x03` reaches one room.
+**Corrected again 2026-09-02.** The claim that TSW-752 panel projects are write-only for lighting
+is wrong. A panel slot reports load state and scene state both, unprompted, as soon as something
+changes. What misled two sessions is that a panel slot sends nothing at registration beyond its
+menu, so a listen-only test against an idle house looks identical to a dead slot. The narrow version
+that survives is about brightness only: no panel and no keypad in the house displays a level
+anywhere. The whole-house map and the proof are in
+[crestron-tsw-panel-control-path.md](crestron-tsw-panel-control-path.md).
 
 The app slots identify themselves as `Favela-iPhone v1`, the previous homeowner's project. It is on
 no device the current owner holds, so those slots can be used freely without displacing anything.

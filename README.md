@@ -65,10 +65,20 @@ Notes, planning, and specs for my Home Assistant buildout.
   retired, tested on 2026-09-02 and blocked: register on one of the AADS's two abandoned Crestron
   App slots the way the MC2E's abandoned XPanel slot was used. The AADS program does hold
   whole-house lighting, but both slots are page-gated and report nothing while lights are operated,
-  so no read-only route to their join numbers survives. Includes the whole-house load and scene
+  so no read-only route to their join numbers survives. Superseded the same day by the panel slot
+  above, which is not page-gated. Includes the whole-house load and scene
   inventory pulled from the program, why write-only stops being a defect once the goal is control
   rather than observation, and why join-sweeping the AADS is dangerous in a way it was not on the
   MC2E.
+
+- [crestron-tsw-panel-control-path.md](docs/crestron/crestron-tsw-panel-control-path.md)
+
+  The whole-house lighting control path, proven 2026-09-02: unplug a TSW-752 and register as it on
+  the AADS. How the panel hands over its own compiled project on request, so the join map comes out
+  by name instead of by pressing unknown joins, the full eight-zone map with the processor's own
+  load and scene names, the alarm keypad's collision with the Kitchen block and why that costs
+  nothing, and the test showing wall keypad LEDs stay in sync for free. Also what it corrects in the
+  older documents and what the route costs.
 
 - [crestron-apex-control-plane.md](docs/crestron/crestron-apex-control-plane.md)
 
