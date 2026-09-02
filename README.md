@@ -80,6 +80,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   nothing, and the test showing wall keypad LEDs stay in sync for free. Also what it corrects in the
   older documents and what the route costs.
 
+- [crestron-load-room-worksheet.md](docs/crestron/crestron-load-room-worksheet.md)
+
+  Every button on the TSW-752 lighting pages mapped to the Home Assistant area its load actually
+  lives in, filled in by hand because no file in the Crestron system records which room a light is
+  in. Which repeated names are one load on several pages and which are separate loads sharing a
+  contextual label, the three places the canonical room name differs from what the hardware
+  reports, and the four Home Assistant areas confirmed to have no Crestron lighting at all.
+
 - [crestron-apex-control-plane.md](docs/crestron/crestron-apex-control-plane.md)
 
   Feasibility of a bidirectional Home Assistant to Crestron to Apex Destiny 6100 alarm control
