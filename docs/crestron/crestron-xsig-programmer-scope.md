@@ -1,803 +1,443 @@
-# Crestron XSIG Interface for Home Assistant
+# Crestron programmer scope of work
 
-## Programmer scope of work
+## Status, 2026-09-01
 
-This document specifies the Crestron programming work required to make Home
-Assistant a complete replacement user interface for the existing Crestron wall
-touch panels while preserving the existing CNX-B8 wall keypads, centralized
-CLX lighting modules, Apex Destiny 6100 alarm system, and AADS audio system.
+This document was originally written on the assumption that a Home Assistant interface to the
+lighting system had to be designed and built from nothing. That assumption is now wrong, and the
+document has been cut down accordingly.
 
-The required end state has one durable Home Assistant XSIG connection terminating
-on the lighting control processor. The existing MC2E should be retained if it
-passes the suitability tests in this document. If it does not, the programmer
-must quote and implement the same interface on a used CP3N after migrating the
-MC2E program.
+Three findings changed it:
 
-This is not a request for a few representative joins. The interface must expose:
+- **2026-08-31.** Every lighting command and state change crosses the MC2E-AADS EISC link, in both
+  directions, with feedback that originates from real device state rather than from an echo of the
+  command. See [crestron-eisc-join-discovery.md](crestron-eisc-join-discovery.md).
+- **2026-09-01.** A free XPanel slot on the MC2E gives a working read *and* write path to lighting
+  with no reprogramming at all, but it reaches only the Kitchen. See
+  [crestron-xpanel-control-path.md](crestron-xpanel-control-path.md).
+- **2026-09-01.** The MC2E's compiled program was retrieved and searched. It contains no alarm
+  logic of any kind, which moves the Apex work out of this document.
 
-- Every connected CLX lighting load, with command and authoritative feedback.
-- Every lighting action currently available from every CNX-B8 keypad and every
-  TSW-752 touch-panel button.
-- Every A/V function currently available on any TSW-752.
-- Every alarm function and status currently available on any TSW-752, using a
-  dedicated credential retained inside Crestron.
-- Connection health, synchronization, and command-result information sufficient
-  for Home Assistant never to mistake a sent command for a confirmed state.
+An earlier version stated that three unoccupied panel and app slots had been tested and none
+carried lighting feedback, and that any proposal assuming otherwise was mistaken. That was a false
+negative caused by decoder bugs since fixed. The statement has been removed.
 
-The programmer must inventory the existing programs and user interfaces before
-assigning final joins. The inventory, signal schedule, editable source, compiled
-programs, backups, test results, and rollback package are contractual
-deliverables.
+## Terminology
+
+Two Crestron terms used here are easy to confuse and mean different things.
+
+**XSIG** is a serial encoding that packs digital, analog, and serial joins into a byte stream over
+TCP or RS-232. It is the Home Assistant-facing transport.
+
+**EISC**, Ethernet Intersystem Communications, is the processor-to-processor link that already
+exists between the MC2E and the AADS at IP-ID 05. It is context for the job, not a deliverable.
+
+Where this document says "Intersystem Communications symbol" it means the SIMPL symbol terminating
+the Home Assistant connection. That is a separate instance from the symbol carrying the existing
+MC2E-AADS link.
+
+## What already works, with no programmer
+
+A bidding programmer should be told this exists, because pricing the mechanism as new work is
+pricing work already done. The mechanism is the hard part and it is finished.
+
+Registering on the MC2E's unoccupied XPanel at `Slot-05.IP-ID-03` over CIP (TCP 41794) yields:
+
+- A full state dump on connect: 42 digital joins, 2 analog, 4 serial.
+- Live per-light state changes, including brightness as a 16-bit analog join whose high byte is the
+  8-bit Cresnet dimmer level, directly usable as a Home Assistant brightness value.
+- A working write path. The processor accepts digital join presses and drives the Cresnet dimmers
+  itself. Lights were physically switched this way and confirmed in the room.
+
+**The limit is coverage, not capability.** All 75 press joins were scanned. Joins 21-35 address
+five Kitchen loads; joins 36-95 drive no dimmer at all. The `.dsc` describes the panel as
+`101-Kitchen` and that is exactly what it is.
+
+## The actual job
+
+Extend lighting control from the Kitchen to the remaining thirteen rooms, and put the result on a
+documented, stable join contract.
+
+Everything else in this document is either a precondition for that, a constraint on how it is done,
+or work the owner wants priced separately.
+
+Two candidate routes, both requiring program changes:
+
+1. **Widen the existing XPanel at `IP-ID-03`.** The symbol already carries the Kitchen, and joins
+   36-95 are defined but unwired, so there is headroom. This is the preferred route.
+2. **Free or duplicate the EISC at `IP-ID-05`.** It already carries whole-house joins (`d58` Entry
+   Center, `d99` Sink Area, `d103` Pool Bath, confirmed 2026-08-31). It is held by the AADS, and
+   displacing it breaks audio and removes the ST-IO's Cresnet bus master.
+
+The MC2E's `.dsc` lists only `IP-ID-03` and `IP-ID-05`, so there is no third slot waiting to be
+used. A programmer proposing a new slot must say where it comes from.
+
+## The gating question: is the source recoverable?
+
+**Nothing below can be quoted accurately until this is answered.** It decides whether the job is a
+contained edit or a rewrite of the house's lighting program.
+
+The compiled program was retrieved from the processor and its header reads:
+
+```text
+Source File:  C:\ASI\Client Folders\Favela\Crestron\D3Pro\Gale Favela 11-14-08\Programs\...
+Program File: Gale Favela 11-14-08.smw
+Programmer:   D3 Pro 2.8.29
+Compiled On:  8/23/2011 3:07 PM
+Source Env:   SIMPL Windows v3.02.04
+Target Rack:  MC2E
+```
+
+Three consequences.
+
+**The compiled program cannot be turned back into source.** A `.bin` holds "SMW compiled code which
+will be interpreted by LogicEngine.exe", so it is interpreter bytecode. Crestron's Series-3 package
+format (`.lpz`) can optionally carry an archive of the source when the archive option was set at
+compile time; the Series-2 package format (`.spz`) has no such provision, and the MC2E is a
+2-Series processor. There is no supported decompiler and no vendor path back to editable logic.
+
+**What can be recovered is names, not logic.** The binary yields the device table, signal names,
+load names, and the eight house scene names (`A-Welcome`, `B-Good Bye`, `C-House On`, `D-House
+Off`, `E-Good Morning`, `F-Good Night`, `G-Security`, `H-Entertain`). That is a useful inventory
+head start and it is not source. A signal-name listing alone is not accepted as sufficient basis
+for modifying the live system.
+
+**The real source is a D3 Pro job, not a `.smw`.** D3 Pro generates the SIMPL program, the VT Pro-e
+panel projects, and the compiled output from a room-and-load database. Hand-editing generated
+`.smw` output breaks the round trip back to D3 Pro. The editable artifact is the D3 Pro job at the
+path above, which belongs to the original integrator, ASI. D3 Pro reached end of feature life on
+31 March 2025, so a programmer must also confirm they can still open a 2.8.29 job.
+
+Actions, in order:
+
+1. Contact ASI for the D3 Pro job, the `.smw`, and the VT Pro-e projects for this address.
+2. If ASI cannot produce them, ask Crestron whether a dealer program archive exists for this system.
+3. Try to pull a `.sig` signal file off the MC2E, which the compiler produces for the Toolbox
+   debugger and which would give signal names against numbers.
+4. Only if all three fail, treat the job as reconstruction and price it separately.
 
 ## Owner's objectives
 
-1. Replace all four TSW-752 touch panels with Home Assistant wall panels without
-   losing any control function presently available on those panels.
-2. Preserve all existing CNX-B8 keypad behavior.
-3. Give Home Assistant both direct control of every lighting load and the
-   ability to invoke every existing lighting scene or programmed button action.
-4. Allow Home Assistant to observe physical keypad and touch-panel button
-   activity during the transition period.
-5. Move the Apex alarm integration off the AADS so future removal of the AADS
-   does not remove alarm control.
-6. Keep the AADS and its present touch panels functional until the Home
-   Assistant replacements have passed acceptance testing.
-7. Make the AADS a removable A/V subsystem boundary. When it is eventually
-   replaced, lighting and alarm control must remain operational without a
-   Crestron rearchitecture.
-8. Leave the owner with complete, editable source and a documented interface
-   that another Crestron or Home Assistant programmer can maintain.
+1. Replace all four TSW-752 touch panels with Home Assistant wall panels without losing any control
+   function currently available on those panels.
+2. Preserve all existing CNX-B8 keypad behavior exactly.
+3. Give Home Assistant direct control of every lighting load plus the ability to invoke every
+   existing scene or programmed button action.
+4. Allow Home Assistant to observe physical keypad and panel activity during the transition.
+5. Make the AADS a removable subsystem boundary, so replacing it later does not remove lighting.
+6. Keep the AADS and its panels functional until the Home Assistant replacements pass acceptance.
+7. Leave the owner with complete, editable source and a documented interface another programmer can
+   maintain.
 
-## Update, 2026-08-31: a working lighting interface already exists internally
-
-Before commissioning any of the work below, read
-[crestron-eisc-join-discovery.md](crestron-eisc-join-discovery.md).
-
-The MC2E and the AADS are linked by an Ethernet Intersystem Communications symbol at IP-ID 05 on
-both sides. Every lighting command and every lighting state change crosses that link, in both
-directions, with digital joins that carry a momentary press inbound and an authoritative level
-outbound. Three loads have been mapped end to end, from EISC join through CLX module and channel to
-keypad and button index, and the discovery method is passive and repeatable for the rest.
-
-Critically, the feedback on that link **originates from real device state, not from an echo of the
-command**. State changes made at a physical keypad, with no panel involved anywhere in the path,
-are published on it. That is the specific property this document requires in
-[Commands and authoritative feedback](#commands-and-authoritative-feedback) and assumes has to be
-built from nothing.
-
-This does not remove the need for the work below, for two reasons. The EISC slot is occupied by the
-AADS and cannot be taken over without breaking audio and the ST-IO's bus master. And the joins
-observed are the existing program's internal numbering, which carries none of the stability,
-documentation, or non-recycling guarantees this document rightly insists on.
-
-What it changes is the nature of the job. Exposing or duplicating an existing, working, already
-wired interface is a smaller and better understood task than designing one, and a bidding
-programmer should be told it exists. The capture and the method are in the linked document.
-
-Separately, note that the TSW-752 panels are write-only for lighting: they send commands and
-display no state. Three unoccupied panel and app slots were tested and none carries lighting
-feedback. Any proposal that assumes the existing panel interface can be observed or reused for
-state is mistaken.
+Moving the Apex alarm integration off the AADS remains an owner objective, but it is no longer part
+of this document. See [Separately priced work](#separately-priced-work).
 
 ## Verified existing system
 
-### MC2E lighting processor
+### MC2E, lighting
 
-The MC2E currently holds the live lighting program and is the Cresnet master for
-the wall keypads and garage lighting modules.
+Cresnet master for the keypads and garage lighting modules. Holds the live lighting program.
 
-| Device | Cresnet IDs | Quantity | Existing descriptor location |
+| Device | Cresnet IDs | Qty | Location |
 | --- | --- | ---: | --- |
 | CNX-B8 keypad | 62, 63, 64, 65, 66, 67, 6A, 6D, 6F | 9 | Seven rooms |
 | CLX-1DIM8 | 70, 71, 72 | 3 | `106 - Garage` |
 | CLX-1DIM4 | 73, 75, 76 | 3 | `106 - Garage` |
 | CLX-4HSW4 | 74 | 1 | `106 - Garage` |
 
-The keypad room assignments are:
+Keypad rooms: 62 and 66 `201 - Master Bed`; 63 `104 - Outdoor Kitchen`; 64 and 6F `101 - Kitchen`;
+65 `202 - Master Bathroom`; 67 `103 - Foyer`; 6A `105 - Great Room`; 6D `203 - Studio`.
 
-| Cresnet ID | Room |
-| --- | --- |
-| 62, 66 | `201 - Master Bed` |
-| 63 | `104 - Outdoor Kitchen` |
-| 64, 6F | `101 - Kitchen` |
-| 65 | `202 - Master Bathroom` |
-| 67 | `103 - Foyer` |
-| 6A | `105 - Great Room` |
-| 6D | `203 - Studio` |
+The MC2E is the IP master of the EISC to the AADS at CIP ID 05. It provides two bidirectional COM
+ports, neither of which is required unless the Apex work is added back in.
 
-The MC2E and AADS have an existing, live Ethernet Intersystem Communications
-connection at CIP ID 05. The MC2E is the IP master for that connection.
+### AADS, audio and panels
 
-The MC2E provides two bidirectional COM ports. One must be confirmed available
-and suitable before choosing the MC2E end state.
+Runs its own live program and owns the four TSW-752 panels at IP-IDs 11-14, a CEN-IDOC at IP-ID 51,
+the audio matrix and amplifier, the Apex serial connection, an ST-IO at Cresnet ID `0A` on a
+physically separate AADS-owned Cresnet leg, and two stale offline `CHV-TSTAT` definitions at `E1`
+and `E2`.
 
-### AADS audio and user-interface processor
+The TSW-752 panels are write-only for lighting: they send commands and display no state. Panel room
+assignments are Primary Bedroom, Kitchen, Office, and Guest Room, which the `.dsc` does not record,
+so panel identity must be verified against the recovered projects.
 
-The AADS runs its own live program and currently owns:
+### Evidence supplied to the programmer
 
-- The four Ethernet TSW-752 touch panels at IP IDs 11, 12, 13, and 14.
-- A CEN-IDOC at IP ID 51.
-- The AADS audio matrix, amplifier, tuners, source control, and associated logic.
-- The current alarm user-interface logic and presumed Apex serial connection.
-- An ST-IO at Cresnet ID 0A on a physically separate AADS-owned Cresnet leg.
-- Two stale, offline CHV-TSTAT/CHV-THSTAT definitions at Cresnet IDs E1 and E2.
+- [crestron-xpanel-control-path.md](crestron-xpanel-control-path.md), the working control path
+- [crestron-eisc-join-discovery.md](crestron-eisc-join-discovery.md), the whole-house join method
+- [crestron-migration.md](crestron-migration.md) and [crestron-strategy.md](crestron-strategy.md)
+- [`dumps/`](dumps/), the `.dsc` descriptors and manifests from both processors
 
-The TSW-752 room assignments are Primary Bedroom, Kitchen, Office, and Guest
-Room. The existing `.dsc` descriptor does not contain those room names, so the
-programmer must verify the identity of each panel in the recovered projects.
+These establish hardware and topology. They are not a substitute for the original D3 Pro, SIMPL
+Windows, and VT Pro-e projects.
 
-### Alarm panel
+## Phase 1: source recovery and decision gate
 
-The installed panel is an Apex Destiny 6100. Crestron's published module for
-this panel uses bidirectional RS-232 at 1200 baud, 8 data bits, no parity, and
-one stop bit through a CNXCOM or ST-COM interface. The published module supports
-user number/code entry, Arm Away, Arm Home, Disarm, status requests, and
-armed-away/home/disarmed feedback for as many as eight partitions.
+No production program may be overwritten in this phase.
 
-The programmer must verify the actual physical serial path, existing module,
-panel firmware, partition configuration, and all alarm functions used by the
-current AADS program. The ST-IO wiring must also be identified; it must not be
-assumed to be the Apex serial interface or disconnected as part of this work.
+Retrieve and archive, where they exist: the D3 Pro job, editable SIMPL Windows source and all
+dependencies, the four VT Pro-e panel projects, the compiled programs currently loaded, firmware
+and IP tables and Cresnet reports, nonvolatile values and presets, and a full restore-to-current
+backup of every processor and panel.
 
-### Repository evidence supplied to the programmer
+The MC2E is retained only if all of the following hold, per
+[ADR 0007](../adr/0007-cp3n-mandatory-fallback.md):
 
-- [crestron-migration.md](crestron-migration.md)
-- [crestron-strategy.md](crestron-strategy.md)
-- [crestron-apex-control-plane.md](crestron-apex-control-plane.md)
-- [`dumps/mc2e-gale-favela-11-14-08.dsc.txt`](dumps/mc2e-gale-favela-11-14-08.dsc.txt)
-- [`dumps/aads-favela-v4.dsc.txt`](dumps/aads-favela-v4.dsc.txt)
-- [`dumps/aads-favela-v4.dip.txt`](dumps/aads-favela-v4.dip.txt)
-- [`dumps/aads-manifest.txt`](dumps/aads-manifest.txt)
-
-These files establish hardware and topology. They are not substitutes for the
-original SIMPL Windows and VT Pro-e source projects.
-
-## Required end-state architecture
-
-### Preferred MC2E architecture
-
-```text
-                              Home Assistant
-                                    ▲
-                                    │ TCP/XSIG
-                                    ▼
-CNX-B8 keypads ── Cresnet ──► MC2E lighting/alarm gateway
-CLX modules     ◄─ Cresnet ──┤   │
-Apex 6100       ◄── RS-232 ──┘   │ existing Ethernet ISC
-                                  ▼
-                             AADS A/V system
-                                  │
-                         TSW-752 panels during transition
-```
-
-The MC2E is the only Home Assistant XSIG endpoint. It continues to own the
-lighting bus, gains the Apex serial module and physical connection, and carries
-all current AADS A/V commands and feedback over the existing MC2E-AADS
-intersystem connection.
-
-Removing the AADS later is permitted to remove only A/V functions and the old
-TSW-752 panels. It must not remove lighting, keypad, alarm, or the Home
-Assistant XSIG endpoint.
-
-### Mandatory CP3N fallback
-
-The programmer must use a CP3N instead of the MC2E if any MC2E suitability test
-fails. In that case:
-
-```text
-                              Home Assistant
-                                    ▲
-                                    │ TCP/XSIG
-                                    ▼
-CNX-B8 keypads ── Cresnet ──► CP3N consolidated gateway
-CLX modules     ◄─ Cresnet ──┤   │
-Apex 6100       ◄── RS-232 ──┘   │ Ethernet ISC
-                                  ▼
-                             AADS A/V system
-```
-
-The CP3N must replace the MC2E as the Cresnet master, reproduce all existing
-lighting and keypad behavior, host the Apex integration, host the Home Assistant
-XSIG endpoint, and maintain an intersystem link to the AADS until the AADS is
-removed.
-
-## Phase 1: source recovery and non-destructive survey
-
-No production program may be overwritten during this phase.
-
-The programmer must retrieve and archive, where present:
-
-- Complete MC2E and AADS processor projects, including editable SIMPL Windows
-  source, SIMPL+ modules, user modules, device modules, IR drivers, and all
-  supporting files.
-- Compiled processor programs currently loaded on both processors.
-- All four editable VT Pro-e TSW-752 projects and the compiled projects loaded
-  on each panel.
-- Current firmware, IP tables, Cresnet reports, processor configuration,
-  passwords/access settings, and program checksums.
-- Nonvolatile values, presets, and configuration data needed to reproduce the
-  current behavior.
-- A full backup that can restore each processor and panel to its pre-work state.
-
-If editable source is not recoverable, the programmer must stop and provide a
-separate written estimate for reconstruction. A compiled program or signal-name
-file alone is not accepted as sufficient source for modifying the live system.
-
-## Phase 2: complete functional inventory
-
-The programmer must create a spreadsheet or CSV signal schedule covering every
-current control and feedback item. Each row must include:
-
-| Required field | Meaning |
-| --- | --- |
-| Stable ID | Permanent machine-readable identifier independent of join number |
-| Subsystem | `system`, `lighting`, `alarm`, or `av` |
-| Room/zone | Physical room, A/V zone, alarm partition, or `global` |
-| Existing UI | Panel/project/page/button or keypad/Cresnet ID/button number |
-| Existing signal | Original SIMPL signal name and module/symbol location |
-| Description | Plain-language behavior visible to the owner |
-| Data type | Digital, analog, or serial |
-| Direction | HA to Crestron, Crestron to HA, or paired command/feedback |
-| Behavior | Pulse, press/release, maintained, level, ramp, text, or enumeration |
-| Range/units | Boolean, 0-65535, percent, dB scale, source ID, text encoding, etc. |
-| XSIG join | Final type-prefixed join such as `d123`, `a45`, or `s12` |
-| Feedback source | Hardware/module signal that authoritatively determines state |
-| Test procedure | Exact action and expected command/feedback result |
-| Notes | Dependencies, delays, lockouts, mutually exclusive states, or hazards |
-
-Discovery must cover all four TSW-752 projects, even if they appear identical.
-Differences among rooms or panel revisions must be recorded rather than assumed
-away.
-
-### Lighting inventory
-
-Inventory all populated channels on every CLX module and record:
-
-- Cresnet ID and channel number.
-- Load name, room/area, load type, and dimmable versus switched behavior.
-- Current on/off and level feedback signals.
-- Direct on, off, toggle, absolute-level, raise, lower, and stop behavior where
-  supported.
-- Ramp rates or timing behavior currently used.
-- Every scene, preset, all-off, pathway, room-off, house-state, and other
-  programmed lighting action.
-- Every CNX-B8 button press and release, including button number, engraving,
-  room, LED feedback, tap behavior, hold behavior, double-tap behavior, and any
-  conditional or mode-dependent behavior.
-- Every TSW-752 lighting button or slider with the same command and feedback
-  semantics.
-
-Direct load control and programmed actions are separate requirements. Exposing
-a load level does not satisfy the requirement to expose a scene or button
-action, and exposing a button action does not satisfy the requirement for
-authoritative load state.
-
-### A/V inventory
-
-Inventory every function presently available on any TSW-752, including every
-active AADS zone, source, and controlled source device. At minimum, inspect for:
-
-- Zone power and power feedback.
-- Source selection and selected-source feedback.
-- Volume setpoint, volume feedback, volume up/down/stop, mute, and mute feedback.
-- Bass, treble, balance, loudness, mono, tone presets, and any other audio DSP
-  function exposed by the current project.
-- Global and grouped commands such as all off, party mode, paging, zone linking,
-  or source sharing.
-- AADS tuner band, frequency, preset, seek, tune, station text, and metadata.
-- CEN-IDOC browsing, transport, selection, and metadata if still functional.
-- Every controlled source-device function: power, digits, channel, guide, menu,
-  navigation, transport, record, colored/function keys, favorites, and any
-  device-specific commands shown on a panel.
-- All serial text, metadata, cover-art references, now-playing information,
-  errors, and availability feedback displayed by the existing panels.
-- All conditional behavior, source-specific page behavior, interlocks, and
-  macros triggered by a panel action.
-
-Page navigation and purely decorative UI elements do not need XSIG joins.
-Every button, slider, selector, or displayed state that controls or represents
-the real system does.
-
-### Alarm inventory
-
-Inventory every function and state presently available on any TSW-752 and every
-configured Apex partition. At minimum, inspect for:
-
-- Arm Home, Arm Away, Disarm, and status request.
-- Per-partition ready/not-ready, armed-home, armed-away, disarmed, alarm,
-  trouble, entry-delay, exit-delay, and chime states where available.
-- Fire, panic, medical, police, silence, reset, and cancel controls if and only
-  if they are present and functional on the existing Crestron interface.
-- Zone open/closed, bypassed, alarm, trouble, and descriptive text where shown.
-- Zone bypass/unbypass controls where shown.
-- Command accepted, rejected, timed out, or failed status.
-- ST-IO inputs and relays, their physical wiring, and their relationship to the
-  alarm system or any other subsystem.
-
-No life-safety function may be inferred from a screen label alone. Trace each
-signal to the existing program logic and test it with the alarm monitoring
-provider placed in the appropriate test mode.
-
-## Phase 3: processor decision gate
-
-### Retain the MC2E only if all conditions pass
-
-The programmer must document that:
-
-1. Complete editable MC2E source and all dependencies are available.
+1. Complete editable source and dependencies are available.
 2. The current program compiles reproducibly before modification.
-3. At least one bidirectional MC2E COM port is available for the Apex connection,
-   or an appropriate supported expansion interface is included in the quote.
-4. The program has sufficient memory, signal capacity, Ethernet resources, and
-   runtime headroom for the complete signal inventory, Apex module, expanded
-   intersystem traffic, and Home Assistant XSIG connection.
-5. The processor firmware and Home Assistant XSIG implementation can maintain a
-   stable connection under the expected signal volume.
-6. Existing Cresnet operation is healthy and remains within power and network
-   limits.
-7. The programmer is willing to deliver and support the modified 2-Series
-   source.
+3. The program has memory, signal, Ethernet, and runtime headroom for the full signal inventory and
+   the Home Assistant connection.
+4. Processor firmware and the Home Assistant integration hold a stable connection under expected
+   signal volume.
+5. Existing Cresnet operation is healthy and within power and network limits.
+6. A bidirectional COM port is available for Apex, **only if** the separately priced Apex work is
+   included.
+7. The programmer will deliver and support the modified 2-Series source.
 
-### Use the CP3N if any condition fails
+If any condition fails, migrate to a CP3N: recreate the complete lighting and keypad program,
+preserve every CNX-B8 button behavior and LED indication, preserve every CLX channel behavior and
+scene and ramp, move the Cresnet bus without electrically joining it to the AADS/ST-IO leg,
+recreate the EISC to the AADS, host the Home Assistant endpoint, and regression-test all
+pre-existing behavior before enabling Home Assistant control. The owner must approve the documented
+decision and the CP3N price before any processor replacement begins.
 
-The CP3N migration must include:
+## Phase 2: lighting inventory
 
-- Recreating the complete MC2E lighting/keypad program on the CP3N.
-- Preserving every CNX-B8 button behavior and LED indication.
-- Preserving every CLX channel behavior, scene, preset, ramp, and feedback.
-- Moving the MC2E Cresnet bus to the CP3N without joining it electrically to the
-  separate AADS/ST-IO Cresnet leg.
-- Moving the Apex module and serial connection to a CP3N COM port.
-- Recreating the AADS intersystem interface on the CP3N.
-- Hosting the Home Assistant XSIG endpoint on the CP3N.
-- Regression-testing all pre-existing behavior before enabling HA control.
+Produce a machine-readable signal schedule. One row per control or feedback item, with: stable ID,
+room or `global`, existing UI reference (panel/page/button, or keypad Cresnet ID and button
+number), existing SIMPL signal name, plain-language description, data type, direction, behavior
+(pulse, press/release, maintained, level, ramp), range and units, final join, authoritative
+feedback source, test procedure, and notes on dependencies or interlocks.
 
-The owner must approve the documented decision gate and CP3N price before a
-processor replacement begins.
+Cover:
 
-## Phase 4: Apex migration
+- Every populated CLX channel: Cresnet ID, channel, load name, room, dimmable or switched, current
+  state and level feedback signals, and supported operations including ramp timing.
+- Every scene, preset, all-off, pathway, room-off, and house-state action.
+- Every CNX-B8 button: number, engraving, room, LED feedback, and tap, hold, and conditional
+  behavior.
+- Every TSW-752 lighting control, with the same command and feedback detail.
 
-The Apex integration must be moved from the AADS to the selected durable
-processor. The programmer must:
+Direct load control and programmed actions are separate requirements. Exposing a load level does
+not satisfy the requirement to expose a scene, and exposing a button action does not satisfy the
+requirement for authoritative load state.
 
-1. Identify the existing Apex serial module and preserve all currently used
-   behavior.
-2. Identify and label the existing AADS-to-Apex cable at both ends.
-3. Move or extend the physical serial connection to the selected processor using
-   the correct DCE/DTE wiring and without creating two active serial controllers.
-4. Configure and verify the existing 1200-baud, 8-N-1 connection or document the
-   actual verified settings if the installation differs.
-5. Create a dedicated Apex automation user number/code with only the required
-   permissions, if the panel supports that separation.
-6. Store that credential only inside the Crestron program/nonvolatile
-   configuration. It must not be placed on an XSIG digital, analog, or serial
-   join, written into the signal schedule, printed in debug logs, or supplied to
-   Home Assistant.
-7. Expose high-level commands and authoritative feedback, never keypad digits or
-   the credential itself.
-8. Retain local Apex keypad operation, central-station communication, fire and
-   life-safety behavior, and autonomous panel operation if Crestron or Home
-   Assistant is offline.
+The five Kitchen loads and their joins are already mapped in
+[crestron-xpanel-control-path.md](crestron-xpanel-control-path.md) and should be treated as a
+worked example of the required detail, not re-derived.
 
-Disarm and other security-sensitive requests must be edge-triggered commands,
-not maintained signals. A request must clear after processing and must not be
-replayed automatically after a reconnect or processor restart.
-
-## Phase 5: AADS intersystem expansion
-
-Until the AADS is replaced, all A/V logic remains on the AADS. The programmer
-must expand the existing Ethernet Intersystem Communications link so the durable
-processor can proxy every inventoried A/V command and feedback item.
-
-Requirements:
-
-- Preserve the current intersystem behavior between the processors.
-- Add new signals without renumbering or breaking existing signals unless both
-  programs are changed and fully regression-tested together.
-- Use separate, clearly named signal groups for A/V commands, A/V feedback, and
-  connection/synchronization state.
-- Prevent feedback loops between HA commands, panel commands, and feedback.
-- Preserve current TSW-752 control during the transition.
-- On intersystem reconnect, resynchronize actual AADS state without replaying
-  stale commands.
-- Expose an explicit `aads_online` status to Home Assistant.
-- When AADS is offline, mark A/V functions unavailable; do not retain misleading
-  last-known states as current.
-
-## Phase 6: Home Assistant XSIG contract
+## Phase 3: the Home Assistant interface
 
 ### Transport
 
-The selected processor must use a TCP/IP Client configured to connect to the
-Home Assistant host and port required by the selected Home Assistant Crestron
-XSIG integration. The final IP address, port, reconnect timing, and network
-policy will be supplied during commissioning.
+A TCP/IP Client on the selected processor connects to the Home Assistant host and port required by
+the installed Crestron integration. Verify compatibility against the actual installed integration
+version, not an old example program.
 
-The connection must be local-LAN only. It must not be exposed directly to the
-Internet. Because legacy XSIG transport does not provide modern application
-authentication, access must be restricted by network segmentation and firewall
-rules to the Home Assistant host and selected Crestron processor.
+The connection is local-LAN only and must not be exposed to the Internet. Legacy XSIG transport has
+no application authentication, so access is restricted by network segmentation and firewall rules
+to the Home Assistant host and the selected processor.
 
-The programmer must verify compatibility against the actual integration version
-installed by the owner, not merely against an old example program.
+### Symbols
 
-### XSIG symbols
+Use separate Intersystem Communications symbols for digital and for analog/serial signals on the
+same transport, if the integration supports it. This avoids the join-number offset ambiguity that
+occurs when digital joins follow analog/serial joins on one symbol. `dN`, `aN`, and `sN` must be
+unambiguous in both the source and the delivered schedule. No dynamic, undocumented, or wildcard
+mappings; every join explicitly wired and documented.
 
-Use separate Intersystem Communications symbols for digital signals and for
-analog/serial signals, connected to the same TCP/IP Client transport if the
-selected integration supports that arrangement. This avoids the join-number
-offset ambiguity that occurs when digital joins follow analog/serial joins on a
-single symbol.
+### Join stability
 
-The final design must make `dN`, `aN`, and `sN` unambiguous in both the SIMPL
-source and the delivered signal schedule. Configure each symbol's Offset and
-Option parameters according to the current SIMPL symbol documentation and the
-tested Home Assistant integration requirements.
+Join numbers are a public API. Once accepted they are not repurposed. See
+[ADR 0008](../adr/0008-xsig-join-numbers-are-public-api.md).
 
-Do not use dynamic, undocumented, or wildcard mappings. Every join must be
-explicitly wired and documented.
+Required logical grouping: system (connectivity, heartbeat, schema version, resync, online states);
+lighting loads (per-channel commands and hardware-derived feedback); lighting actions (callable
+scenes and separately observed physical button events); reserved capacity after each group.
 
-### Join stability and allocation
-
-Join numbers are a public API. Once accepted, they may not be repurposed.
-
-The programmer may propose the final numeric ranges after completing discovery,
-but the following logical grouping is required:
-
-| Group | Contents |
-| --- | --- |
-| System | Connectivity, heartbeat, schema version, resync, processor/AADS/Apex online states |
-| Lighting loads | Direct per-channel commands and hardware-derived feedback |
-| Lighting actions | Callable scenes/macros and separate observed physical-button events |
-| Alarm | High-level commands, per-partition/zone feedback, command result |
-| A/V zones | Power, source, volume, mute, tone/DSP, availability |
-| A/V sources | Device commands, transport, navigation, tuner and metadata |
-| Reserved | Documented unused capacity after each subsystem for future additions |
-
-Within each group:
-
-- Keep HA-to-Crestron commands distinct from Crestron-to-HA feedback/events.
-- Never drive a feedback join directly from the HA command signal.
-- Use stable IDs and signal names even if display labels later change.
-- Mark deprecated joins as reserved; do not recycle them.
-- Reserve at least 25 percent expansion capacity in each data type and subsystem
-  range where processor limits permit.
+Within each group, keep commands distinct from feedback, never drive a feedback join directly from
+a command signal, keep stable IDs even when display labels change, mark deprecated joins reserved
+rather than recycling them, and leave at least 25 percent expansion room where processor limits
+allow.
 
 ### Signal naming
 
-Use deterministic names such as:
+Names identify subsystem, room, object, operation, and direction:
 
 ```text
-HA_SYS_AADS_ONLINE_FB
-HA_LGT_KITCHEN_PENDANTS_ON_CMD
-HA_LGT_KITCHEN_PENDANTS_ON_FB
-HA_LGT_KITCHEN_PENDANTS_LEVEL_SET
-HA_LGT_KITCHEN_PENDANTS_LEVEL_FB
+HA_SYS_MC2E_ONLINE_FB
+HA_LGT_KITCHEN_ISLAND_ON_CMD
+HA_LGT_KITCHEN_ISLAND_ON_FB
+HA_LGT_KITCHEN_ISLAND_LEVEL_SET
+HA_LGT_KITCHEN_ISLAND_LEVEL_FB
 HA_LGT_KITCHEN_KEYPAD_64_BTN_03_INVOKE
 HA_LGT_KITCHEN_KEYPAD_64_BTN_03_PHYSICAL_FB
-HA_ALM_PARTITION_01_ARM_AWAY_CMD
-HA_ALM_PARTITION_01_ARMED_AWAY_FB
-HA_AV_GREAT_ROOM_POWER_CMD
-HA_AV_GREAT_ROOM_POWER_FB
-HA_AV_GREAT_ROOM_VOLUME_SET
-HA_AV_GREAT_ROOM_VOLUME_FB
 ```
 
-Names must identify subsystem, room/zone, object, operation, and direction.
-Avoid names that depend only on an old panel page or an unexplained numeric
-signal.
+Avoid names that depend on an old panel page or an unexplained numeric signal.
 
-### Digital command semantics
+### Semantics
 
-- Stateless actions use momentary press/release or a documented one-shot pulse.
-- If an existing action distinguishes press, hold, and release, XSIG must carry
-  the full press/release state so Home Assistant can reproduce it.
-- Do not trigger commands repeatedly merely because a TCP connection reconnects
-  while a join is high.
-- Maintained commands are permitted only where the real device semantics are
-  maintained and documented.
-- Physical-button observation must use separate feedback/event joins from the
-  joins used by Home Assistant to invoke the same action.
-- Triggering an action from Home Assistant must not falsely report that a
-  physical keypad button was pressed.
+Digital: stateless actions use momentary press/release or a documented one-shot pulse. Where an
+existing action distinguishes press, hold, and release, carry the full state. Do not retrigger
+because a TCP connection reconnected while a join was high. Physical-button observation uses
+separate joins from the joins Home Assistant uses to invoke the same action, and invoking from Home
+Assistant must not report a physical press.
 
-### Analog semantics
+Analog: document raw range, engineering range, units, scaling, and rounding. Brightness needs a
+documented conversion between Crestron's 0-65535 range and the integration's brightness range; note
+that the observed encoding is the 8-bit dimmer level scaled to 16 bits. Setpoint and measured
+feedback use separate joins. Ramping terminates on release, explicit stop, disconnect, or a safe
+timeout.
 
-- Document raw range, engineering range, units, scaling, and rounding for every
-  analog join.
-- Lighting brightness exposed to HA must have a documented conversion between
-  Crestron's 0-65535 analog range and the integration's HA brightness range.
-- A/V volume must state whether it represents raw AADS level, percentage, or dB
-  and must define minimum, maximum, and mute behavior.
-- Command setpoints and measured/current feedback must use separate joins.
-- Raise/lower ramping must terminate on release, explicit stop, disconnect, or a
-  safe timeout.
+Serial: document encoding, maximum length, termination, and empty behavior. No secrets on serial
+joins. Enumerated states may use serial labels only alongside a stable machine-readable identifier.
 
-### Serial semantics
+### Authoritative feedback
 
-- Document encoding, maximum length, termination, and empty/null behavior.
-- Serial joins must not contain alarm credentials, access tokens, or other
-  secrets.
-- Enumerated states may use serial labels only when a stable machine-readable
-  identifier or documented enumeration is also available.
-- Source names, station text, track metadata, zone names, alarm zone text, and
-  error descriptions must update when their authoritative source changes.
-
-### Commands and authoritative feedback
-
-Every stateful function must have independent authoritative feedback derived
-from the controlled module or existing Crestron state logic. The following is
-not acceptable:
+Every stateful function needs feedback derived from the controlled module or existing state logic.
+This is not acceptable:
 
 ```text
-HA command join → copied directly to HA feedback join
+HA command join -> copied directly to HA feedback join
 ```
 
-The required pattern is:
+This is required:
 
 ```text
-HA command join → existing control logic → real device/module state → HA feedback join
+HA command join -> existing control logic -> real device state -> HA feedback join
 ```
 
-If a subsystem cannot confirm the result, expose the command as an action and
-document that it has no confirmed state. Do not synthesize success.
+Where a result cannot be confirmed, expose it as an action and document that it has no confirmed
+state. Do not synthesize success. The existing program already publishes state on real device
+change, including changes originating at a physical keypad, so this property does not need to be
+invented.
 
-### Connection, startup, and resynchronization
+### Connection and resynchronization
 
-Expose at least:
+Expose at minimum: processor online/ready, connection online, schema version, lighting Cresnet
+healthy, and last command result where available.
 
-- Selected processor online/ready.
-- XSIG connection online.
-- XSIG schema version as an integer or serial semantic version.
-- AADS intersystem online.
-- Apex serial online/communicating.
-- Lighting Cresnet healthy.
-- Last command result or subsystem error where available.
+On connect and reconnect, send a complete snapshot of all feedback joins and replay no momentary
+commands. If the standard symbol behavior cannot produce a snapshot, add and document an explicit
+resynchronization mechanism. Home Assistant going offline must not interrupt local keypad, panel,
+or lighting operation.
 
-On initial connection and reconnect, send a complete state snapshot for all
-feedback joins. Do not replay momentary commands. If a complete snapshot cannot
-be generated by the standard symbol behavior, add an explicit status-request or
-resynchronization mechanism and document it.
+### Required lighting interface
 
-Home Assistant going offline must not interrupt local keypad, touch-panel,
-lighting, A/V, or alarm operation.
+Per populated dimmer channel: on, off, toggle, absolute level setpoint, current level feedback,
+on/off feedback derived from real state, raise press/release, lower press/release, stop if distinct
+from release, and fault feedback where available. Per switched channel: on, off, toggle, on/off
+feedback, fault feedback where available.
 
-## Required subsystem interfaces
-
-### Lighting loads
-
-For every populated dimmer channel, expose where supported:
-
-- On command.
-- Off command.
-- Toggle action.
-- Absolute level setpoint.
-- Current level feedback.
-- On/off feedback derived from current state.
-- Raise press/release.
-- Lower press/release.
-- Stop action if distinct from release.
-- Online/fault feedback if available.
-
-For every populated non-dimming switch channel, expose:
-
-- On command.
-- Off command.
-- Toggle action.
-- On/off feedback.
-- Online/fault feedback if available.
-
-### Lighting buttons and actions
-
-For every CNX-B8 and TSW-752 lighting control:
-
-- A Home Assistant invoke input that enters the same existing logic as the
-  original button, including hold/release behavior where applicable.
-- A separate physical-button/event output that reports actual user interaction
-  with the original keypad or panel.
-- LED/indicator feedback where it conveys a meaningful programmed state.
-- Documentation of every load, scene, condition, or macro affected.
-
-The original UI signal and HA invoke signal should converge before the existing
-action logic, not duplicate that logic in parallel.
-
-### Alarm
-
-For every configured partition, expose all supported existing functions and
-states. The minimum accepted interface is:
-
-- Arm Home command.
-- Arm Away command.
-- Disarm command using the processor-held automation credential.
-- Status request.
-- Ready feedback.
-- Armed Home feedback.
-- Armed Away feedback.
-- Disarmed feedback.
-- Alarm feedback.
-- Trouble feedback.
-- Entry-delay and exit-delay feedback where available.
-- Apex communication online feedback.
-- Last-command result: accepted, rejected, timeout, or communication error.
-
-Also expose every additional alarm zone, bypass, panic, reset, silence, status,
-or text function proven to exist on the current TSW-752 interface. High-risk
-functions must remain protected by the same deliberate interaction or safety
-logic as the existing interface.
-
-### A/V
-
-For every active zone and source, expose every current TSW-752 function found in
-the inventory. The delivered schedule must be complete enough for the owner to
-reconstruct every operational TSW-752 A/V page in Home Assistant without
-reverse-engineering the SIMPL or VT Pro-e source.
-
-Command joins must enter the same existing AADS logic used by the panels.
-Feedback joins must originate from the existing AADS state signals. Source
-device commands that lack feedback must be identified as actions rather than
-stateful controls.
+Per CNX-B8 and TSW-752 lighting control: a Home Assistant invoke input entering the same existing
+logic as the original button including hold behavior, a separate output reporting real user
+interaction with the physical control, LED feedback where it conveys programmed state, and
+documentation of every load and scene affected. The original UI signal and the Home Assistant
+invoke signal converge before the existing action logic rather than duplicating it.
 
 ## Security requirements
 
-1. Do not place the Apex user number/code on XSIG, in the delivered join map, in
-   logs, or in Home Assistant.
-2. Use a dedicated automation credential rather than the household's normal
-   keypad credential where supported.
-3. Restrict the XSIG TCP path to the Home Assistant host and selected processor
-   on the trusted local network.
-4. Do not forward the XSIG port through the Internet-facing router.
-5. Set and document administrative passwords on the processors; the current
-   unauthenticated Telnet access identified during discovery must not remain the
-   long-term state.
-6. Disable unnecessary legacy remote-access services where doing so is supported
-   and does not prevent required maintenance.
-7. Do not log secrets or full alarm command payloads.
-8. A network or HA outage must fail locally: keypad, alarm panel, lighting, and
-   existing AADS operation continue without HA.
-9. HA must not be able to alter installer programming, alarm user codes, central
-   station configuration, or life-safety configuration through XSIG.
+1. Restrict the transport to the Home Assistant host and the selected processor on the trusted LAN.
+2. Do not forward the port through the Internet-facing router.
+3. Set and document administrative passwords on both processors. The current unauthenticated
+   Telnet access must not remain the long-term state.
+4. Disable unnecessary legacy remote-access services where supported and where doing so does not
+   prevent required maintenance.
+5. A network or Home Assistant outage must fail locally: keypads, lighting, alarm panel, and AADS
+   operation continue without Home Assistant.
 
-## Change and cutover requirements
+Alarm credential handling is governed by
+[ADR 0009](../adr/0009-alarm-credentials-stay-in-crestron.md) and applies to the separately priced
+Apex work.
 
-- Work from backups and editable source, never by modifying the only copy.
-- Bench-compile and validate each program before loading it.
-- Schedule production loads and alarm tests with the owner present.
-- Place the monitored alarm account in test mode before alarm signaling tests.
-- Change one processor role at a time and retain a tested rollback path.
-- Preserve current panel and keypad operation until HA acceptance is signed.
-- Do not electrically combine the MC2E lighting Cresnet leg with the separate
-  AADS/ST-IO Cresnet leg.
-- Label all moved cables and provide before/after photographs.
-- Record firmware changes and do not upgrade solely for convenience without a
-  documented compatibility reason and rollback plan.
+## Change and cutover
+
+Work from backups and never modify the only copy. Bench-compile and validate before loading.
+Schedule production loads with the owner present. Change one processor role at a time with a tested
+rollback path. Preserve current panel and keypad operation until acceptance is signed. Do not
+electrically combine the MC2E lighting Cresnet leg with the AADS/ST-IO leg. Label moved cables and
+photograph before and after. Record firmware changes and do not upgrade for convenience without a
+documented compatibility reason and rollback plan.
 
 ## Acceptance testing
 
-The programmer and owner must execute the delivered test procedure together.
-Passing a few sample devices is insufficient; every row in the signal schedule
-must have a recorded result.
+Programmer and owner execute the delivered test procedure together. Every row in the signal
+schedule needs a recorded result; sampling a few devices is insufficient.
 
-### Baseline regression
+**Baseline regression, before enabling Home Assistant control.** Every CNX-B8 button retains its
+original tap, hold, LED, scene, and conditional behavior. Every TSW-752 retains its original
+operation. Every CLX load responds and reports correctly. AADS audio remains operational in every
+active zone. Processor restarts issue no unintended commands.
 
-Before enabling Home Assistant control:
+**Lighting.** For every populated load: on, off, toggle, and level commands operate the correct
+channel only; real load state updates Home Assistant feedback whether the change originated in Home
+Assistant, at a keypad, at a panel, or from a scene; raise and lower start on press, stop on
+release, and cannot remain ramping after disconnect. For every keypad and panel control: Home
+Assistant can invoke the existing action, physical press and release are observable, an invocation
+is not reported as a physical press, and existing LED and scene feedback stays correct.
 
-- Every CNX-B8 button retains its original tap, hold, release, LED, scene, and
-  conditional behavior.
-- Every TSW-752 retains its original lighting, alarm, and A/V operation.
-- Every CLX load responds and reports correctly.
-- AADS audio remains operational in every active zone.
-- Apex local keypads, central-station communication, and existing Crestron alarm
-  controls remain operational.
-- Processor restarts do not issue unintended commands.
-
-### Home Assistant lighting tests
-
-For every populated load:
-
-- On, off, toggle, and level commands operate the correct channel only.
-- Actual load state updates HA feedback whether the change originated from HA,
-  a keypad, a touch panel, a scene, or other Crestron logic.
-- Raise/lower starts on press, stops on release, and cannot remain ramping after
-  disconnect.
-
-For every keypad and touch-panel lighting control:
-
-- HA can invoke the exact existing action.
-- Physical press and release are observable in HA.
-- An HA invocation is not reported as a physical press.
-- Existing LED and scene feedback remains correct.
-
-### Home Assistant alarm tests
-
-For every configured partition and current touchscreen alarm function:
-
-- Commands are tested from a safe initial state.
-- Not-ready and invalid transitions are rejected and reported as failures.
-- HA state changes only after authoritative Apex feedback.
-- Disarm uses the processor-held dedicated credential and exposes no digits or
-  code through packet capture, joins, logs, or delivered files.
-- Serial disconnect produces unavailable/error feedback, not a false success.
-- Reconnect resynchronizes actual partition state and does not replay a command.
-- HA and Crestron outages do not impair standalone alarm operation.
-
-### Home Assistant A/V tests
-
-For every active zone, source, and current TSW-752 function:
-
-- HA command behavior matches the original panel behavior.
-- State and metadata changes made from HA, a TSW-752, the AADS front panel, or
-  another source appear correctly in HA where feedback exists.
-- AADS or intersystem disconnect marks affected entities unavailable.
-- Reconnect restores actual state without changing zone power, source, or
-  volume unexpectedly.
-
-### Connection and failure tests
-
-Test at least:
-
-- Home Assistant restart.
-- XSIG TCP disconnect and reconnect.
-- Selected processor restart.
-- AADS restart and intersystem reconnect.
-- Apex serial disconnect and reconnect.
-- Loss and restoration of LAN connectivity.
-
-No test may cause a stale momentary command to replay. Every subsystem must
-return to an accurate state or an explicit unavailable/error state.
+**Connection and failure.** Home Assistant restart, TCP disconnect and reconnect, processor
+restart, and loss and restoration of LAN connectivity. No test may replay a stale momentary
+command. Every subsystem returns to an accurate state or an explicit unavailable state.
 
 ## Deliverables
 
-The job is not complete until the owner receives:
+1. Unmodified pre-work backups of both processors and all four panel projects.
+2. Complete editable post-work source and all dependencies, including the D3 Pro job if the work
+   was done through D3 Pro.
+3. Compiled programs exactly matching the delivered source.
+4. If a CP3N is used, complete CP3N source, configuration, firmware record, and the retired MC2E
+   backup.
+5. The final machine-readable signal schedule with every field named in Phase 2.
+6. A human-readable join map grouped by room.
+7. Home Assistant connection parameters and a sample configuration covering one example of each
+   signal pattern used.
+8. A network and processor diagram of the final topology.
+9. Completed acceptance-test results covering every signal-schedule row.
+10. A written rollback procedure and the files needed to execute it.
+11. A list of unresolved, unused, offline, or obsolete devices and signals found during the work,
+    without silently removing them.
+12. A maintenance guide covering how to add a future load or button without renumbering joins.
 
-1. Unmodified pre-work backups of the MC2E, AADS, and all TSW-752 projects.
-2. Complete editable post-work SIMPL Windows source and all dependencies.
-3. Complete editable post-work VT Pro-e source for all panels, including any
-   changes needed during transition.
-4. Compiled programs exactly matching the installed source.
-5. If CP3N is used, complete CP3N source, configuration, firmware record, and
-   the retired MC2E backup.
-6. The final machine-readable CSV or spreadsheet signal schedule with every
-   required field from this document.
-7. A human-readable join-map PDF or Markdown export grouped by subsystem and
-   room/zone.
-8. Home Assistant connection parameters and a sample configuration covering at
-   least one example of each signal pattern used.
-9. A network and processor diagram showing the final topology.
-10. Photographs and labels for the Apex serial connection and any moved wiring.
-11. Completed acceptance-test results, including every signal-schedule row.
-12. A written rollback procedure and all files needed to execute it.
-13. A list of unresolved, unused, offline, or obsolete devices/signals discovered
-    during the work, without silently removing them.
-14. A brief maintenance guide explaining how to add a future load, button,
-    A/V function, or alarm status without renumbering existing joins.
-
-The owner must have unrestricted use of the delivered source for this residence.
-No source-code password, dealer lock, or dependency on an undisclosed custom
-module is acceptable.
+The owner must have unrestricted use of the delivered source for this residence. No source-code
+password, dealer lock, or dependency on an undisclosed custom module is acceptable.
 
 ## Completion criteria
 
-The work is complete only when:
+- One Home Assistant endpoint on the MC2E or approved CP3N exposes the complete accepted schedule.
+- Every populated lighting load in all fourteen rooms is controllable with authoritative feedback.
+- Every existing CNX-B8 action is preserved, observable, and callable through the documented
+  interface.
+- Every existing TSW-752 lighting control can be reproduced on a Home Assistant wall panel.
+- Every stateful command has authoritative feedback or is documented as an action without feedback.
+- All regression, lighting, reconnect, and failure tests pass.
+- Source, join map, test record, and rollback package delivered and verified.
 
-- One Home Assistant XSIG endpoint on the MC2E or approved CP3N exposes the
-  complete accepted signal schedule.
-- Lighting and alarm remain on the durable processor and no longer depend on
-  the continued presence of the AADS.
-- A/V remains fully controllable through the AADS for as long as it is retained.
-- Every existing functional TSW-752 control can be reproduced on a Home
-  Assistant wall panel.
-- Every existing CNX-B8 lighting action is preserved, observable, and callable
-  through the documented interface.
-- Every stateful command has authoritative feedback or is explicitly documented
-  as an action without feedback.
-- All regression, subsystem, reconnect, and failure tests pass.
-- The complete source, join map, test record, and rollback package have been
-  delivered and verified.
+## Separately priced work
+
+Removed from this document on 2026-09-01. Both remain owner objectives and neither is cancelled.
+
+**Apex alarm migration.** The MC2E's compiled program was searched and contains zero occurrences of
+alarm, Apex, zone, motion, siren, passcode, panic, or intrusion. The only "security" hit is
+`G-Security`, a lighting scene. The alarm lives entirely on the AADS, so moving it is an AADS-side
+job with its own risks, its own test regime, and a monitoring-company test window. It is scoped in
+[crestron-apex-control-plane.md](crestron-apex-control-plane.md). Folding it into the lighting job
+made both harder to price.
+
+**A/V proxying.** Exposing every AADS zone, source, tuner, and metadata function through the
+durable processor is a large inventory job against a subsystem the owner intends to replace. It
+should be quoted on its own, once the lighting interface is proven.
+
+The consequence of this split: the ST-IO stays on the AADS Cresnet leg and the AADS cannot be
+decommissioned until the alarm work is done. That dependency is recorded in
+[crestron-migration.md](crestron-migration.md#what-this-changes-in-the-plan).
 
 ## Reference documentation
 
 - [Crestron MC2E product documentation](https://www.crestron.com/Products/Catalog/Inactive/Discontinued/M/MC2E)
 - [Crestron CP3N product documentation](https://www.crestron.com/Products/Catalog/Inactive/Discontinued/C/CP3N)
 - [Crestron SIMPL Windows Symbol Guide: Intersystem Communications](https://www.crestron.com/getmedia/39357ef1-4169-4e0f-82c3-d1f0958dcaa5/mg_sw-simpl_symbols_guide_1)
-- [Crestron Apex Destiny 6100 module documentation](https://applicationmarket.crestron.com/content/Help/Apex/destiny_6100_arm_disarm.pdf)
+- [Crestron file extension reference](https://github.com/RBSystems/Crestron-Documentation/blob/master/FileExtensions.md), for `.bin`, `.spz`, and `.lpz` package contents
+- [Transitioning from D3 Pro to Crestron Home](https://www.crestron.com/News/Blog/January-2025/Transitioning-D3-Pro-Software-to-Crestron-Home), D3 Pro end of feature life
 - [Home Assistant Crestron XSIG integration](https://github.com/npope/home-assistant-crestron-component)

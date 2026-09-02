@@ -14,6 +14,13 @@ problem. Nothing is written to any processor and nothing is pressed. See
 What is not solved is *use*. The EISC slot is occupied by the AADS and cannot simply be taken over.
 See [The use problem](#the-use-problem).
 
+**Update, 2026-09-01.** Use is partly solved, by a route this document dismissed. The unoccupied
+XPanel at MC2E IP-ID `0x03` gives a working read *and* write path with no reprogramming at all,
+covering the Kitchen's five loads. Read
+[crestron-xpanel-control-path.md](crestron-xpanel-control-path.md) alongside this document; where
+the two disagree, that one is correct. The discovery method below is unaffected and remains the way
+to map the rest of the house.
+
 ## Verified topology
 
 Established by read-only `VER`, `IPTABLE`, `WHO`, and `TYPE` on each processor's console.
@@ -40,8 +47,10 @@ architecture recorded in [crestron-migration.md](crestron-migration.md).
 **IP-IDs are hex.** The `16` in that table is `0x16`, not decimal 16, and `51` is decimal 81.
 Passing decimal produces a misleading "IP-ID does not exist" refusal.
 
-The MC2E separately has an XPanel definition at its own IP-ID `0x03`, permanently offline, left
-over from an eControl PC panel that no longer exists.
+The MC2E separately has an XPanel definition at its own IP-ID `0x03`, unoccupied, left over from an
+eControl PC panel that no longer exists. Unoccupied is not the same as dead: a CIP client can
+register on it, and doing so gives a working control path to the Kitchen's lighting
+([crestron-xpanel-control-path.md](crestron-xpanel-control-path.md)).
 
 ## Confirmed join map
 
@@ -139,14 +148,23 @@ owner.
 Recorded so nobody repeats it. Each of these was tested by registering a CIP client against the
 slot and watching while lighting changes were made that a bus sniffer independently confirmed.
 
-| Slot | Result |
-|---|---|
-| MC2E IP-ID `0x03`, XPanel | Silent. Not wired to lighting. Carries a leftover scheduling page. |
-| AADS IP-ID `0x15`, `0x16`, Crestron App | Silent. Menu labels only, including a `Lights` entry whose subsystem was never connected. |
-| AADS IP-ID `0x11`, a real TSW panel slot | Silent. Panel freed by unplugging it. |
+**Corrected 2026-09-01. Do not rely on this table.** The CIP client used for these tests had three
+decoding bugs, since fixed. Every "silent" result below is either a proven false negative or
+untrustworthy, and the conclusion drawn from them was wrong. Kept here because the table was cited
+elsewhere and because a retracted finding is more useful than a deleted one. Correction recorded in
+[crestron-xpanel-control-path.md](crestron-xpanel-control-path.md).
 
-The panel projects are write-only for lighting. Listening at the panel layer cannot work, which is
-why the EISC is the right observation point.
+| Slot | Recorded 2026-08-31 | After the decoder fix |
+|---|---|---|
+| MC2E IP-ID `0x03`, XPanel | Silent. Not wired to lighting. Carries a leftover scheduling page. | **False negative.** Reports state promptly and in detail, accepts writes, and drives five Kitchen loads. |
+| AADS IP-ID `0x15`, `0x16`, Crestron App | Silent. Menu labels only, including a `Lights` entry whose subsystem was never connected. | Unproven. Never re-tested with the fixed decoder. |
+| AADS IP-ID `0x11`, a real TSW panel slot | Silent. Panel freed by unplugging it. | Unproven. Never re-tested with the fixed decoder. |
+
+The TSW-752 panel projects are write-only for lighting: they send commands and display no state.
+That part stands, confirmed independently by the panels' own behavior. The stronger claim made here
+originally, that listening at the panel layer cannot work at all, does not survive the `0x03`
+result and is withdrawn. What remains true is narrower: the EISC is the only observation point so
+far confirmed to carry whole-house joins, and `0x03` reaches one room.
 
 The app slots identify themselves as `Favela-iPhone v1`, the previous homeowner's project. It is on
 no device the current owner holds, so those slots can be used freely without displacing anything.
@@ -162,19 +180,21 @@ ST-IO's bus master, which is a hard dependency recorded in
 
 Open options, none yet investigated:
 
-1. A second EISC or XPanel slot on the MC2E wired to the same signals. This is a programmer
-   question and sits squarely inside the existing scope of work, but it is now a far better
-   specified one: the signals exist, the joins are known, and a capture demonstrates both
-   directions working.
+1. Widening the XPanel at IP-ID `0x03`, which already carries the Kitchen and has defined but
+   unwired joins above 35. This is a programmer question and sits inside the existing scope of
+   work, but it is now a far better specified one: the transport works, the signals exist, the
+   joins are known, and both directions are demonstrated.
 2. Relay through the AADS, which already receives all of this and has two unused app slots. Those
    slots carry no lighting today, so this also needs a program change.
-3. Cresnet injection, direct to the CLX modules, bypassing both processors. Blocked on transmit
-   timing rather than on protocol knowledge. See the CresnetMon `HANDOFF.md`.
+3. Cresnet injection, direct to the CLX modules, bypassing both processors. **Abandoned
+   2026-09-01.** Transmission itself was proven, but the CLX modules ignore commands arriving
+   outside their slot in the master's poll round, and a byte-perfect replay of the processor's own
+   frames produced no light. Sustained injection makes all seven modules re-initialise, which is a
+   fault response rather than obedience.
 
-Whether the end state is the IP route or the Cresnet route is genuinely open. The IP route has
-authoritative feedback and a clean interface but needs a program change to get a slot. The Cresnet
-route needs no cooperation from Crestron at all but has an unsolved timing problem and, so far, no
-feedback path.
+**Settled 2026-09-01: the end state is the IP route.** The Cresnet route is closed for the reason
+in option 3. The IP route already works for the Kitchen with no program change at all, so the open
+question narrows to how the other thirteen rooms reach a slot we can register on.
 
 ## What this changes in the programmer scope
 

@@ -43,6 +43,29 @@ Notes, planning, and specs for my Home Assistant buildout.
   touch panel capture alone cannot define a load's endpoint. Assesses whether this class of
   capture is sufficient to start Path B, and what is still missing.
 
+- [crestron-eisc-join-discovery.md](docs/crestron/crestron-eisc-join-discovery.md)
+
+  How to read the lighting control interface that already exists. The MC2E-AADS EISC link carries
+  every lighting command and every state change in both directions, with feedback originating from
+  real device state rather than echoed from a command. The passive, repeatable discovery method
+  using the processor's own `SDEBUG` output alongside a bus sniffer, the confirmed join map, and
+  why the EISC rather than the panel layer is the right observation point.
+
+- [crestron-xpanel-control-path.md](docs/crestron/crestron-xpanel-control-path.md)
+
+  The working read and write path into the lighting system, found on an unoccupied XPanel slot on
+  the MC2E. What it exposes, why it reaches only the Kitchen, the CIP digital-join encoding, the
+  corrected `1D` frame format, and why Cresnet frame injection was abandoned even though
+  transmission itself was proven.
+
+- [crestron-aads-slot-control-path.md](docs/crestron/crestron-aads-slot-control-path.md)
+
+  An untested proposal for driving lights outside the Kitchen, valid only if the AADS is kept
+  rather than retired: register on one of the AADS's two abandoned Crestron App slots the way the
+  MC2E's abandoned XPanel slot was used. Why the earlier "silent" verdict on those slots does not
+  hold, why write-only stops being a defect once the goal is control rather than observation, and
+  why join-sweeping the AADS is dangerous in a way it was not on the MC2E.
+
 - [crestron-apex-control-plane.md](docs/crestron/crestron-apex-control-plane.md)
 
   Feasibility of a bidirectional Home Assistant to Crestron to Apex Destiny 6100 alarm control
@@ -52,10 +75,11 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 - [crestron-xsig-programmer-scope.md](docs/crestron/crestron-xsig-programmer-scope.md)
 
-  The scope of work for the Crestron programming contractor: a durable Home Assistant XSIG
-  connection exposing every CLX lighting load, keypad and touch-panel action, A/V function, and
-  alarm function, while preserving the existing CNX-B8 keypads, MC2E/CP3N processor, and AADS
-  system. Required deliverables and inventory obligations.
+  The scope of work for the Crestron programming contractor, cut down once a working control path
+  was found: extend lighting control from the Kitchen to the remaining thirteen rooms on a stable,
+  documented join contract. Why source recoverability is the gating question, what a compiled
+  2-Series program can and cannot give back, and why the alarm and A/V work is now priced
+  separately.
 
 ### Device Alerts
 
