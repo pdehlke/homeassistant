@@ -1,0 +1,11 @@
+# Control programs retrieved from the Crestron processors.
+#
+# These are the complete, compiled control programs for a private residence, and
+# this repository is public. The `.dsc` descriptors and manifests in
+# docs/crestron/dumps/ are committed deliberately; the programs themselves and
+# anything derived from them by bulk extraction are not.
+#
+# See docs/crestron/crestron-xpanel-control-path.md ("Retrieving the program")
+# for how to re-fetch one in about four seconds when it is needed.
+docs/crestron/dumps/*.bin
+docs/crestron/dumps/*.strings.txt
