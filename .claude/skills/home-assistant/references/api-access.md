@@ -279,7 +279,20 @@ python3 scripts/haws.py '{"type":"config/entity_registry/update","entity_id":"li
 ```
 
 It authenticates, sends each argument as one command in order, and prints each
-result as JSON on its own line. Needs `aiohttp`, which is already installed.
+result as JSON on its own line.
+
+It needs `aiohttp`, which is **not** in the system Python. `python3 scripts/haws.py`
+fails with `ModuleNotFoundError: No module named 'aiohttp'` under Homebrew's
+Python 3.14; an earlier note here claiming it was already installed was true of
+a Python that has since been replaced. Run it in an ephemeral environment
+instead, which installs nothing and leaves no lockfile behind:
+
+```bash
+uv run --quiet --with aiohttp python3 scripts/haws.py '{"type":"config/area_registry/list"}'
+```
+
+`--quiet` matters: without it uv writes its resolution progress to stderr, which
+lands in the middle of the JSON you are trying to parse.
 
 Labels work like a second, non-exclusive area: `config/label_registry/create`
 returns a `label_id` slugged from `name`, same as areas do.
