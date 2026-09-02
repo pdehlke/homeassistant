@@ -54,17 +54,21 @@ Notes, planning, and specs for my Home Assistant buildout.
 - [crestron-xpanel-control-path.md](docs/crestron/crestron-xpanel-control-path.md)
 
   The working read and write path into the lighting system, found on an unoccupied XPanel slot on
-  the MC2E. What it exposes, why it reaches only the Kitchen, the CIP digital-join encoding, the
-  corrected `1D` frame format, and why Cresnet frame injection was abandoned even though
-  transmission itself was proven.
+  the MC2E. What it exposes, why it reaches only the Kitchen for observation as well as control,
+  the proof that the slot mirrors activity originating at a wall panel, the CIP digital-join
+  encoding, brightness as a 16-bit analog join, the corrected `1D` frame format, and why Cresnet
+  frame injection was abandoned even though transmission itself was proven.
 
 - [crestron-aads-slot-control-path.md](docs/crestron/crestron-aads-slot-control-path.md)
 
-  An untested proposal for driving lights outside the Kitchen, valid only if the AADS is kept
-  rather than retired: register on one of the AADS's two abandoned Crestron App slots the way the
-  MC2E's abandoned XPanel slot was used. Why the earlier "silent" verdict on those slots does not
-  hold, why write-only stops being a defect once the goal is control rather than observation, and
-  why join-sweeping the AADS is dangerous in a way it was not on the MC2E.
+  A proposal for driving lights outside the Kitchen, valid only if the AADS is kept rather than
+  retired, tested on 2026-09-02 and blocked: register on one of the AADS's two abandoned Crestron
+  App slots the way the MC2E's abandoned XPanel slot was used. The AADS program does hold
+  whole-house lighting, but both slots are page-gated and report nothing while lights are operated,
+  so no read-only route to their join numbers survives. Includes the whole-house load and scene
+  inventory pulled from the program, why write-only stops being a defect once the goal is control
+  rather than observation, and why join-sweeping the AADS is dangerous in a way it was not on the
+  MC2E.
 
 - [crestron-apex-control-plane.md](docs/crestron/crestron-apex-control-plane.md)
 

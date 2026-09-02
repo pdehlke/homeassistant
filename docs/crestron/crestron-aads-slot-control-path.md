@@ -2,9 +2,12 @@
 
 ## Status
 
-**Untested hypothesis, 2026-09-02.** Nothing here has been run. It is a proposal assembled from
-evidence already gathered for other purposes, written down because it is a serious candidate route
-and because the reasoning is easy to lose.
+**Tested and blocked on a read-only route, 2026-09-02.** The premise holds: the AADS's compiled
+program does contain whole-house lighting. Both candidate slots were then registered listen-only
+and both stayed completely silent while lights were operated from a wall panel. The slots are
+page-gated, so the join map cannot be recovered by watching, and recovering it any other way means
+writing joins to the one processor that also carries the alarm interface. Nothing has been written
+to any processor. Details in [the 2026-09-02 test](#the-2026-09-02-test-and-what-it-showed).
 
 It assumes the AADS is **not** being retired. Every other document in this directory treats the
 AADS as a subsystem on its way out, which is why this route was never considered: a control path
@@ -42,7 +45,7 @@ project. It runs on no device the current owner holds, so claiming a slot displa
 is the same condition that made MC2E `IP-ID 0x03` usable, established in
 [crestron-eisc-join-discovery.md](crestron-eisc-join-discovery.md).
 
-## Why the earlier "silent" result does not close this
+## Why the earlier "silent" result did not close this
 
 Both slots were tested on 2026-08-31 and recorded as silent, carrying menu labels only. That test
 ran on the `cip_xpanel.py` build with three decoding bugs, since fixed: multi-join digital,
@@ -53,8 +56,14 @@ nor unwired. And the specific failure mode matters here: a slot whose output is 
 carried on serial joins, which is exactly the decoder path that was broken. "Menu labels only" is
 as likely to be an artifact as a finding.
 
-Both slots are therefore unproven, not cleared. The corrected table is in
+Both slots were therefore unproven rather than cleared. The corrected table is in
 [crestron-eisc-join-discovery.md](crestron-eisc-join-discovery.md#what-was-ruled-out).
+
+**Resolved 2026-09-02.** The re-test was run with the fixed decoder and reproduced the original
+result exactly. The 2026-08-31 reading was accurate about what arrives on these slots. It was
+only its significance that was misjudged: menu labels are what a page-gated slot is supposed to
+send before it has asked for anything, so the observation never distinguished an unwired slot from
+a gated one, and still does not.
 
 ## Why write-only stops being a defect
 
@@ -86,6 +95,81 @@ Both travel TSW-752 to AADS, across the EISC to the MC2E, then out over Cresnet 
 So the AADS already holds whole-house lighting commands wired into its panel projects. The open
 question is only whether an *app* slot exposes them, or some subset.
 
+## What the AADS program holds for lighting
+
+Confirmed 2026-09-02 by retrieving `Favela v4.bin` and running `strings` over it. The program has a
+single `Lights` block at symbol path `S-7.17.1` containing 61 name entries, 42 of them unique. It
+is emphatically not one room.
+
+**Loads.** Table, Powder, Perimeter, Outdoor Kitchen, North, South, Pathway, West Seating, East
+Seating, Ambient, Patio North, Patio South, Range, Island, Cabinet, Bed Perimeter, Bed Diagonal,
+Bath Perimeter, Bath Diagonal, Hallway, Door, Entry Center, Home Perimeter, Entry Perimeter, Garage
+Sconces, North Sink, East Hall, Pool Bath, Living Off, Area Off.
+
+**Scenes.** Path, Night, Fiesta, Patio (All On), Club, Pool, Holiday, Security, Vacation, Party,
+Goodbye, Good Night.
+
+Three independent cross-checks land. Island, Range, Pathway, Powder, and Cabinet are exactly the
+five Kitchen loads the MC2E XPanel drives on joins 21-35. Entry Center is EISC join `d58` and Pool
+Bath is `d103`, both confirmed on 2026-08-31. The scene set is the AADS's own and differs from the
+MC2E's eight, `A-Welcome` through `H-Entertain`.
+
+This proves the AADS program holds whole-house lighting logic. It does not yet prove those loads
+are exposed on an app slot, which is what step 2 tests.
+
+One structural caution supports the reduced-function-set worry below. In the program's device
+block, each TSW-752 slot carries three sub-slots (`IP-ID-11`, `IP-ID-11.2`, `IP-ID-11.3`) while
+`IP-ID-15` and `IP-ID-16` carry two, with `Favela-iPhone v1` named at `Slot-01`. The app slots are
+built differently from the wall panels.
+
+## The 2026-09-02 test and what it showed
+
+Both slots were registered listen-only with `cip_xpanel.py`, which sends only the registration
+handshake, the update request, the end-of-query ack, and heartbeats. It has no join-write path at
+all; that lives in `poc_joinpress.py`. So the test could not press a join even by accident, which
+is why it had to come first.
+
+On registration each slot returns the same thing, and it is a whole-house menu rather than a
+Kitchen one:
+
+| Join | Value |
+|---|---|
+| `s10` | `Kitchen` |
+| `s100`-`s128` | A/V source list, `iPod` through `Device 29` |
+| `s129`-`s131` | `Climate Zones`, `South HVAC`, `North HVAC` |
+| `s140` | `Lights` |
+| `s142` | `Alarm` |
+
+Beyond the labels there is almost nothing: `5 digital joins reported, 5 high; 2 analog, 2 non-zero;
+140 serial`, with digitals high at 41, 43, 47, 52, 1001 and analogs `a11 = 57735`, `a12 = 60`. Both
+slots identify as `Favela-iPhone v1`, confirming the `.dsc` reading.
+
+Then a 300-second listen on `0x15` and `0x16` simultaneously, while Pool Bath, Entry Center, and
+Entry Perimeter were switched off from the Studio TSW-752:
+
+```
+aads-15-watch.txt: [300.474] 0 changes seen after sync
+aads-16-watch.txt: [300.145] 0 changes seen after sync
+```
+
+Not one join update on either slot. The result is not a tooling artifact: `record()` logs a
+`CHANGE` line the instant any value differs, and both listeners set `synced` at 0.9 seconds when
+the processor sent end-of-query, so both were armed minutes before anything was pressed.
+
+**The reading is page-gating.** The AADS sends a registered slot its menu and then goes quiet. A
+panel has to signal which room and which subsystem it is showing before the processor starts
+feeding it state. That is ordinary Crestron practice and it is the opposite of how the MC2E's flat
+XPanel behaves, which is exactly why the Kitchen map fell out of `IP-ID 0x03` in an afternoon and
+why nothing falls out of `0x15`. The contrast is visible in a single line of each state dump: the
+MC2E reports 42 digital joins high, the AADS reports 5.
+
+**What it does not show is that the `Lights` page is unwired.** A gated slot and a dead slot look
+identical from outside. Separating them means writing the page-select joins, and no read-only
+method of learning which joins those are has survived: step 1 established the AADS carries no
+`pressNN` naming, and this test establishes that watching yields nothing. That leaves guessing,
+on the processor whose interface spans eight alarm partitions, which
+[the safety rule](crestron-alarm-open-questions.md#the-safety-rule) forbids.
+
 ## The risk: this is not the MC2E
 
 **Do not carry the MC2E's safety finding across.** That finding was specific and was proven by
@@ -93,38 +177,65 @@ searching the retrieved MC2E binary, which contains zero occurrences of alarm, A
 siren, passcode, panic, or intrusion. On the MC2E the worst outcome of pressing an unknown join is
 that a light changes.
 
-The AADS is the opposite case. It holds the Apex Destiny 6100 serial connection and the alarm
-user-interface logic, and `crestron-eisc-join-discovery.md` already records that this same app
-interface exposes an `Alarm` subsystem alongside the `Lights` menu label. The join-sweep that
-mapped the Kitchen in an afternoon is not safe to repeat here.
+The AADS is the opposite case, and the retrieved program makes it concrete. Its alarm integration
+includes `S2_DSC_PowerSeries_Virtual_Keypad_Feedback_v1_1` and eight instances of
+`S2_DSC_PowerSeries_Partition_Control_v1_0`, so the interface carries a virtual keypad across eight
+partitions. A wrong press there can be a keypad digit or a partition command.
+`crestron-eisc-join-discovery.md` separately records that this same app interface exposes an
+`Alarm` subsystem alongside the `Lights` menu label.
 
-Alarm work is explicitly phase 2 for this house, gated on lighting control working first. Blundering
-into it by pressing joins on the AADS inverts that ordering in the worst possible way.
+**The join-sweep that mapped the Kitchen in an afternoon must not be repeated here.** Register
+listen-only, identify every join by name before writing to it, and never sweep a range. Alarm work
+is explicitly phase 2 for this house, gated on lighting working first; blundering into it by
+pressing joins inverts that ordering in the worst possible way. Full rule in
+[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-safety-rule).
 
 ## Test plan, in strict order
 
-1. **Retrieve and read the AADS program before pressing anything.** Use `ctp_getfile.py` against the
-   CTP console on TCP 41795, the same method that worked on the MC2E. The manifest
-   ([`dumps/aads-manifest.txt`](dumps/aads-manifest.txt)) names the file `Favela v4.bin`. Run
-   `strings` over it and look for join names. The MC2E binary named its press joins `press21`
-   through `press95`, so the same convention should reveal the AADS's lighting joins by name, and
-   more importantly reveal which joins are alarm.
-2. **Register on `0x15` listen-only, with the fixed decoder.** Watch while someone operates lights
-   from a TSW-752. If the slot mirrors panel activity, the join map falls out with nothing pressed.
-3. **Only then consider writing**, and only to joins identified by name in step 1. Never sweep.
-4. If `0x15` is genuinely empty, repeat with `0x16` before considering a TSW-752 slot.
+1. ~~Retrieve and read the AADS program before pressing anything.~~ **Done 2026-09-02.**
+   `Favela v4.bin`, 1,144,832 bytes, pulled with `ctp_getfile.py` against the CTP console on TCP
+   41795. It confirms a single `Lights` block at symbol path `S-7.17.1` holding 42 unique
+   whole-house load and scene names, which is the evidence this proposal needed. One technique did
+   not transfer: the AADS uses no `pressNN` join naming, so the MC2E's trick of reading a join map
+   out of the binary by number does not work here, and join identification has to come from step 2.
+   See [the lighting inventory](#what-the-aads-program-holds-for-lighting).
+2. ~~Register on `0x15` listen-only, with the fixed decoder.~~ **Done 2026-09-02, negative.** Run
+   on `0x15` and `0x16` together for 300 seconds while Pool Bath, Entry Center, and Entry Perimeter
+   were switched from the Studio TSW-752. Zero changes on both. See
+   [the 2026-09-02 test](#the-2026-09-02-test-and-what-it-showed).
+3. ~~Only then consider writing, and only to joins identified by name in step 1.~~ **Blocked.**
+   Step 1 found no join naming and step 2 found no observable joins, so there is no way to identify
+   a join by name before writing to it. Writing now would be the sweep the safety rule forbids.
+4. ~~If `0x15` is genuinely empty, repeat with `0x16`.~~ **Done in the same run, same result.** A
+   TSW-752 slot is not a way around this: claiming one costs a working panel and it would be
+   page-gated identically.
 
 ## What would kill this
 
+Written before the test, and one of them landed:
+
+- **This is what happened.** The slots are page-gated, so no join map can be read out of them
+  passively, and no read-only route to the join numbers remains.
 - The app slots carry a phone project, which may expose a deliberately reduced function set
-  compared with the wall panels. It may reach fewer rooms than a TSW-752 does, or none.
+  compared with the wall panels. It may reach fewer rooms than a TSW-752 does, or none. Still
+  untested, and now untestable without writing.
 - The `Lights` menu label may turn out to be exactly what the original test said: a page that was
-  designed and never connected to a subsystem.
+  designed and never connected to a subsystem. Still open for the same reason.
 - Lighting joins on the AADS may be inseparable from alarm joins in a way that makes writing to the
   slot unacceptably risky regardless of coverage.
 
-Any of those returns the whole question to
-[crestron-xsig-programmer-scope.md](crestron-xsig-programmer-scope.md) and a programmer.
+The obvious fallback was pulled the same afternoon and it closed too. MC2E `IP-ID 0x03` was
+watched listen-only while the same three loads were switched from the same panel, and it reported
+nothing; a control test with a Kitchen load then proved the slot does mirror wall-panel activity,
+which turns that silence into a real negative rather than an ambiguous one. The `101-Kitchen`
+boundary holds for observation as well as control. See
+[crestron-xpanel-control-path.md](crestron-xpanel-control-path.md#the-slot-mirrors-the-wall-panels).
+
+So the whole question returns to
+[crestron-xsig-programmer-scope.md](crestron-xsig-programmer-scope.md) and a programmer. Note what
+is and is not blocked: whole-house *observation* already works through the passive Cresnet tap and
+its `1D` frames. It is whole-house *control* that has no remaining route which avoids a program
+change.
 
 ## Loose end
 

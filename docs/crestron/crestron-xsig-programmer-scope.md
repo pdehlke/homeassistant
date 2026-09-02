@@ -1,12 +1,12 @@
 # Crestron programmer scope of work
 
-## Status, 2026-09-01
+## Status, 2026-09-02
 
 This document was originally written on the assumption that a Home Assistant interface to the
 lighting system had to be designed and built from nothing. That assumption is now wrong, and the
 document has been cut down accordingly.
 
-Three findings changed it:
+Four findings changed it:
 
 - **2026-08-31.** Every lighting command and state change crosses the MC2E-AADS EISC link, in both
   directions, with feedback that originates from real device state rather than from an echo of the
@@ -16,10 +16,24 @@ Three findings changed it:
   [crestron-xpanel-control-path.md](crestron-xpanel-control-path.md).
 - **2026-09-01.** The MC2E's compiled program was retrieved and searched. It contains no alarm
   logic of any kind, which moves the Apex work out of this document.
+- **2026-09-02.** Every route to whole-house control that avoids a programmer has now been tested
+  and eliminated. The AADS's two abandoned app slots are page-gated and report nothing while lights
+  are switched. The MC2E's XPanel slot was proven to mirror wall-panel activity, and still showed
+  nothing outside the Kitchen, so its `101-Kitchen` boundary is exact rather than an artifact of
+  the press scan. See [crestron-aads-slot-control-path.md](crestron-aads-slot-control-path.md) and
+  [crestron-xpanel-control-path.md](crestron-xpanel-control-path.md#the-slot-mirrors-the-wall-panels).
+
+**On the scope of the remaining job.** Whole-house *observation* is already solved outside this
+document, by the passive Cresnet tap and its `1D` command frames. What a programmer is needed for
+is whole-house *control*. Quoting the job as though state feedback also had to be built would
+overstate it.
 
 An earlier version stated that three unoccupied panel and app slots had been tested and none
 carried lighting feedback, and that any proposal assuming otherwise was mistaken. That was a false
-negative caused by decoder bugs since fixed. The statement has been removed.
+negative caused by decoder bugs since fixed, and the statement was removed. The re-test on
+2026-09-02 reaches a similar conclusion for the two AADS app slots on sound evidence, but for a
+different reason: the slots are gated, not unwired, and the difference matters because a gated slot
+may well be fully wired behind the gate.
 
 ## Terminology
 

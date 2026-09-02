@@ -1,8 +1,8 @@
 # The XPanel control path
 
-Findings from 2026-09-01. This supersedes the Cresnet-injection strategy for
-writing to the lighting system, and largely settles how a Home Assistant bridge
-should talk to this house.
+Findings from 2026-09-01, extended 2026-09-02. This supersedes the
+Cresnet-injection strategy for writing to the lighting system, and largely
+settles how a Home Assistant bridge should talk to this house.
 
 ## Summary
 
@@ -22,6 +22,10 @@ off this way, confirmed in the room.
 scanned by pressing each one and recording what the processor drove. Joins 21-35
 address five Kitchen loads; joins 36-95 drive no dimmer at all. The `.dsc`
 describes the panel as `101-Kitchen`, and that is exactly what it is.
+
+That limit was confirmed to apply to observation as well as control on
+2026-09-02, by a controlled test rather than by inference from the press scan.
+See [the mirroring test](#the-slot-mirrors-the-wall-panels).
 
 ## Why Cresnet injection was abandoned
 
@@ -68,6 +72,18 @@ that light on, the join read 50069 = `0xC395`, whose high byte is exactly the
 analog join is the 8-bit dimmer level scaled to 16 bits, which is directly usable
 as a Home Assistant brightness value.
 
+Confirmed again 2026-09-02 on a second join and a second load. Island switched
+from a wall panel put `a22` at 7471 = `0x1D2F`, high byte `0x1D` = 29 of 255 =
+11.4%.
+
+That number is also the only trustworthy statement of the level. Neither the
+TSW-752 panels nor the keypads display a brightness readout anywhere, so there
+is no on-panel figure to reconcile against and no possibility of the two
+disagreeing in front of a user. A human estimate of "about 25%" made in the room
+was checked against this and withdrawn: the lights are simply very dim, and eye
+estimates of low-end dimmer output run high. Treat the wire value as
+authoritative.
+
 ## The Kitchen join map
 
 | join | drives | effect |
@@ -88,6 +104,41 @@ Kitchen group and the Great Room keypad's Living Pathway pair, which is why
 pressing join 24 lit a lamp that could not be seen from the living room and was
 briefly mistaken for a failure.
 
+## The slot mirrors the wall panels
+
+Established 2026-09-02. The slot does not merely echo feedback for joins we
+press ourselves. It reports lighting activity that originates at a TSW-752, with
+nothing sent from our side.
+
+The test registered listen-only and pressed nothing. `cip_xpanel.py` sends only
+the registration handshake, the update request, the end-of-query ack, and
+heartbeats; the join-write path lives in `poc_joinpress.py` and was not used.
+Island was then switched from the Studio TSW-752, and the slot reported:
+
+```
+[336.481]   a22 = 0
+[336.493] CHANGE a22 = 7471 (was 0)
+[336.501] CHANGE d29 = 1 (was None)
+[336.509] CHANGE d35 = 1 (was None)
+```
+
+**Why this needed a control.** The same listener had already run for several
+minutes while Pool Bath, Entry Center and Entry Perimeter were switched from the
+same panel, and reported nothing at all. On its own that silence was ambiguous:
+it fits a slot that ignores other panels entirely just as well as it fits a slot
+that mirrors faithfully but carries no joins for those three loads. Island is
+certainly inside the slot's join space, so switching it separates the two.
+
+With mirroring proven, the earlier silence becomes a real negative. Pool Bath,
+Entry Center and Entry Perimeter have no feedback presence on this slot. The
+`101-Kitchen` boundary is exact and it is not an artifact of how the press scan
+was done.
+
+Do not read the digital joins through the press map below. That table records
+what each join *does when pressed*; `d29` and `d35` appearing as feedback does
+not mean the processor executed "0x72 ch2 off" and "toggle all five". Feedback
+semantics on these joins are unmapped.
+
 ## The `1D` frame, corrected
 
 `<dest> <size> 1D 00 <fade hi> <fade lo> <channel> <level>`, channel/level
@@ -98,16 +149,30 @@ raise, `00 18` for lower.
 ## The open question
 
 How to reach the other thirteen rooms. Their loads answer to keypads and touch
-panels, not to this XPanel slot. Two candidate routes, neither explored:
+panels, not to this XPanel slot. Three candidate routes, all now explored:
 
 1. Another free IP-ID with a wider join map. The `.dsc` lists only `IP-ID-03`
-   and `IP-ID-05` on the MC2E, so this may require a slot that does not exist.
-2. The EISC at `Slot-05.IP-ID-05`, which carries whole-house joins (`d58` Entry
+   and `IP-ID-05` on the MC2E, so this would require a slot that does not exist.
+   **Closed.**
+2. The AADS's two abandoned Crestron App slots, `IP-ID 0x15` and `0x16`. The
+   AADS program does hold whole-house lighting, 42 named loads and scenes, but
+   both slots are page-gated: they send a menu on registration and then nothing,
+   including while lights are being switched from a wall panel. **Closed for any
+   read-only approach**, and the only way past it is writing unidentified joins
+   on the processor that also carries the alarm interface. Full record in
+   [crestron-aads-slot-control-path.md](crestron-aads-slot-control-path.md).
+3. The EISC at `Slot-05.IP-ID-05`, which carries whole-house joins (`d58` Entry
    Center, `d99` Sink Area, `d103` Pool Bath, confirmed 2026-08-31). It is
-   occupied by the AADS and displacing it breaks audio and the ST-IO.
+   occupied by the AADS and displacing it breaks audio and the ST-IO. Still the
+   only route with part of a whole-house join map already in hand, and still
+   unpriced in terms of what exactly breaks.
 
-The second route already has part of a whole-house join map. It is worth
-establishing precisely what breaks before writing it off.
+Whole-house **observation** is not blocked by any of this: the passive Cresnet
+tap already sees `1D` command frames for every room. It is whole-house
+**control** that has no route which avoids a programmer. That conclusion now
+rests on tests rather than on argument, which is the useful part when briefing
+one. See
+[crestron-xsig-programmer-scope.md](crestron-xsig-programmer-scope.md).
 
 ## Safety: there is no alarm in this processor
 
