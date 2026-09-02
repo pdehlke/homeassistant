@@ -1,5 +1,18 @@
 # Home Assistant, Crestron, and Apex Destiny 6100 Control Plane
 
+## Status: parked, and its mechanism is wrong
+
+**Do not quote a programmer from this document as written.** The alarm panel it names is correct,
+confirmed visually by the house owner. The mechanism is not. The AADS's live program does its
+arming, disarming, and status through DSC PowerSeries modules, and the Destiny 6100 serial
+parameters below come from Crestron's generic module documentation rather than from anything
+observed in this house.
+
+That contradiction is unresolved and alarm work is parked behind lighting. See
+[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md), which also carries the safety
+rule that stays in force meanwhile. The rest of this document is left as written because the
+correct rewrite depends on which reading of the contradiction turns out to be true.
+
 ## Conclusion
 
 The existing equipment appears capable of supporting a complete bidirectional

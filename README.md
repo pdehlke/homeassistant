@@ -71,7 +71,16 @@ Notes, planning, and specs for my Home Assistant buildout.
   Feasibility of a bidirectional Home Assistant to Crestron to Apex Destiny 6100 alarm control
   plane. Why Cresnet sniffing is not the mechanism that unlocks it, why an XSIG interface added
   to the existing AADS program exposing its Apex arm/disarm/status signals is the cleanest
-  route, and where the fallback reverse-engineering targets are if that's not enough.
+  route, and where the fallback reverse-engineering targets are if that's not enough. Parked, and
+  its mechanism is now known to be wrong; read the next entry before quoting it to anyone.
+
+- [crestron-alarm-open-questions.md](docs/crestron/crestron-alarm-open-questions.md)
+
+  Alarm findings parked until lighting is finished, plus the one alarm rule that stays in force
+  meanwhile: never press unknown joins on the AADS, because its program carries a virtual keypad
+  across eight partitions. Records what the AADS's compiled program actually contains, why its DSC
+  PowerSeries modules sit oddly against a visually confirmed Apex Destiny panel, the three readings
+  of that contradiction, and the read-only tests that would settle it.
 
 - [crestron-xsig-programmer-scope.md](docs/crestron/crestron-xsig-programmer-scope.md)
 
