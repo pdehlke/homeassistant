@@ -192,12 +192,37 @@ symbol.
 Reversibility is total up to the point of committing to it. Plugging the panel back in takes the
 IP-ID away again and nothing else changes.
 
+## Answered since
+
+**There is no brightness on this slot, and there never was.** Settled 2026-09-02 from two
+independent directions.
+
+The panel project settles it without touching hardware. Every lighting load button carries a
+`DigitalPressJoin` and an indirect text reference and nothing else; no analog join appears anywhere
+near one. The whole project contains exactly two `AnalogFeedbackJoin` values, both on
+`Liquid Gauge Horizontal` controls, and no slider, gauge or dimmer control type exists on any
+lighting page. The panel has no dimmer interface to offer.
+
+The live processor agrees. A read-only registration on `IP-ID 0x13` reported `2 analog, 2 non-zero`
+for the entire slot: `a11 = 63242` and `a12 = 60`, which are the two audio gauges. There is no
+per-load level join to read and none to write.
+
+So the twenty-six loads reachable here are on/off only. This is consistent with the narrower claim
+already recorded above, that no panel or keypad in the house displays a brightness readout: the
+reason is that the lighting interface was never built with one. The four Kitchen loads on the MC2E
+XPanel are the exception and do carry 16-bit level joins, which is now the only place in the house
+where Home Assistant could offer a brightness slider truthfully.
+
+**The AADS does not drop a silent client, at least not quickly.** Measured 2026-09-02: a registered
+session on `IP-ID 0x13` was synced and then went completely silent, sending no heartbeats at all,
+and was still connected and still receiving after 149 seconds. Registration through end of state
+dump takes about 1.1 seconds, so reconnecting is cheap besides. Reconnect logic can be
+unremarkable: heartbeat on the usual 15-second cadence out of politeness, reconnect on socket error
+or an explicit disconnect, and re-seed state from the fresh dump rather than trusting anything
+carried over.
+
 ## What is still open
 
-- Brightness. Every test so far has been on/off. The Kitchen XPanel slot exposes 16-bit analog
-  joins for level, and whether the panel slot does too is untested.
-- Whether the AADS drops a registration that stops answering heartbeats, and how quickly, which
-  determines how aggressive the reconnect logic has to be.
 - Which of the four panels to sacrifice. Room assignments are Primary Bedroom, Kitchen, Office and
   Guest Room per the descriptors, and panel 13 self-reports as Studio, so that list needs checking
   against the `s11` value each panel reports.
