@@ -224,12 +224,15 @@ different roles.
 The processor that owns the Ethernet/CIP link between MC2E and AADS (currently MC2E).
 
 **XSIG**:
-Crestron's Intersystem Communications join protocol (digital/analog/serial joins) carried over
-TCP — the transport a Home Assistant integration would use to talk to MC2E/CP3N.
+A serial encoding that packs Crestron digital, analog, and serial joins into a byte stream over
+TCP or RS-232. The Home Assistant-facing transport.
+_Avoid_: ISC, EISC, "Intersystem Communications". Distinct from EISC below.
 
-**Ethernet Intersystem Communications (ISC)**:
-The existing Crestron-to-Crestron Ethernet link between MC2E and AADS. Distinct from XSIG, which
-is HA-facing, though [crestron-migration.md](./docs/crestron/crestron-migration.md) uses the two terms loosely together in places.
+**EISC** (Ethernet Intersystem Communications):
+The live Crestron-to-Crestron Ethernet link between MC2E and AADS, carrying joins between the two
+processors.
+_Avoid_: ISC, XSIG/ISC. Distinct from XSIG above: EISC is processor-to-processor, XSIG is
+Home Assistant-facing.
 
 **Alarm keypad**:
 The DSC-branded wall-mounted interface unit (faceplate visible in the pantry). A user-facing

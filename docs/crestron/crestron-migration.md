@@ -25,7 +25,7 @@ short version of where things stand and what's left.
 - Lighting modules: 3x CLX-1DIM8, 3x CLX-1DIM4, 1x CLX-4HSW4 (not two), all seven physically racked in
   the garage.
 - The MC2E and AADS both hold live, independent programs and are linked by a confirmed, named
-  Ethernet Intersystem Communications (XSIG/ISC) connection, currently online.
+  Ethernet Intersystem Communications (EISC) connection, currently online.
 - The AV cabinet holds two separate, independently-powered Cresnet buses, not one: MC2E's own leg
   (keypads and garage lighting), and a second leg powered by its own brick that reaches the ST-IO via a
   passive distribution strip. This is the AADS's leg physically extending into the same cabinet.
@@ -121,14 +121,14 @@ appears to be fabricated outright.
 
 ### Reasonable but unverified
 
-The claim that touch panel commands are IP-targeted at the AADS and cross to the MC2E via XSIG/ISC is
-architecturally plausible and consistent with how Adagio-plus-lighting systems were commonly built,
-but it had not been confirmed against this specific installation. The same went for the claim that the
-AADS holds the primary SIMPL logic rather than the MC2E. Both were testable without any Crestron
-software: 2-Series processors expose a Telnet console (standard commands like `ver` and `iptable`)
-that needs only network access, not a Toolbox license.
+The claim that touch panel commands are IP-targeted at the AADS and cross to the MC2E via the EISC
+is architecturally plausible and consistent with how Adagio-plus-lighting systems were commonly
+built, but it had not been confirmed against this specific installation. The same went for the
+claim that the AADS holds the primary SIMPL logic rather than the MC2E. Both were testable without
+any Crestron software: 2-Series processors expose a Telnet console (standard commands like `ver`
+and `iptable`) that needs only network access, not a Toolbox license.
 
-**Update:** both were checked directly. See "Direct verification" below. The touch panel/XSIG claim
+**Update:** both were checked directly. See "Direct verification" below. The touch panel/EISC claim
 turned out to be correct in substance, though the specifics (which box holds "primary" logic) turned
 out more nuanced: both processors hold real, independent, live logic, and the IP link between them is
 confirmed by name in both programs' own device tables, not just plausible.
@@ -285,10 +285,12 @@ The raw `.dsc`/`.dip`/manifest text pulled from both consoles via `TYPE` is save
   not hold up on its own: it is a peer with local logic, not the master of the pair.
 - AADS's IP table has 8 entries. One is the live MC2E link (mirrored from the MC2E side, same CIP_ID 5),
   labeled `Ethernet Intersystem Communications` in both programs' own descriptor files. That label,
-  present on both ends and both `ONLINE`, is the confirmation that the earlier notes' XSIG/ISC
-  hypothesis was correct in substance. The `WHO` console command and the program descriptor together
-  identify the other seven entries, which are real devices, not internal placeholders as first guessed
-  from the loopback addresses in the static IP table:
+  present on both ends and both `ONLINE`, is the confirmation that the earlier notes'
+  intersystem-link hypothesis was correct in substance. (Those notes called the link XSIG/ISC. The
+  correct name is EISC; XSIG is a separate, Home Assistant-facing encoding.) The `WHO` console
+  command and the program descriptor together identify the other seven entries, which are real
+  devices, not internal placeholders as first guessed from the loopback addresses in the static IP
+  table:
 
   | IP-ID | Device type | Room | Notes |
   | :--- | :--- | :--- | :--- |

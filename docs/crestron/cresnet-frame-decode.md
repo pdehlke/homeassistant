@@ -14,7 +14,7 @@ than it first appears. See [Origination paths](#origination-paths) below.
 |---|---|---|---|
 | 1 | "Sink Area" | Studio CNX-B8 keypad (`0x6D`) | Cresnet directly |
 | 2 | "Patio South" | Studio CNX-B8 keypad (`0x6D`) | Cresnet directly |
-| 3 | "Living Room Pathway" | TSW-752 touch panel | Ethernet to AADS, ISC to MC2E |
+| 3 | "Living Room Pathway" | TSW-752 touch panel | Ethernet to AADS, EISC to MC2E |
 
 Record 3's `device` field in the capture file reads `0x64` (Kitchen CNX-B8). That attribution is a
 labeling-dialog artifact and should be disregarded. The action originated on a touch panel, which
@@ -122,7 +122,7 @@ directly in what the capture contains.
 
 ```
 keypad:      CNX-B8 --Cresnet--> MC2E --Cresnet--> CLX
-touch panel: TSW-752 --Ethernet--> AADS --ISC--> MC2E --Cresnet--> CLX
+touch panel: TSW-752 --Ethernet--> AADS --EISC--> MC2E --Cresnet--> CLX
 ```
 
 The four TSW-752 panels are Ethernet devices registered with the AADS at IP IDs 11 through 14, not
