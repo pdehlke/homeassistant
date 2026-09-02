@@ -1,5 +1,88 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-09-02 (Lights chip filled with the real Crestron loads, then given a per-room Area Off)
+
+Two rounds on the same day, both driven by the CIP lighting bridge going live. See
+[crestron-ha-bridge.md](../crestron/crestron-ha-bridge.md) for the bridge itself; this entry covers
+only the dashboard side and the deploys. Releases went `20260826.6` -> `20260902.3` -> `20260902.5`.
+
+### Round one: the chip's contents (`20260902.3`)
+
+The Lights chip had been emptied of its placeholder entries earlier in the day, once every
+demo-data `light.*` entity was deleted. It was refilled from live Home Assistant state with the 26
+loads the bridge actually drives, grouped by Home Assistant area rather than by Crestron zone page.
+The eight panel pages are groupings of what one panel can reach and do not line up with rooms
+anywhere, so the room worksheet is the mapping that matters here. Ten groups, from Courtyard's two
+loads to Living Room's and Primary Suite's five each.
+
+The four Kitchen loads with no join yet are left out rather than listed. This chip gives an
+unavailable entity no distinct treatment, that being scoped to Irrigation on purpose, so listing
+them would render four ordinary-looking buttons that silently do nothing. They go in once
+[issue #18](https://github.com/pdehlke/homeassistant/issues/18)'s identification pass lands.
+
+One bug shipped and was fixed in the same round: `toggleSubEntity`'s optimistic label wrote a
+literal `100%` when switching a light on. That was harmless while every light in the chip was a
+template light with a brightness channel, and wrong the moment the 26 on/off-only panel-slot loads
+arrived. It now branches on the same `getLightCaps` the reconciled label uses.
+
+### Round two: Area Off per room (`20260902.5`)
+
+pde asked for an Area Off button on each room in the Lights chip, turning off whatever in that room
+is on. It sits on the accordion room row next to the "N ON" badge, so it works without expanding
+the room, with `stopPropagation` keeping the tap off the accordion.
+
+Decisions worth keeping:
+
+- **On the row, not inside the expanded panel.** The row already reports "3 ON"; the button acts on
+  what the row is already telling you. Putting it in the panel would have meant expanding a room to
+  turn it off.
+- **Hidden unless the room has something on**, following the badge beside it. A dark room gives the
+  button nothing to do, and ten permanently visible dead buttons is a worse row list than none.
+  Rejected the always-visible alternative on that basis, not on looks.
+- **Lights only.** Climate, Covers, Purifier and Music share this accordion, and "off" is not one
+  action for any of them: a cover closes, a climate zone has modes. Gated on `isLightControl`, the
+  same way the Music chip's All Off row is gated on `isMusicControl`.
+- **Only the lights that are on are sent.** A rendered card's own class beats the state cache when
+  both exist, because it carries an optimistic tap Home Assistant has not confirmed yet. Note this
+  is an optimisation, not the safety mechanism: the loads behind these entities are toggle buttons
+  with no discrete off, and it is the bridge reading live feedback before it presses that keeps a
+  stale card from switching a light the wrong way.
+- **Repaint before the service call.** Each press is serialized behind a per-connection lock and
+  waits for feedback, so a room of five takes seconds. Waiting on Home Assistant to answer would
+  make the button look like it had missed.
+
+`setRoomRowActive()` was added because the badge and the button are two views of one number and
+there were already three places writing the badge directly, soon to be four. A visible Area Off on
+a room the badge says is dark is worse than either being absent. A test asserts that no call site
+other than that helper looks up an accordion row badge.
+
+The compact accordion popup went from 300px to 360px. At 300px a lit room had to fit its name, the
+badge and the button into roughly 200px of row, and both "Dining Room" and the button's own label
+wrapped to two lines. Measured against the real ten-room list, where "Primary Suite" is the longest
+name. That width is shared by every accordion chip, so Climate, Covers, Purifier and Music row
+lists are 60px wider now too.
+
+### Deploy and verification
+
+Both rounds followed the usual pattern: SSH & Web Terminal add-on already running, live files
+backed up with a timestamp, uploaded under temp names, atomically renamed, `homie-dash`'s iframe
+`?v=` bumped through a whole-config Lovelace save (this dashboard is an iframe strategy, not a card,
+so `apply-card.py` does not apply to it), md5 confirmed to match the local file at each step. No
+token splicing was needed in either round for `homie-dashboard.html`; only `config.js` carries one,
+and round two did not touch it.
+
+125 tests pass, four new. Verified live against the real house through Playwright, driving the
+deployed page directly rather than through a Home Assistant login, since Homie authenticates itself:
+
+- Office, two loads on, Area Off tapped, both off 0.2s apart.
+- Dining Room and Living Room lit simultaneously. Dining Room's button turned off its three and
+  left Living Room's two on, which is the scoping proof.
+- `light.dining_room_powder` was already off and its `last_changed` never moved, so the filter
+  genuinely skips an off load rather than sending it a toggle press.
+- Toggling North Sink on from inside the expanded Office panel brought the badge and the button
+  back on the row, and tapping the button from there cleared the card without collapsing the panel.
+- House left at 26 off and the 4 Kitchen loads unavailable, the state it started in.
+
 ## Checkpoint: 2026-08-24, later still (AltNation added as a seventh Music chip station)
 
 pde asked for SiriusXM's AltNation channel added to the Music chip. Full design and verification
