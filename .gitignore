@@ -9,3 +9,6 @@
 # for how to re-fetch one in about four seconds when it is needed.
 docs/crestron/dumps/*.bin
 docs/crestron/dumps/*.strings.txt
+# The TSW-752 panel project, same reasoning: it is the previous owner's compiled
+# interface for this house. crestron-tsw-panel-control-path.md has the re-fetch command.
+docs/crestron/dumps/*.xml
