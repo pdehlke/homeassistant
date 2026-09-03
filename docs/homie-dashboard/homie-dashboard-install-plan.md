@@ -1,5 +1,44 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-09-03 (the Kitchen four join the Lights chip)
+
+The gap the previous checkpoint left open. [Issue #18](https://github.com/pdehlke/homeassistant/issues/18)'s
+identification pass ran live, MC2E link stopped and freed, `mac/poc_panelpress.py` pressing
+candidate joins one at a time with someone in the Kitchen confirming each response. Full record in
+[crestron-xpanel-control-path.md](../crestron/crestron-xpanel-control-path.md#kitchen-identification-resolved-2026-09-03).
+
+Three of the four (Cabinet, Kitchen Pathway, Range) turned out to be ordinary toggles, wired into
+`custom_components/crestron_cip/const.py` (CresnetMon repo) the same way as the other 26. Island
+was not: its MC2E channel is a dimmer with a separate on button and a separate single-press
+fade-to-off button rather than one toggle, so the `Load` dataclass gained `press_on`/`press_off`
+fields, generalized rather than special-cased, since every other MC2E channel the Kitchen slot
+reaches is a dimmer too and the Phase 2 dimmer pass will need the same shape again.
+`bridge.py`'s guard and press logic moved from assuming a load's canonical `join` is what gets
+pressed to resolving it through `press_join()`, checked against the DSC alarm range at every
+join a load could ever press, not just its feedback join. 23 offline tests pass (up from 19),
+including the new on/off-join split and a forbidden-press-through-`press_on` case the old guard
+would have missed.
+
+With all 30 loads live in Home Assistant, the Lights chip's Kitchen group went from one entry
+(Perimeter) to five, alphabetized: Cabinet, Island, Pathway, Perimeter, Range. The chip's
+"omitted rather than listed" comment from the previous checkpoint is gone along with the four-entry
+dead-entity test guard it explained; both were written for a state that no longer exists. Release
+`20260902.5` -> `20260903.1`.
+
+Deploy followed the same pattern as before: SSH & Web Terminal add-on already running, live
+`config.js` and `homie-dashboard.html` backed up with a timestamp, uploaded under temp names,
+atomically renamed, `homie-dash`'s iframe `?v=` bumped through a whole-config Lovelace save.
+`config.js` carries a live-spliced `$HOMIE_TOKEN`, so the new content couldn't simply overwrite it;
+a server-side Python step read the live token line back out of the current file and spliced it into
+the uploaded one before the rename, so the token itself never had to leave the HA host or appear in
+anything this session could see. Diffed the two with the token line redacted on both sides to
+confirm nothing else drifted.
+
+Verified live via Playwright against the deployed page directly (no HA login needed, same as
+every prior round): the Kitchen room panel shows all five entries in the right order with the
+right live state (Range on, the rest off, matching the house at the time), and the room row's
+"1 On" badge and Area Off button both worked off the real count with no changes needed there.
+
 ## Checkpoint: 2026-09-02 (Lights chip filled with the real Crestron loads, then given a per-room Area Off)
 
 Two rounds on the same day, both driven by the CIP lighting bridge going live. See

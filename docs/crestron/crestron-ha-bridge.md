@@ -92,13 +92,19 @@ Where a load appears on several zone pages the canonical join is the one pressed
 report, which is how Outdoor Kitchen stays one entity across five buttons. Feedback on any alias
 is mirrored onto the canonical join, so state has exactly one place to be read from.
 
-The four Kitchen loads carry no join yet and are declared with `join=None`. They report unavailable
-and refuse commands rather than guessing. See [Status](#status).
+The four Kitchen loads were identified 2026-09-03 (issue #18) and are wired the same as any other
+load, though not all as simple toggles. Three (Cabinet, Kitchen Pathway, Range) are ordinary
+toggles. Island's channel turned out to be a dimmer rather than a switch, with a separate on join
+and off join rather than one toggled both ways; the `Load` dataclass's `press_on`/`press_off`
+fields generalize that split for whatever the Phase 2 dimmer pass finds among the other MC2E
+channels, all of which are dimmers. See
+[crestron-xpanel-control-path.md](crestron-xpanel-control-path.md#kitchen-identification-resolved-2026-09-03)
+for the full identification record.
 
 ## Status
 
-**Live since 2026-09-02.** Both links registered, all thirty lights bound to it, driving real
-loads.
+**Live since 2026-09-02, all thirty loads since 2026-09-03.** Both links registered, all thirty
+lights bound to it, driving real loads.
 
 Proven live:
 
@@ -106,31 +112,39 @@ Proven live:
   read-only recon baseline: Garage Sconces high on both `d185` and `d244`, nothing else, which is
   the alias resolution working on real state.
 - Writes reach the house. Pool Bath (`d245`), North Sink (`d241`) and Patio North (`d164`/`d188`)
-  were each switched on and off from Home Assistant and followed.
+  were each switched on and off from Home Assistant and followed. So were all four Kitchen loads
+  after identification, including Island's `press_on`/`press_off` split (join 27 to turn on, 29 to
+  turn off) exercised through the real `light.turn_on`/`light.turn_off` services, not just the
+  identification tooling.
 - Idempotence holds against real hardware. A second `turn_on` on a load already on presses nothing;
-  a second press would have turned the light off.
+  a second press would have turned the light off. Confirmed for both a toggle load and, offline,
+  for Island's separate-join case.
 - `light.turn_on` on the Home Assistant entity drives the load end to end, through the template
   light, the service, the bridge and the whole Crestron chain.
 
 Established before deployment and unchanged by it:
 
 - Registration through end of state dump takes about 1.1s.
-- The slot carries no per-load analog level join, so these twenty-six loads are on/off only. Two
-  analog joins exist on the whole slot and both are audio gauges.
+- The AADS panel slot carries no per-load analog level join, so its twenty-six loads are on/off
+  only. Two analog joins exist on the whole slot and both are audio gauges. The MC2E's Kitchen
+  channels are different: every one of them is a dimmer, and Island's `a22` proves it. Brightness is
+  still out of scope pending the Phase 2 dimmer pass; `level_join` on the `Load` dataclass records
+  what identification finds so that pass does not have to re-derive it.
 - The AADS does not drop a client that stops answering heartbeats, at least not within 149s.
-- Nineteen offline tests pass, covering the codec against recorded frames, the load table's safety
-  invariants, and the toggle logic including idempotence, concurrency, alias resolution and refusal
-  on unknown state.
+- Twenty-three offline tests pass, covering the codec against recorded frames, the load table's
+  safety invariants, and the toggle logic including idempotence, concurrency, alias resolution,
+  refusal on unknown state, and the on/off-join split.
 
 Still open:
 
-- The four Kitchen loads, pending the identification pass described in
-  [ADR 0066](../adr/0066-crestron-bridge-needs-two-cip-connections.md).
 - An externally-originated change has not been watched live. Garage Sconces proves the bridge reads
   a load it never touched, but no wall-panel or keypad press has been observed arriving while the
   bridge was running. Note that this cannot be told apart from a Home Assistant write after the
   fact: the template light derives its state from the feedback sensor, so the originating context
   is lost and `context_user_id` is `None` either way.
+- Whether Island's on-join (27) recalls a fixed preset level or ramps proportionally to how long
+  it's held. Not resolved during identification; see
+  [crestron-xpanel-control-path.md](crestron-xpanel-control-path.md#kitchen-identification-resolved-2026-09-03).
 
 ## Two bugs worth remembering
 

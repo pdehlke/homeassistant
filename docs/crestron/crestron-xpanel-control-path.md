@@ -104,6 +104,61 @@ Kitchen group and the Great Room keypad's Living Pathway pair, which is why
 pressing join 24 lit a lamp that could not be seen from the living room and was
 briefly mistaken for a failure.
 
+## Kitchen identification, resolved 2026-09-03
+
+[Issue #18](https://github.com/pdehlke/homeassistant/issues/18) named each
+channel above. With the bridge's MC2E link stopped to free `IP-ID 0x03`,
+`mac/poc_panelpress.py` pressed each candidate join in turn against
+`192.168.4.59`, one at a time, with someone in the Kitchen confirming which
+light responded each time.
+
+| load | channel | join(s) | behavior |
+|---|---|---|---|
+| Cabinet | `0x71` ch4 | 21 | toggle |
+| Kitchen Pathway | `0x75` ch0 | 25 | toggle |
+| Range | `0x72` ch3 | 26 | toggle |
+| Island | `0x72` ch2 | on: 27, off: 29 | not a toggle |
+
+Cabinet, Pathway and Range are ordinary toggles despite the "on, instant" and
+"on" labels the original scan gave joins 21, 25 and 26: a second press of each
+turned its light back off, one for one, the same as every AADS load.
+
+Island is not a toggle, and its channel turned out to be a dimmer rather than
+a switch. Join 27 (documented above as "raise") brought Island on to a low,
+nonzero level on a single brief press, `a22` rising from 0. Join 29
+(documented as "off") ran the level smoothly down to 0 over about 1.9 seconds
+on a single press, and its own digital feedback dropped to 0 only once the
+level actually reached 0, meaning **29 is both the off button and the on/off
+status join** for this channel. There is no separate plain "on" join: turning
+Island on discretely means pressing 27, not toggling 29.
+
+Two things observed during identification but not fully characterized, left
+for the Phase 2 dimmer pass rather than resolved here, since brightness stays
+out of scope for issue #18:
+
+- Whether a brief tap of 27 always recalls a fixed preset level, or whether
+  the level reached is proportional to how long 27 is held (a real hold-to-
+  raise). The one live sample (a brief ~120ms tap landing at `a22` = 1703, well
+  short of the `a22` = 7471 a wall-panel switch-on produced earlier) is
+  consistent with either theory.
+- `d35`, documented above as "toggle all five," moved in lockstep with `d26`
+  during the Range tests (both went 1→0 when Range turned off, both None→1
+  when it turned back on) without ever being pressed. That fits an aggregate
+  "something in this group is on" status join better than a literal group
+  toggle, but only one load in the group was ever exercised while watching it,
+  so this is not confirmed against Island or Powder being on at the same time.
+
+`0x71` ch3 (raise 22 / lower 23) was left untouched. It is Powder by
+elimination once the other four channels were named, and Powder is already
+driven from the AADS at `d102`; pressing it here would create a second entity
+for one light.
+
+Recorded in code as `custom_components/crestron_cip/const.py`'s `_MC2E_LOADS`
+in the CresnetMon repo, `press_on`/`press_off` on the `Load` dataclass
+generalizing Island's on/off split for whatever the Phase 2 dimmer pass finds
+next among the other MC2E modules (`0x70`-`0x73`, `0x75`, `0x76`), all of which
+are dimmers.
+
 ## The slot mirrors the wall panels
 
 Established 2026-09-02. The slot does not merely echo feedback for joins we
