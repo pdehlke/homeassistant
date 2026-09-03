@@ -21,6 +21,22 @@ covering the Kitchen's five loads. Read
 the two disagree, that one is correct. The discovery method below is unaffected and remains the way
 to map the rest of the house.
 
+**Update, 2026-09-03.** *Use* is solved, and not by any route this document or the last update
+considered. The rest of the house is reached by impersonating a TSW-752 touch panel, implemented as
+a Home Assistant add-on on 2026-09-02. The AADS does not need displacing and "The use problem"
+below is no longer the obstacle it describes; read that section as history.
+
+Two corrections follow from it. MC2E IP-ID `0x03` is **no longer unoccupied** — the add-on holds it
+for Kitchen control, and CIP permits one connection per IP-ID, so registering there takes the
+Kitchen offline until you disconnect. And the claim below that these slots "can be used freely
+without displacing anything" was true when written and is not true now; check `WHO` on the console
+before taking a slot.
+
+The alarm caution in [crestron-apex-control-plane.md](crestron-apex-control-plane.md) becomes more
+important rather than less: the surface now being impersonated is the TSW-752, which is exactly
+where the Apex interface lives. Findings about the MC2E containing no alarm logic are specific to
+that processor and do not license join probing on the panel side.
+
 ## Verified topology
 
 Established by read-only `VER`, `IPTABLE`, `WHO`, and `TYPE` on each processor's console.

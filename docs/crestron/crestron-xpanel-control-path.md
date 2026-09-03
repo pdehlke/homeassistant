@@ -6,8 +6,9 @@ settles how a Home Assistant bridge should talk to this house.
 
 ## Summary
 
-The MC2E's running program contains an XPanel at `Slot-05.IP-ID-03` that nothing
-occupies. Registering on it over CIP (TCP 41794) gives:
+The MC2E's running program contains an XPanel at `Slot-05.IP-ID-03`. It was
+unoccupied when this was written; it is not now (see the end). Registering on it
+over CIP (TCP 41794) gives:
 
 - a full state dump on connect: 42 digital joins, 2 analog, 4 serial;
 - live per-light state changes, including brightness as a 16-bit analog join;
@@ -250,9 +251,14 @@ E-Good Morning   F-Good Night   G-Security   H-Entertain
 ```
 
 The worst outcome of pressing an unknown join on this processor is that lights
-change. The caution in `crestron-apex-control-plane.md` about not putting alarm
-functions on joins still applies to the TSW-752 panels and the AADS, which are a
-separate system; it does not apply to the MC2E.
+change.
+
+**This is scoped to the MC2E and must not be generalised.** The caution in
+`crestron-apex-control-plane.md` about alarm functions on joins applies fully to
+the TSW-752 panels and the AADS. That matters more now than when it was written:
+the current integration impersonates a TSW-752, so it operates on exactly the
+surface that reaches the Apex. Nothing established about the MC2E licenses blind
+join probing there.
 
 ## Retrieving the program
 
@@ -286,3 +292,28 @@ bus-confirmed lighting changes. That was a false negative, caused by three
 decoding bugs in the CIP client that were fixed afterwards. The slot reports
 state promptly and in detail. Anything else cleared with that decoder deserves
 a re-test.
+
+## Superseded in part
+
+Two things changed on 2026-09-02, in a session not recorded here.
+
+**The open question above is answered.** Reaching the rest of the house is done
+by impersonating a TSW-752 touch panel, an approach neither of this document's
+two candidate routes anticipated. Disregard both: there is no need for an
+additional free IP-ID, and the AADS does not need evicting from the EISC.
+
+**`IP-ID-03` is no longer free.** A Home Assistant add-on at `192.168.4.141`
+holds that slot and uses it for live Kitchen control. CIP permits one connection
+per IP-ID, so anything else registering there takes the Kitchen offline until it
+disconnects. The proof-of-concept tools in `CresnetMon/mac` all default to that
+slot and will do exactly that. Check `WHO` on the console before running them.
+
+The add-on is v0.1. Kitchen control still runs through the XPanel path described
+above; folding it into the TSW-752 impersonation is a planned enhancement, at
+which point this document becomes history rather than reference.
+
+One thing worth confirming and currently only inferred: which host the 752
+impersonation registers against. The MC2E's `.dsc` lists only `IP-ID-03` and
+`IP-ID-05`, which suggests the AADS at `192.168.4.61` rather than the MC2E. If
+so, the Kitchen path and the whole-house path run against two different systems,
+and that distinction should be made explicit wherever it matters.
