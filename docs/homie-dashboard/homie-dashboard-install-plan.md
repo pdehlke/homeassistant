@@ -1,5 +1,44 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-09-03 (the Lights status tile stops lying, issue #17)
+
+[Issue #17](https://github.com/pdehlke/homeassistant/issues/17): `sensor.homie_lights_status`, the
+Template helper behind the status grid's Lights tile (`homeStats[1]` in `dist/config.js`), had its
+state template hardcode the twenty placeholder `light.*` entities that existed the day it was
+written. All twenty were deleted on 2026-09-02 along with the rest of the placeholder fleet.
+Jinja's `expand()` silently drops entity IDs that no longer resolve rather than raising, so the
+count was always zero and the tile had been stuck reading `All Off` regardless of the house's
+actual state, with no error anywhere to notice.
+
+Fixed by replacing the entity list with a plain count over the `light` domain:
+
+```jinja
+{% set lights = states.light | selectattr('state', 'eq', 'on') | list | count %}
+{{ 'All Off' if lights == 0 else lights ~ ' On' }}
+```
+
+This tracks whatever `light.*` entities exist rather than a snapshot of what existed on the day the
+template was written, which was the actual defect. `unavailable`/`unknown` lights are excluded from
+the "on" count by construction (`selectattr('state', 'eq', 'on')` only matches `on`), which is the
+same behavior a glance at the tile wants: a light Home Assistant can't currently confirm should not
+read as on. The output contract Homie depends on is unchanged: exactly `All Off` or `<N> On`, no
+parsing or mapping on the dashboard side.
+
+Edited via the helper's options flow (`POST /api/config/config_entries/options/flow`, entry
+`01KZEA7MEMXVMVGM8TKDEFFFWZ`), since it is a storage-backed helper with no YAML and no
+`/api/config/...` REST surface. No fork change and no release bump: `dist/config.js` already
+pointed `homeStats[1]` at this sensor and needed nothing further.
+
+Verified in three layers, each restoring the house to all-off before moving on: the new template
+against `/api/template` before touching the live helper (`All Off` -> `1 On` -> `2 On` -> `All Off`
+across `light.office_north_sink` and `light.kitchen_island`); the live sensor after the options-flow
+submit, exercised the same way through the real `light.turn_on`/`light.turn_off` services rather
+than the preview API; and the dashboard tile itself via Playwright against the deployed page
+directly (no HA login needed), screenshotted with North Sink on (`LIGHTS` tile and chip badge both
+read `1 On`) and again after turning it off (`All Off`). Console carried only the same
+already-known-benign noise as every prior round (two `/api/states/` 404s, the
+`homie_dynamic_playlists` 404, the pre-gesture `navigator.vibrate` warning).
+
 ## Checkpoint: 2026-09-03 (the Kitchen four join the Lights chip)
 
 The gap the previous checkpoint left open. [Issue #18](https://github.com/pdehlke/homeassistant/issues/18)'s
