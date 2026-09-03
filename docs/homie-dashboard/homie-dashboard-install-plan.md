@@ -1,5 +1,38 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-09-03, later same day (Scenes chip refilled with "Dinner", a script-backed scene)
+
+pde asked for a real scene: turn off the TV if it's on, turn on the Kitchen and Dining Room lights
+plus Living Room Pathway, then start "Jazz: Hiromi" through the Music chip's own sequence. Full
+design, the traced TV/Music sequences, the light-entity table, and the generalization writeup are
+in [homie-scenes-chip.md](homie-scenes-chip.md)'s "Fifth pass" section; this entry covers only the
+summary and repo state.
+
+A native `scene.*` entity can't express a conditional or an arbitrary service call, so Dinner is
+backed by a new Home Assistant script, `script.scene_dinner`, not a scene snapshot. Wiring it into
+the chip needed two small, additive changes to the stock mechanism: `sceneAffectedEntities()` now
+treats a non-`scene.*` entity as self-affecting instead of trying to expand it, and
+`togglePopupScene()` gained an optional `activate` parameter (defaulting to `entities`) so a
+tap-while-off can run something other than the entities the on/off glow is about. Every scene
+bubble that predates this needed no config change. `HOMIE_ASSET_VERSION` bumped `20260903.2` →
+`20260903.3`; `test/screen-a.test.cjs` updated (129/129, 5 new).
+
+Deploy followed the now-standard pattern: SSH & Web Terminal add-on started, live `config.js` and
+`homie-dashboard.html` backed up with a timestamp, uploaded under temp names,
+`config.js`'s `$HOMIE_TOKEN` re-spliced server-side (first attempt read the wrong line of the
+uploaded file and clobbered the token declaration entirely — caught before rename by diffing with
+the token redacted, fixed by matching the actual `const HA_TOKEN` line instead of the file's first
+line, then re-verified clean), atomic rename, `homie-dash`'s iframe `?v=` bumped to match over
+WebSocket, add-on stopped again after.
+
+Backend verified live end-to-end before any dashboard code changed: the script run cold and with
+Harmony already on a different activity, both branches of its TV-off conditional confirmed via
+trace rather than inferred from end state, and `homeassistant.turn_on`/`turn_off` confirmed to
+dispatch correctly to a script entity and to plain lights respectively — the exact mechanism the
+generalized dashboard code relies on. House left all-off after every test. No `playwright-cli`
+install existed locally for this change; pde chose to check the live popup and tap-through himself
+rather than have one installed, so that specific step is his, not yet recorded here.
+
 ## Checkpoint: 2026-09-03 (the Scenes chip goes quiet, issue #16)
 
 [Issue #16](https://github.com/pdehlke/homeassistant/issues/16): the Scenes chip's three bubbles

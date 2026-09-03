@@ -261,3 +261,170 @@ third pass above):
 
 All three used `color: "var(--accent)"` as the bubble background. Every one of them is verbatim
 from the emptied config, byte for byte, so the next phase can paste rather than re-author.
+
+## Fifth pass: refilled with "Dinner", a script-backed scene (2026-09-03)
+
+pde asked for a real scene: turn off the TV if it's on, turn on all the Kitchen and Dining Room
+lights plus Living Room Pathway, then start "Jazz: Hiromi" through the Music chip's own sequence.
+
+**Why this can't be a `scene.*` entity.** A native HA scene is a pure entity-state snapshot — it
+has no conditional (there's no way to express "only if the TV is on") and no way to call an
+arbitrary service like `music_assistant.play_media` with a specific station. Every prior scene on
+this chip (Bedroom/Bathroom/Primary Suite Evening) fit the snapshot model exactly; Dinner doesn't.
+It's backed instead by a Home Assistant **script**, `script.scene_dinner`, created via
+`POST /api/config/script/config/scene_dinner` (the same "config editor" REST family already used
+for automations and scenes on this instance):
+
+```yaml
+alias: Dinner
+sequence:
+  - if:
+      - condition: state
+        entity_id: remote.harmony_hub
+        state: "on"
+    then:
+      - action: remote.turn_off
+        target: { entity_id: remote.harmony_hub }
+  - action: light.turn_on
+    target:
+      entity_id:
+        - light.kitchen_cabinet
+        - light.kitchen_island
+        - light.kitchen_pathway
+        - light.kitchen_perimeter
+        - light.kitchen_range
+        - light.dining_room_north
+        - light.dining_room_powder
+        - light.dining_room_south
+        - light.dining_room_table
+        - light.living_room_pathway
+  - action: remote.turn_on
+    target: { entity_id: remote.harmony_hub }
+    data: { activity: Airplay }
+  - if:
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: media_player.crestron
+            state: playing
+    then:
+      - action: media_player.volume_set
+        target: { entity_id: media_player.crestron }
+        data: { volume_level: 0.4 }
+  - action: media_player.shuffle_set
+    target: { entity_id: media_player.crestron }
+    data: { shuffle: false }
+  - action: music_assistant.play_media
+    target: { entity_id: media_player.crestron }
+    data: { media_id: library://radio/1, media_type: radio }
+mode: single
+```
+
+The TV-off step and the Jazz: Hiromi sequence are copied, not reinvented, from the dashboard's own
+live code, traced before writing a line of the script: the TV chip's "All Off" button
+(`tvControlAction('PowerOff')`) is exactly one call, `remote.turn_off` on `remote.harmony_hub`,
+with no built-in "is it on" guard of its own — the script supplies that guard itself, since a
+conditional is exactly what a scene couldn't do. The Music chip's "Jazz: Hiromi" preset
+(`togglePopupMusic`) is `remote.turn_on` (Harmony, activity `Airplay`) → conditionally
+`media_player.volume_set` → `media_player.shuffle_set` → `music_assistant.play_media` with
+`media_id: "library://radio/1"`. No artificial delay was added between the Harmony power-off and
+the later Harmony Airplay-activate; the dashboard's own code already accepts an equivalent race
+elsewhere (it doesn't wait for Harmony's activity switch before calling `play_media` either — see
+[music-chip.md](../../../homie-dashboard/.claude/skills/verify-homie-dashboard/features/music-chip.md)
+in the fork), so this follows the same convention rather than inventing new plumbing. If real usage
+ever shows the physical hub needs a beat between the two Harmony calls, add a short `delay:` step
+then.
+
+**The light list**, cross-checked against the load-room worksheet, `const.py`, the live
+`config.js`, and a live `/api/states` read (all confirmed `off` before every test run):
+
+| Room | Entities |
+|---|---|
+| Kitchen | `light.kitchen_cabinet`, `light.kitchen_island`, `light.kitchen_pathway`, `light.kitchen_perimeter`, `light.kitchen_range` |
+| Dining Room | `light.dining_room_north`, `light.dining_room_powder`, `light.dining_room_south`, `light.dining_room_table` |
+| Living Room | `light.living_room_pathway` |
+
+Worth recording so a future pass doesn't re-derive it wrong: "Powder" physically wires through the
+Kitchen zone page's panel but is a Dining Room light, and "Perimeter" wires through the Dining zone
+page but is a Kitchen light. The Crestron load-room worksheet's Room column is authoritative, not
+the zone page a join happens to be wired through — the table above already reflects that.
+
+**The generalization.** `sceneAffectedEntities()` and `togglePopupScene()` were built entirely
+around `scene.*` snapshot semantics. Two small, additive changes made them work for a script too,
+without touching `sceneIsOn()` or any of its four callers:
+
+- `sceneAffectedEntities()` now treats any entity whose domain isn't `scene` as self-affecting
+  (returns it directly) instead of trying to expand it via `attributes.entity_id`, which a
+  non-scene entity doesn't have. This alone makes a plain `light.*` list work as a bubble's
+  on/off-defining entities.
+- `togglePopupScene()` gained an optional third parameter, `activate`, defaulting to `entities`.
+  The on-direction now calls `homeassistant.turn_on` — HA's generic dispatcher, confirmed live on
+  this instance to forward correctly to `script.turn_on` for a script entity, the same way it
+  already forwards to `scene.turn_on` for a scene entity — targeting `activate` when given,
+  `entities` otherwise. Every scene bubble that predates this pass doesn't set `activate`, so it
+  turns on exactly what it always did.
+
+Dinner's bubble: `entities` is the ten lights above (what the glow follows, what a tap-while-on
+turns off — `homeassistant.turn_off`, unchanged); `activate` is `"script.scene_dinner"` (what a
+tap-while-off actually runs). **Tapping Dinner off only reverses the lighting.** It does not stop
+the music or touch `remote.harmony_hub` — a deliberate choice, since the script's on-effect and the
+bubble's off-effect are different actions by design here, not a mirror pair the way a snapshot
+scene's on/off is.
+
+Icon: `ICONS.scenes.candle` (already existed, unused since the Bathroom bubble that used it was
+deleted) reused verbatim as a self-contained inline SVG literal in `config.js`, matching every
+other `subGroups.scenes` icon in that file rather than referencing the HTML's global `ICONS`
+object across files.
+
+## Options considered and rejected (fifth pass)
+
+For how the bubble should decide what counts as "on":
+
+- **Track the script's own transient running-state** (`sceneIsOn` reading `script.scene_dinner`
+  itself). Rejected: a script that finishes in a few seconds would glow almost never, and a
+  tap-while-on would mean "cancel the script," not "undo what it did" — not what pde asked for.
+- **Track the lights the script turns on** (chosen). Consistent with every prior scene's
+  any-on-counts convention, and a tap-while-on reverses the actually-visible effect (the lighting)
+  rather than a script's internal execution state nobody but this dashboard would otherwise see.
+
+For how the on-direction should target something other than `entities` itself:
+
+- **A second, parallel scene-config shape just for script-backed bubbles.** Rejected: two shapes to
+  keep in sync in every function that reads a scene bubble, the same objection this document
+  already raised (and resolved the same way) for the grouped-scenes question in the third pass.
+- **An optional `activate` field, defaulting to `entities`** (chosen). One shape, additive, zero
+  behavior change for every bubble that doesn't need it.
+
+## Verification (fifth pass)
+
+- `script.scene_dinner` created and `check_config` confirmed valid. Run cold (Harmony and all ten
+  lights off): `remote.harmony_hub` ended on Airplay, all ten lights on, `media_player.crestron`
+  playing `library://radio/1` — confirmed via `/api/states`, and via
+  `trace/get` (`scripts/haws.py` in the `pdehlke/homeassistant` skill) that the TV-off `if`
+  evaluated `false` and correctly skipped `remote.turn_off`, not just that the end state happened
+  to look right either way. Re-run with Harmony already on a different activity ("Watch a Movie"):
+  the trace confirmed the same `if` evaluated `true` and `remote.turn_off` fired this time, before
+  the script moved on to lights and Airplay. Restored to the starting all-off state after each run.
+- Confirmed live, before touching any dashboard JS, that `homeassistant.turn_on` targeting
+  `script.scene_dinner` actually runs the script (not just a documented HA behavior taken on
+  faith), and that `homeassistant.turn_off` targeting the ten lights turns them off while leaving
+  Harmony/the music untouched — exactly the mechanism the generalized `togglePopupScene()` needed.
+- `node --test test/screen-a.test.cjs`: 129/129 (5 new: a non-scene entity treated as
+  self-affecting, `sceneIsOn` over a plain light list, `togglePopupScene` running `activate` on the
+  on-tap and only the entities on the off-tap, the `activate`-omitted fallback, and the updated
+  config-shape assertion for the new Dinner bubble). The existing scene-domain tests needed only
+  their on-direction assertion updated from `scene`/`turn_on` to `homeassistant`/`turn_on` — no
+  scene-domain behavior actually changed, since `homeassistant.turn_on` forwards to `scene.turn_on`
+  for a `scene.*` target.
+- Deployed `dist/config.js` and `dist/homie-dashboard.html` to
+  `/config/www/community/homie-dashboard/`, prior copies backed up with a timestamp first.
+  `homie-dashboard.html` confirmed byte-identical (MD5) to the fork's local `dist/` after upload.
+  `config.js` verified by diffing the newly spliced file against the pre-deploy backup with the
+  token line redacted — only the intended Scenes-block change showed. `homie-dash`'s Lovelace
+  iframe `?v=` bumped `20260903.2` → `20260903.3` via a whole-config WebSocket save (this dashboard
+  is an iframe strategy, not a card, so `apply-card.py` doesn't apply to it).
+- House left with all ten lights, Harmony, and the music off/idle after every live test, matching
+  the state found. Visual, on-device confirmation of the popup and the live tap-through is pde's
+  own next step, per this project's usual review convention, rather than a Playwright pass — no
+  local `playwright-cli` install existed at the time and pde chose to check it live himself instead
+  of having one installed for this change.
