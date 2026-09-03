@@ -219,3 +219,45 @@ For how to represent a bubble backed by more than one scene:
   covered the single-scene bubble end-to-end (chip glow/count, popup ring, live refresh without
   reopening); this round confirmed the grouped case behaves identically, just over a larger,
   de-duplicated entity set.
+
+## Fourth pass: emptied, mechanism kept (2026-09-03, issue #16)
+
+Both scenes this chip pointed at, `scene.bedroom_evening` and `scene.bathroom_evening`, were
+deleted 2026-09-02 along with the rest of the placeholder Crestron-PoC fleet, so every bubble
+above went from a working toggle to a silent no-op: the popup rendered normally, the tap fired
+`scene.turn_on` at a deleted entity, and Home Assistant answered `200` with an empty
+changed-entity list. No console error either side, in the browser or in Homie's own code.
+
+[Issue #16](https://github.com/pdehlke/homeassistant/issues/16) emptied `dist/config.js`'s Scenes
+chip to `subGroups: []`, keeping the chip, `isSceneChip`, and `showCount`, and left `openPopup`'s
+scene branch to render an explicit "No scenes configured" message
+(`.popup-scene-empty`, styled like `.alert-popup-empty`) rather than a silently blank popup.
+Everything documented above this section — `sceneIsOn`, `sceneAffectedEntities`,
+`togglePopupScene`, `refreshOpenScenePopup`, the grouping design, all of it — is unchanged and is
+exactly what the next phase (a real scene catalogue on top of the Crestron-backed lights) refills.
+Full record of the emptying itself: the
+[2026-09-03 checkpoint in homie-dashboard-install-plan.md](homie-dashboard-install-plan.md#checkpoint-2026-09-03-the-scenes-chip-goes-quiet-issue-16).
+
+**The three bubble icons, preserved here since config no longer carries them:**
+
+Bedroom (crescent moon):
+
+```html
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="1.5" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+```
+
+Bathroom (bath):
+
+```html
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="12" width="6" height="9" rx="1"/><path d="M12 12V9"/><path d="M12 9 C13.5 7 13.5 5 12 3.5 C10.5 5 10.5 7 12 9Z" fill="rgba(255,200,80,0.85)" stroke="rgba(255,160,40,0.9)" stroke-width="1"/><line x1="9" y1="15" x2="9" y2="17" stroke="rgba(255,255,255,0.35)" stroke-width="1"/></svg>
+```
+
+Primary Suite (dresser, deliberately a third icon rather than a repeat of either room's, per the
+third pass above):
+
+```html
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="1.5"/><path d="M9 9 Q8 13 10 15 L8 21"/><path d="M9 9 L15 9 Q17 9 17 12 L17 15"/><path d="M10 15 L17 15 L19 21"/><path d="M6 21 L20 21"/></svg>
+```
+
+All three used `color: "var(--accent)"` as the bubble background. Every one of them is verbatim
+from the emptied config, byte for byte, so the next phase can paste rather than re-author.

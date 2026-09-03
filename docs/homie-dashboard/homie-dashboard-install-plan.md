@@ -1,5 +1,51 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-09-03 (the Scenes chip goes quiet, issue #16)
+
+[Issue #16](https://github.com/pdehlke/homeassistant/issues/16): the Scenes chip's three bubbles
+(Bedroom, Bathroom, Primary Suite) pointed at `scene.bedroom_evening` and `scene.bathroom_evening`,
+both deleted 2026-09-02 with the rest of the placeholder Crestron-PoC fleet. The popup rendered
+completely normally and tapping a bubble returned HTTP 200 with an empty changed-entity list, so
+every tap looked like it worked and did nothing, with no error anywhere to notice. Same failure
+shape as issue #17's Lights tile, worse: that one at least always read a wrong but honest number,
+this one animated success.
+
+Fixed the same way the Lights chip was handled on 2026-09-02: emptied `subGroups: []` on the config
+entry, kept the chip in the bottom row, kept `isSceneChip`/`showCount`, left a comment recording why
+and what refills it. `togglePopupScene`, `sceneIsOn`, `sceneAffectedEntities`, and
+`refreshOpenScenePopup`, the real toggle mechanism documented in
+[homie-scenes-chip.md](homie-scenes-chip.md), are untouched, and so are their behavior tests, since
+that mechanism is exactly what the next phase refills once a real scene catalogue exists on top of
+the Crestron-backed lights. The three hand-authored bubble icons (crescent moon, bath, dresser)
+are preserved verbatim in that same document rather than deleted, for the same reason.
+
+One thing the Lights chip's emptying didn't have to deal with: `isSceneChip` takes its own
+early-return path in `openPopup` (a bespoke bubble grid, not the generic accordion), so an empty
+`subGroups` needed its own check rather than inheriting the Lights chip's proof for free. Confirmed
+`refreshControls`'s count/glow branch, the Overview C sidebar icon override, and
+`refreshOpenScenePopup` all already tolerate empty via `(c.subGroups || []).flatMap(...)`, but
+`openPopup` would have rendered a silently blank popup under the "Scenes" header rather than saying
+anything. Added an explicit empty-state branch there instead, `.popup-scene-empty`, matching the
+same centered-muted-uppercase convention `.alert-popup-empty` and `.history-empty` already use for
+their own empty cases elsewhere in this file, rather than inventing a fourth visual style for "there
+is nothing here."
+
+Design-mapping test updated to assert `subGroups` is empty rather than deleting the check, so
+placeholders reappearing here fails the suite; the five scene-toggle behavior tests, which drive
+synthetic state rather than the real config, needed no change and all still pass. 125/125
+(`node --test test/screen-a.test.cjs`, no count change: emptying and adding an assertion is net
+even). Release `20260903.1` -> `20260903.2`. Deploy followed the now-standard pattern: SSH & Web
+Terminal add-on already running, live `config.js` and `homie-dashboard.html` backed up with a
+timestamp, uploaded under temp names, `config.js`'s live-spliced `$HOMIE_TOKEN` re-spliced
+server-side and diffed against the backup with the token line redacted (only the intended 86-line
+Scenes-block change showed), atomic rename, `homie-dash`'s iframe `?v=` bumped to match over
+WebSocket.
+
+Live-verified via Playwright against the deployed page directly (no HA login needed): the chip
+still renders in the bottom row with its chevron, unlit, no count badge; tapping it opens a popup
+titled "SCENES" showing "NO SCENES CONFIGURED" centered under the header, no dead bubbles, no
+console error beyond the same already-known-benign noise every prior round has recorded.
+
 ## Checkpoint: 2026-09-03 (the Lights status tile stops lying, issue #17)
 
 [Issue #17](https://github.com/pdehlke/homeassistant/issues/17): `sensor.homie_lights_status`, the
