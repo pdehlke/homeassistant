@@ -1,5 +1,39 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-09-03, later still (a second scene, "Visitors", every light in the house)
+
+pde asked for a second scene, same actions as Dinner, except it turns on every light in the house
+including the courtyard and outside fixtures. Full design and verification are in
+[homie-scenes-chip.md](homie-scenes-chip.md)'s "Sixth pass" section; this entry covers only the
+summary and repo state.
+
+`script.scene_visitors` is Dinner's exact sequence with the `light.turn_on` step's target swapped
+for all 30 of the house's `light.*` entities (read live from `/api/states`, not typed from the room
+worksheet, given the transcription risk at that count) instead of ten. No dashboard code changed:
+the fifth pass's generalization was already entity-count- and bubble-count-agnostic, so Visitors is
+a second `{ entities, activate, icon, label, color }` object appended to the same "Scenes"
+`subGroups` entry Dinner lives in. `HOMIE_ASSET_VERSION` bumped `20260903.3` → `20260903.4`;
+`test/screen-a.test.cjs` stayed at 129/129 (no new function-level tests needed, the config-shape
+test extended in place to cover both bubbles).
+
+Same deploy pattern as the fifth pass, with one new wrinkle: `haws.py` needs `aiohttp`, which
+wasn't installed on this machine. pde approved a one-time install; it went into an isolated venv in
+the session's scratch directory rather than the system Python, since Homebrew's interpreter refuses
+an unscoped `pip install` under PEP 668. Deploy itself was otherwise routine: SSH add-on started,
+live files backed up with a timestamp, uploaded under temp names, `config.js`'s token re-spliced
+server-side and verified with a redacted diff against the backup (only the intended Visitors block
+differed), atomic rename, MD5-confirmed byte-identical `homie-dashboard.html`, `homie-dash`'s iframe
+`?v=` bumped to match over WebSocket, add-on stopped again after.
+
+The script's TV-off conditional wasn't re-traced with `haws.py`'s formal `trace/list`/`trace/get`
+this time — the logic is identical to Dinner's, already trace-confirmed both ways in the fifth
+pass — but the live run's own service-call response showed `remote.harmony_hub` transition through
+`off/PowerOff` mid-sequence before landing back on `Airplay`, which is the same category of
+evidence (which branch fired, not just the end state). All 30 lights confirmed on, then restored to
+off; Harmony left on Airplay, matching what was found before this pass's testing (not off from
+scratch, unlike the fifth pass). No `playwright-cli` install exists locally for this change either;
+pde is checking the live popup and both bubbles' tap-through himself.
+
 ## Checkpoint: 2026-09-03, later same day (Scenes chip refilled with "Dinner", a script-backed scene)
 
 pde asked for a real scene: turn off the TV if it's on, turn on the Kitchen and Dining Room lights

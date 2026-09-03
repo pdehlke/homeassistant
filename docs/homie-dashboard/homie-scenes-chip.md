@@ -428,3 +428,90 @@ For how the on-direction should target something other than `entities` itself:
   own next step, per this project's usual review convention, rather than a Playwright pass — no
   local `playwright-cli` install existed at the time and pde chose to check it live himself instead
   of having one installed for this change.
+
+## Sixth pass: "Visitors", same mechanism over every light in the house (2026-09-03)
+
+pde asked for a second scene, same actions as Dinner, except it turns on every light in the house
+instead of just Kitchen/Dining/Pathway — explicitly including the courtyard and outside fixtures.
+
+**Same script shape, bigger target list.** `script.scene_visitors` is `script.scene_dinner`'s exact
+sequence — the same TV-off-if-on conditional, the same Jazz: Hiromi sequence through Harmony — with
+the `light.turn_on` step's target list swapped for all 30 of the house's `light.*` entities instead
+of ten. The list was pulled directly from a live `GET /api/states` read, not typed from the room
+worksheet by hand the way Dinner's ten were — with 30 entries across every room, transcription risk
+outweighed the worksheet's value, and reading it live is also the only way to be sure the count
+actually matches "every light," since the worksheet documents intent while `/api/states` documents
+what Home Assistant actually has. That count came back exactly 30, matching the project checkpoint
+that Home Assistant now drives all thirty of the house's lighting loads:
+
+```
+light.courtyard_patio_north      light.living_room_ambient
+light.courtyard_patio_south      light.living_room_east_seating
+light.dining_room_north          light.living_room_pathway
+light.dining_room_powder         light.living_room_perimeter
+light.dining_room_south          light.living_room_west_seating
+light.dining_room_table          light.office_north_sink
+light.entry_center               light.office_pool_bath
+light.entry_door                 light.outdoor_kitchen
+light.entry_perimeter            light.outside_garage_sconces
+light.guest_suite_east_hall      light.outside_home_perimeter
+light.kitchen_cabinet            light.primary_suite_bath_diagonal
+light.kitchen_island             light.primary_suite_bath_perimeter
+light.kitchen_pathway            light.primary_suite_bed_diagonal
+light.kitchen_perimeter          light.primary_suite_bed_perimeter
+light.kitchen_range              light.primary_suite_hallway
+```
+
+**No dashboard code changed.** The fifth pass's generalization — `sceneAffectedEntities()`
+treating any non-`scene.*` entity as self-affecting, `togglePopupScene()`'s optional `activate`
+parameter — was already entity-count-agnostic, and every `isSceneChip` render/refresh site
+(`openPopup`, `refreshOpenScenePopup`, the chip glow in `refreshControls`, the Overview C sidebar
+glow) already iterates `subGroups[].scenes[]` with `.flatMap`/`.forEach` rather than assuming
+exactly one bubble. Adding Visitors as a second bubble in the same "Scenes" `subGroups` entry was a
+config-only change: a new `{ entities, activate, icon, label, color }` object, same shape as
+Dinner's, appended to the same `scenes` array.
+
+Icon: none of the chip's existing unused SVGs (`relax`, `romantic`, `movie`, `fireplace`,
+`nightlight`, or the three older hand-authored ones — crescent moon, bath, dresser — mentioned in
+the `config.js` comment) read as "guests," so Visitors gets a new hand-authored two-person glyph in
+the same stroke style (18×18, `rgba(255,255,255,0.9)` stroke, 1.5 weight, round caps) as the rest of
+`ICONS.scenes`, inlined directly in `config.js` rather than added to that shared object — matching
+how Dinner's icon is a self-contained literal in `config.js`, not a cross-file reference.
+
+## Verification (sixth pass)
+
+- `script.scene_visitors` created via `POST /api/config/script/config/scene_visitors` and
+  `check_config` confirmed valid.
+- Run live with Harmony already on a different activity (found already on Airplay from the fifth
+  pass's own testing — a real "already on" case, not a contrived one): the service call's own
+  response showed `remote.harmony_hub` transition `on/Airplay` → `off/PowerOff` → back to
+  `on/Airplay`, confirming the TV-off `if` branch actually fired mid-sequence rather than the
+  before/after states merely converging. All 30 lights confirmed `on` via `/api/states` afterward;
+  `media_player.crestron` confirmed playing `library://radio/1` ("Hiromi + more"). `haws.py`'s
+  formal `trace/list`/`trace/get` confirmation wasn't run a second time for this script — the
+  underlying conditional logic is identical to Dinner's, already trace-confirmed in both directions
+  in the fifth pass, and the intermediate state transition visible in this run's own response is
+  the same category of evidence trace would have added (which branch fired, not just the end
+  state). Restored: music stopped, all 30 lights turned back off; Harmony left on Airplay, matching
+  the state found before this pass's testing began (it was not off beforehand, unlike the fifth
+  pass's from-scratch runs).
+- `node --test test/screen-a.test.cjs`: 129/129 unchanged in count — no new function-level tests
+  needed, since Visitors exercises the same generalized mechanism the fifth pass's tests already
+  cover (a non-scene entity list, an `activate` target). The config-shape mapping test was extended
+  in place to assert both bubbles: Dinner's existing ten-entity list, and Visitors' 30-entity list,
+  including that all 30 start with `light.`, that there are no duplicates, and that all four
+  courtyard/outside entities are present.
+- Deployed `dist/config.js` and `dist/homie-dashboard.html` to
+  `/config/www/community/homie-dashboard/`, prior copies backed up with a timestamp first.
+  `homie-dashboard.html` confirmed byte-identical (MD5) to the fork's local `dist/` after upload.
+  `config.js` verified by diffing the newly spliced file against the pre-deploy backup with the
+  token line redacted — only the intended Visitors-block addition showed. `homie-dash`'s Lovelace
+  iframe `?v=` bumped `20260903.3` → `20260903.4` via a whole-config WebSocket save.
+- This pass needed `haws.py` for the SSH add-on start/stop and the Lovelace save, and `haws.py`
+  needs `aiohttp`, which this machine didn't have installed. pde approved a one-time `pip install`;
+  it went into an isolated venv in the session scratch directory rather than the system
+  interpreter, since Homebrew's Python refuses an unscoped `pip install` (PEP 668) and a scratch
+  venv avoids the `--break-system-packages` trade-off entirely.
+- House left with all 30 lights off and the music stopped after the live test; Harmony left on
+  Airplay, matching what was found. Visual, on-device confirmation of the popup and the live
+  tap-through is pde's own next step, same convention as the fifth pass.
