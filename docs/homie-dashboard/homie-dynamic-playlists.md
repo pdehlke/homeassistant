@@ -166,6 +166,25 @@ scheduling mechanism, whatever that turns out to be — it is specifically
 the "install a crontab line and assume cron runs it" idea that is dead, not
 the script or the container setup around it.
 
+## Checkpoint: 2026-09-04 (the scheduler exists after all; the sensor just doesn't survive a restart)
+
+pde reported both Jellyfin playlists missing from the Music chip. `sensor.homie_dynamic_playlists`
+had gone entirely absent (`Entity not found`, not merely stale) — REST-set state with no config
+entry or registry backing, so it does not survive a Home Assistant restart, and a clean Core
+stop/start cycle happened earlier the same day (confirmed via the logbook: `homeassistant`
+domain, `stopped` at 14:19:52, `started` at 14:21:18 UTC). The MA/Jellyfin connection itself was
+never the problem; `music_assistant.get_library` had both playlists (`Alternative`, `Crazy Train`)
+the whole time. Fixed for the moment by re-running `sync-homie-playlists.py` by hand.
+
+The "still open" scheduler gap recorded above turns out to already be closed, just not here:
+pde runs the sync on a dedicated Proxmox container, not the SSH add-on's container this document
+spent so much space ruling out. It was running every 12 hours, which is wide enough that a
+restart landing mid-window can leave the sensor gone for most of a day, which is what happened
+here. pde is narrowing that interval himself. This document's "still open" bullet calling for a
+scheduler was therefore wrong as of this checkpoint and has been removed; the actual remaining
+gap is narrower than "no scheduler exists" — it's "the sensor has no way to notice it's missing
+and self-heal between scheduled runs," which a shorter interval only shrinks, not closes.
+
 ## What is verified, and what is still open
 
 Verified live on 2026-08-26 and 2026-08-27:
@@ -194,11 +213,6 @@ Verified live on 2026-08-26 and 2026-08-27:
 
 **Still open**:
 
-- **A working scheduler.** This is the actual unsolved part of the original
-  ask. Cron inside the SSH add-on's container does not work (see above,
-  no `crond` process). pde is designing a different approach; the deployed
-  script, token wrapper, and `py3-aiohttp` install are left in place to
-  support that.
 - A real browser/Playwright pass tapping into the Playlists row and
   confirming the bubble renders and plays correctly. `playwright-cli` was
   not available in the session that built this feature (no global install,
