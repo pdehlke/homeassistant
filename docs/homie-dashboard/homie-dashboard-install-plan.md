@@ -1,5 +1,132 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-09-04, later still again (off is a full undo; Visitors means all 34, not any 1)
+
+pde answered the two open questions from the checkpoint just below with no ambiguity: off should
+definitely undo everything a scene started, including the music, and Visitors' any-on indicator
+was "completely wrong" — it's specifically supposed to mean every single light in the house is on.
+Full design, the options considered, and verification are in
+[homie-scenes-chip.md](homie-scenes-chip.md)'s "Tenth pass" section; this entry covers the summary
+and repo state.
+
+`togglePopupScene()`'s off-branch now also runs `stopPopupMusic()` (media_stop, then Harmony off —
+the Music chip's own off sequence) after turning off the lights, unconditionally, looking up the
+Music chip's configured entity from `CONFIG` rather than a third hardcoded
+`media_player.crestron` literal. `sceneIsOn()` gained an additive `allMustBeOn` parameter
+(`.every()` instead of `.some()` over the same affected-entity list), threaded through all five
+places that read a scene's on-state; `config.js`'s Visitors entry set `allMustBeOn: true`, Dinner's
+unchanged. Live-tested the full undo directly (ran Dinner, then issued the exact three calls its
+off-tap now makes, confirmed lights off + player idle + Harmony off) and confirmed the two
+Crestron loads flagged as occasionally unresponsive in the prior checkpoint are still occasionally
+unresponsive, independent of this change.
+
+`dist/config.js` and `dist/homie-dashboard.html` both changed; deployed with the standard pattern.
+`HOMIE_ASSET_VERSION` and the Lovelace iframe `?v=` both bumped together to `20260904.2`, per the
+convention the prior checkpoint adopted. `test/screen-a.test.cjs`: 132/132 (3 new, every existing
+on->off scene test updated for the two additional full-undo calls).
+
+## Checkpoint: 2026-09-04, later still (a browser-caching bug hiding behind two of today's fixes)
+
+pde tried the dim/bright contrast from the checkpoint just below and found real problems: Dinner's
+off-tap only turned off Kitchen and Dining, leaving Living Room Perimeter and the four Zigbee
+lights on; Visitors' off-tap didn't touch the Zigbee lights either; Dinner turning on also lit up
+Visitors' bubble; and music kept playing through every off-tap. Full investigation and the options
+still open are in [homie-scenes-chip.md](homie-scenes-chip.md)'s "Ninth pass" section; this entry
+covers the summary and repo state.
+
+The real bug: `homie-dashboard.html` cache-busts `config.js`/`homie-custom.js` with its own nested
+`HOMIE_ASSET_VERSION` token, independent of the Lovelace iframe's `?v=`, and HA serves everything
+under `/local/` with a 31-day `Cache-Control: max-age`. `HOMIE_ASSET_VERSION` was last bumped in
+the sixth pass (2026-09-03) and sat unchanged through both of today's `config.js` changes (the
+seventh pass's group-ify and the same-day Zigbee-lights addition) — two deploys the iframe `?v=`
+bump alone couldn't force a browser to refetch. (The eighth pass didn't touch `config.js` at all,
+so it wasn't itself affected, but it didn't bump the token either, leaving the hole open.) Any
+browser holding a `config.js` cached from on or before 2026-09-03 kept serving it for up to 31 days
+no matter how many times the outer page's version changed. That's why Dinner's on-tap (server-side
+script, no browser cache involved) correctly used the new `light.dinner_lights` group while its
+off-tap (config data, browser-cached) was still acting on the pre-group ten-light list. Fixed by
+bumping `HOMIE_ASSET_VERSION` for real, to `20260904.1`, matched
+exactly to the iframe's own new `?v=` rather than tracked as a separate number — the new convention
+going forward — with a comment at its declaration explaining why both must move together.
+**pde needs one full reload of the dashboard for this to take effect**, not just tapping around.
+
+Separately, and not a caching artifact: Visitors' entity list (`config.js` and
+`script.scene_visitors`'s `light.turn_on` step, both) never picked up the four Zigbee lights added
+the same day — a real gap, fixed by adding all four to both. Live-tested end to end: the script now
+turns them on, and turning off the full 34-entity list turns them back off.
+
+Two things found but deliberately not changed, both needing pde's call rather than a guess: Dinner
+and Visitors will keep lighting up together, since Dinner's lights are a subset of "every light in
+the house" and `sceneIsOn()`'s any-on convention can't tell "Dinner did this" from "Visitors did
+this" from "someone flipped a switch"; and a scene's off-tap has only ever undone lighting, never
+the music/Harmony a script also starts, which reads as a bug now that pde's used it for real even
+though it was a deliberate fifth-pass choice at the time.
+
+`dist/config.js` and `dist/homie-dashboard.html` both changed this round; deployed with the
+standard pattern (prior copies backed up, `config.js`'s token re-spliced and diff-verified against
+the backup, `homie-dashboard.html` diffed the same way), `homie-dash`'s iframe `?v=` bumped to
+`20260904.1` to match. `test/screen-a.test.cjs` updated for the 30→34 Visitors count, the four new
+required entities, and the hardcoded `HOMIE_ASSET_VERSION` literal the test asserts against;
+129/129.
+
+## Checkpoint: 2026-09-04, later same day (Scenes bubbles dim when off, and a light-group gotcha)
+
+pde reported the Scenes chip looked stuck "on" and asked for a real on/off indicator, matching
+Lights/Music/TV, plus the ability to turn a scene off by tapping it. The toggle-off logic already
+existed and was re-verified live to work correctly; the actual gap was that every bubble's icon
+circle always rendered at its full accent color regardless of state, with only a faint ring as the
+on-signal. Bubbles now sit dim grey when off and jump to full color plus the ring when on, via a
+new `--scene-color` custom property in place of an inline `background` — the same shared markup
+Music's own popup station bubbles use, so they got the same legibility fix as a side effect. Full
+design, the three options considered, and a real bug found in `light.dinner_lights` along the way
+(the group's own aggregate state needs *every* member on to read "on," not any-one-on like every
+other chip's convention, which can make the indicator read "off" indefinitely if even one load is
+slow to respond) are in [homie-scenes-chip.md](homie-scenes-chip.md)'s "Eighth pass" section;
+flagged to pde rather than changed, since it's a setting on his own HA object, not dashboard code.
+
+`homie-dash`'s Lovelace iframe `?v=` bumped `20260903.6` → `20260903.7`. Only
+`dist/homie-dashboard.html` changed (`config.js` untouched); deployed with the now-standard pattern
+(SSH add-on already running, live file backed up with a timestamp, uploaded, diffed against the
+backup with only the intended change showing). The nested `HOMIE_ASSET_VERSION` token was *not*
+bumped this round either — see the next checkpoint below for why that turned out to matter.
+`test/screen-a.test.cjs` stayed at 129/129 — no test asserted the literal inline-style string
+either chip's bubbles changed. No `playwright-cli` install exists locally for this change; pde is
+checking the new contrast and the tap-to-toggle live himself, same convention as every prior pass
+on this chip.
+
+## Checkpoint: 2026-09-04 (Dinner's ten lights collapsed into one HA group; four Zigbee lights added to the Lights chip)
+
+Two independent, same-day requests against the fork, both config-only:
+
+- pde created `light.dinner_lights`, an HA light group wrapping the ten lights the "Dinner" scene
+  bubble and `script.scene_dinner` previously spelled out individually (plus a couple more), and
+  asked both to target the group instead, so the light list can be changed later by editing the
+  group in HA rather than the dashboard config or the script. `script.scene_dinner`'s `light.turn_on`
+  step and the bubble's `entities` in `config.js` both became `["light.dinner_lights"]`. Full design
+  in [homie-scenes-chip.md](homie-scenes-chip.md)'s "Seventh pass" section. The Lovelace iframe's
+  `?v=` was bumped `20260903.4` → `20260903.5` as usual.
+- Four new Zigbee-controlled lights (Globe Lamp, Reading Nook, Living Room Cabinet, Kitchen Counter
+  Lamp — each a Third Reality smart plug exposed as a `light.*` entity via `switch_as_x`) were added
+  to the Lights chip's Kitchen and Living Room `subGroups`, alongside the existing Crestron-driven
+  loads, the same `{label, entity}` shape every other Lights row uses. No dashboard mechanism
+  changed: `sensor.homie_lights_status`'s dynamic entity count (issue #17) already picks up any
+  `light.*` entity with no hardcoded list to update. The iframe `?v=` was bumped `20260903.5` →
+  `20260903.6`.
+
+Neither of these two config.js-only changes bumped the *nested* `HOMIE_ASSET_VERSION` token inside
+`homie-dashboard.html`, which is what actually cache-busts `config.js` itself — the iframe's own
+`?v=` only forces a fresh fetch of `homie-dashboard.html`. That omission, and what it did, is its
+own checkpoint further up this file (2026-09-04, "a browser-caching bug hiding behind two of
+today's fixes").
+
+Both changes deployed live (`dist/config.js` and `dist/homie-dashboard.html`, prior copies backed up
+with a timestamp, token re-spliced server-side and verified with a redacted diff, `homie-dash`'s
+iframe `?v=` bumped to match over WebSocket each time) and split into two separate, logically
+distinct commits in the fork (`977c3d0`, `94f2cea`) once pde approved both live. `test/screen-a.test.cjs`
+updated for both (129/129): the Dinner entities assertion collapsed to the one-element group array,
+and the Lights subEntities/count assertions extended to 34 total entities including the new Kitchen
+Counter Lamp and the four-entry Living Room addition.
+
 ## Checkpoint: 2026-09-03, later still (a second scene, "Visitors", every light in the house)
 
 pde asked for a second scene, same actions as Dinner, except it turns on every light in the house

@@ -515,3 +515,294 @@ how Dinner's icon is a self-contained literal in `config.js`, not a cross-file r
 - House left with all 30 lights off and the music stopped after the live test; Harmony left on
   Airplay, matching what was found. Visual, on-device confirmation of the popup and the live
   tap-through is pde's own next step, same convention as the fifth pass.
+
+## Seventh pass: Dinner's ten lights collapsed into one HA group (2026-09-04)
+
+pde created a light group in HA, `light.dinner_lights`, wrapping the fixtures Dinner's
+`light.turn_on` step and bubble `entities` had spelled out individually, plus a couple more
+(Living Room Cabinet, Reading Nook, Globe Lamp, Kitchen Counter Lamp — the four Zigbee lights
+added to the Lights chip the same day, config-only, not covered here). He asked for the chip and
+the script to target the group instead of the ten lights directly, so the light list can be
+changed later by editing the group in HA rather than editing the dashboard config or the script.
+
+Two edits, both mechanical given the fifth pass's generalization already treats any non-`scene.*`
+entity as self-affecting: `script.scene_dinner`'s `light.turn_on` step's target became
+`light.dinner_lights` instead of the ten-entity list, and the bubble's `entities` in `config.js`
+became `["light.dinner_lights"]`. `sceneIsOn()` now reads the group's own aggregate on/off state
+instead of checking ten lights individually, and a tap-while-on calls `homeassistant.turn_off` on
+the group, which HA forwards to every member — both directions confirmed live (script trace showed
+the group fan out to `crestron_cip.turn_on` for each member; see the eighth pass below for a
+fuller live audit of the off-direction and the group's own state-aggregation behavior, done as
+part of diagnosing a different report). The Lovelace iframe's own `?v=` was bumped `20260903.4` →
+`20260903.5` as usual, but — not caught until the ninth pass below — the *nested*
+`HOMIE_ASSET_VERSION` token inside `homie-dashboard.html`, which cache-busts `config.js` and
+`homie-custom.js` independently of the iframe's own URL, was not bumped alongside it. It should
+have been; see the ninth pass for what that omission actually did. No test changes beyond updating
+the Dinner entities assertion to the one-element array — the generalization under test didn't
+change, only the input.
+
+## Eighth pass: a real on/off indicator, and a light-group gotcha found while building it (2026-09-04)
+
+pde reported the Scenes chip felt broken: tapping a scene "on" never seemed to show as "off"
+again, and asked for a visible on/off state matching Lights/Music/TV, plus the ability to turn a
+scene off by tapping it.
+
+**The toggle-off mechanism already existed and already worked.** Before changing any code, the
+existing `togglePopupScene()`/`sceneIsOn()` pair (second pass, above) was re-verified live against
+the real `light.dinner_lights` group: calling `homeassistant.turn_off` against it (the exact call a
+tap-while-on makes) turned off all 13 members and the group itself reported `off` within a few
+seconds. This wasn't a logic bug.
+
+**The actual gap was visual.** Every scene bubble's icon circle was always rendered at its
+configured `sc.color` (an inline `style="background:..."`, same accent color for every bubble on
+this chip), on or off, with the only on-signal a 2px box-shadow ring in the same accent hue family
+— a subtle highlight on a circle that was already that color, easy to miss at a glance and easy to
+mistake for "stuck on" once tapped. Lights' popup rows, by contrast, sit at a muted
+`rgba(255,255,255,0.05)` background when off and get a visibly tinted background plus a
+slide-toggle knob when on — a much stronger contrast pde's ask referenced by name.
+
+pde chose, from three options (a starker ring at the same always-colored resting look; matching
+Lights exactly with rows and a sliding toggle switch, replacing the icon-bubble grid; or dimming
+the resting circle and only showing its real color once on) the third: **dim grey when off, full
+color plus the existing ring when on**. Implemented as a CSS custom property,
+`--scene-color`, set inline per bubble (`style="--scene-color:${sc.color}"`) in place of the old
+`style="background:${sc.color}"`; `.popup-scene-icon`'s base rule now renders a muted
+`rgba(255,255,255,0.1)` circle at `opacity: 0.55`, and `.popup-scene-icon.on` swaps the background
+to `var(--scene-color, var(--accent))` at full opacity, on top of the pre-existing ring. The
+fallback to `var(--accent)` matters because the Music chip's own popup station bubbles
+(`togglePopupMusic`'s render site) share this exact same `.popup-scene-icon`/`.popup-scene-bubble`
+markup and CSS — they never set `--scene-color` at all (every Station bubble plays through the one
+fixed `media_player.crestron`, so there's only ever one color to show), and previously carried the
+identical `style="background:var(--accent)"` inline override this pass removed. That inline style
+would otherwise have out-specificity'd the new CSS entirely, leaving Music's bubbles always
+full-color regardless of on/off — removing it instead of leaving it was a deliberate choice, not an
+oversight: it means Music's own popup bubbles get the same dim-off/bright-on legibility fix as a
+side effect of fixing the class they already shared with Scenes, rather than the two chips visibly
+diverging over an implementation detail neither config author would expect to matter.
+`test/screen-a.test.cjs` had no assertions on the literal inline-style string for either chip's
+bubbles, so no test changes were needed; 129/129 unchanged.
+
+**A real bug turned up during the live re-verification, in the `light.dinner_lights` group itself,
+not the dashboard.** Turning the group off and back on via the exact service calls
+`togglePopupScene()` makes showed the group's own aggregate `state` does not follow the "any member
+on" convention `sceneIsOn()` assumes (and that every other chip on this dashboard uses): with 11 of
+its 13 members confirmed `on` and only two (`light.kitchen_pathway`, `light.kitchen_perimeter`)
+still `off`, `light.dinner_lights` itself kept reporting `off`, and only flipped to `on` the instant
+the last two members were turned on directly. That is the Group helper's "all entities must be on
+for the group to be considered on" option, which HA's Light Group helper supports as a per-group
+toggle at creation and which this group apparently has enabled. It was not investigated further
+this pass, since it wasn't this pass's ask and fixing it means editing settings on pde's own HA
+object rather than dashboard code; flagged to pde directly rather than silently flipped, along with
+the fact that two more group helpers already exist alongside `light.dinner_lights` — `Evening
+Lights` (9 members) and `Dinner Only` (4 members) — of unclear relationship to the one the chip
+actually points at. Whatever "all entities on" is set to on this group directly determines how
+reliable Dinner's on/off indicator is: with two of thirteen loads (or any future load added to the
+group) occasionally slow or unresponsive over CIP, "all on" means the indicator may rarely or never
+show "on" at all, which would look exactly like the "stuck" symptom pde originally reported, just
+in the opposite direction from what the visual-contrast fix above addresses.
+
+Deployed `dist/homie-dashboard.html` only (`config.js` untouched this pass) to
+`/config/www/community/homie-dashboard/`, prior copy backed up with a timestamp first, diffed
+against the backup with only the intended CSS/render-site changes showing. `homie-dash`'s Lovelace
+iframe `?v=` bumped `20260903.6` → `20260903.7` via a whole-config WebSocket save. No `playwright-cli`
+install exists locally for this change either; pde is checking the new dim/bright contrast and the
+tap-to-toggle live himself, same convention as every prior pass on this chip.
+
+### Options considered and rejected (eighth pass)
+
+For how a bubble should look off versus on:
+
+- **Bigger ring, same always-colored resting look.** Smallest possible change, but the underlying
+  problem — an already-colored circle with only a thin same-hue ring to distinguish state — doesn't
+  go away just because the ring is thicker. Rejected as not actually solving what was reported.
+- **Match Lights exactly: replace the icon-bubble grid with rows and a sliding toggle switch.**
+  The most literal reading of "like Lights," but scenes would lose the individual icon/color
+  identity every bubble on this chip (and Music's) has always had, and the popup would get visibly
+  denser for what is still just a handful of bubbles. Rejected as more change than the actual
+  complaint (indistinguishable on/off) needed.
+- **Dim grey off, full color plus ring on** (chosen). Keeps the existing round-icon-grid layout and
+  every bubble's individual identity, while making on/off as unmistakable at a glance as Lights'
+  rows are, at the cost of one CSS custom property and a couple of rule changes.
+
+## Ninth pass: a browser-caching bug hiding behind the seventh pass, and two real bugs (2026-09-04)
+
+pde tried the new dim/bright contrast live and reported three things wrong: tapping Dinner on lit
+*both* the Dinner and Visitors bubbles and the chip read "2 on"; tapping Dinner off only turned off
+the Kitchen and Dining lights, leaving Living Room Perimeter and all four Zigbee lights on (and
+Visitors still lit); and tapping Visitors off turned off Perimeter but not the Zigbee lights either.
+Music kept playing through all of it. Three separate causes, found by re-running the exact service
+calls the taps make and watching real entity states rather than guessing from the symptoms alone.
+
+**The real bug: a browser-caching hole that made the seventh pass's own fix invisible, sitting
+behind whatever cached copy of `config.js` pde's browser was already holding.** (The eighth pass's
+CSS lives entirely in `homie-dashboard.html`, which the Lovelace iframe's `?v=` already cache-busts
+correctly on its own — that fix did take effect. It's specifically `config.js`, loaded as a
+separate resource, that this bug affects.)
+`homie-dashboard.html` loads `config.js` and `homie-custom.js` via
+`` document.write(`<script src="config.js?v=${HOMIE_ASSET_VERSION}">`) ``, a *second*,
+independent cache-busting token from the Lovelace iframe's own `?v=` (which only forces a fresh
+fetch of `homie-dashboard.html` itself). HA's static file server sends
+`Cache-Control: public, max-age=2678400` — 31 days — on everything under `/local/`, confirmed live
+via `curl -I`. `HOMIE_ASSET_VERSION` was last actually bumped in the sixth pass, 2026-09-03, to
+`20260903.4`, and sat at that exact value through the seventh pass (Dinner's group), the same-day
+Zigbee-lights addition, and the eighth pass (this chip's CSS fix) — three consecutive
+`config.js`/`homie-dashboard.html` deploys where only the outer Lovelace iframe `?v=` was bumped,
+confirmed by grepping the live-served file for the literal string. Any browser that had `config.js`
+cached from on or before 2026-09-03 had no reason to ever refetch it — the URL never changed — so it
+kept serving that exact stale response for up to 31 days, regardless of how many times the outer
+page changed underneath it. That is exactly why Dinner's off-tap only affected Kitchen and Dining:
+the *script* (`script.scene_dinner`, server-side, no browser cache involved) correctly used the new
+`light.dinner_lights` group, but the *bubble's `entities` field*, read from a stale cached
+`config.js`, was still the pre-group ten-light array — kitchen(5) + dining(4, including
+`light.dining_room_powder`) + `light.living_room_pathway` — so the on-tap and off-tap of the same
+bubble were silently acting on two different light lists. Fixed by giving `HOMIE_ASSET_VERSION` a
+real bump (`20260903.4` → `20260904.1`, matched to the Lovelace iframe's own new value rather than
+kept as a separate number) and adding a comment at its declaration spelling out why the two tokens
+must move together on every `config.js`/`homie-custom.js` deploy from now on. **pde needs to fully
+reload the dashboard once** (not just tap around) for this to take effect — a stale tab that never
+re-fetches `homie-dashboard.html` won't pick up a new `?v=` either.
+
+**Confirmed independently, not a caching artifact: Visitors' entities list never picked up the
+four Zigbee lights.** Both `config.js`'s Visitors bubble and `script.scene_visitors`'s own
+`light.turn_on` step were the original 30-entity list from the sixth pass, predating the Zigbee
+lights entirely — a real gap, not something the cache fix touches. Since Visitors' own definition
+is "every light in the house," both were updated: `config.js` now lists all 34, and
+`script.scene_visitors` was updated the same way via
+`POST /api/config/script/config/scene_visitors` (so a tap-while-off actually turns the new lights
+on too, not just the on/off glow and off-tap). Live-tested end to end: running the script turned on
+all four Zigbee lights alongside the rest, and calling `homeassistant.turn_off` on the live 34-entity
+list turned all of them, Zigbee included, back off.
+
+**Flagged, not fixed: Dinner and Visitors will keep lighting up together.** Dinner's group members
+are a subset of "every light in the house," so `sceneIsOn()`'s any-on-counts convention means
+turning on Dinner will always also make Visitors read "on" — and after today's fix, more so, since
+Visitors' list is now four entries longer and still fully overlaps Dinner's. This isn't a bug in
+the mechanism so much as a consequence of what the two scenes are defined to mean: Visitors as
+written asks "is any light in the house on," which is true almost any time the house is in normal
+use, not just when someone tapped Visitors specifically. Nothing changed here pending pde's read on
+what he actually wants (see the checkpoint in `homie-dashboard-install-plan.md` for the options this
+raises: requiring literally all 34 lights on before Visitors reads "on," some other definition, or
+leaving it as designed and accepting the overlap).
+
+**Not addressed, by original design, and now worth revisiting given how it read in practice: a
+scene's off-tap only undoes lighting, never the music/Harmony a script also started.** This was a
+deliberate choice in the fifth pass (see above) — "tapping Dinner off only reverses the lighting" —
+but pde's report ("the music continues to play... after I click off either or both of the scenes")
+reads as this not matching what he expects from an off-tap now that he's using it for real. Flagged
+alongside the Visitors-overlap question above rather than changed unilaterally, since "should off
+mean undo everything" is pde's call, not a bug to silently patch.
+
+Deployed `dist/config.js` and `dist/homie-dashboard.html` (both changed this round) to
+`/config/www/community/homie-dashboard/`, prior copies backed up with a timestamp, `config.js`'s
+token re-spliced and verified with a redacted diff against the backup (only the intended Visitors
+entities/comment changes showed), `homie-dashboard.html` diffed the same way (only the
+`HOMIE_ASSET_VERSION` change showed). `homie-dash`'s Lovelace iframe `?v=` bumped to `20260904.1`
+— matching `HOMIE_ASSET_VERSION` exactly, the new convention this pass adopted.
+`test/screen-a.test.cjs` updated for the 30→34 Visitors count and the four new required entities,
+plus the hardcoded `HOMIE_ASSET_VERSION` literal the test asserts against; 129/129.
+
+## Tenth pass: off is a full undo, and Visitors' indicator finally means what it says (2026-09-04)
+
+Two explicit, unambiguous decisions from pde on the ninth pass's two open questions: off should
+definitely undo everything a scene started, including the music; and Visitors' indicator reading
+"any light in the house is on" as a trigger is "completely wrong" — it's specifically supposed to
+mean every single light is on.
+
+**Off now stops the music too.** `togglePopupScene()`'s on->off branch, after turning off the
+lights, now also calls `stopPopupMusic()` — the exact same `media_player.media_stop` +
+`remote.turn_off` (Harmony) sequence the Music chip's own off action and "All Off" row already use
+— targeting whichever entity the config's `isMusicChip` control is set to look up
+(`(CONFIG.controls || []).find(c => c.isMusicChip)`), rather than a second hardcoded
+`media_player.crestron` literal alongside the one already in `script.scene_dinner`/
+`script.scene_visitors`. Unconditional: every scene bubble's off-tap runs it, on the theory that
+stopping an already-idle player and turning off an already-off Harmony hub are harmless no-ops, not
+worth a per-bubble opt-out for a case (a hypothetical scene that never touches music) that doesn't
+exist yet on this chip.
+
+**Visitors' on-indicator now requires every one of its 34 lights on, not any one of them.**
+`sceneIsOn()` gained a second parameter, `allMustBeOn`, switching its internal `.some()` to
+`.every()` over the same `sceneAffectedEntities()` list every other call already uses — an
+additive, default-off flag, so every bubble that doesn't pass it (Dinner, and any future one)
+keeps the any-on behavior that's still the right reading for a scene that only claims a handful of
+lights rather than the whole house. Threaded through all five places that needed it: `sceneIsOn()`
+itself, its four read sites (the popup bubble, `refreshControls`'s chip glow/count, the Overview C
+sidebar, `refreshOpenScenePopup`), and `togglePopupScene()`'s own direction-deciding `wasOn` check
+— all five read from the bubble's own `sc.allMustBeOn`/parameter rather than a second copy of the
+flag. `config.js`'s Visitors entry gained `allMustBeOn: true`; Dinner's entry needed no change.
+One real behavioral consequence worth knowing, not just an implementation detail: with
+`allMustBeOn`, a tap while even one of the 34 lights is off (a bulb that's out, one of the
+occasionally-flaky Crestron loads from the ninth pass's own findings, someone having switched a
+single light off by hand) reads as "off" and **re-activates** Visitors rather than clearing it —
+the same direction a fresh off-tap would take on a scene that's genuinely all the way off. That's
+inherent to what "requires literally everything on" has to mean for deciding a tap's direction, not
+a bug in the implementation of the ask.
+
+Did not add a music/Harmony requirement to Visitors' `allMustBeOn` check itself — pde's own phrasing
+was that the *light* indicator's any-on trigger was "completely wrong," and the fix addresses
+exactly that. If Visitors' glow should also require the music mid-playback before showing "on,"
+that's a further, separate ask, not assumed here.
+
+### Options considered and rejected (tenth pass)
+
+For how off should reach the music, given a scene bubble has no `media_player` field of its own:
+
+- **Hardcode `media_player.crestron` a third time**, alongside the literal already duplicated in
+  both `script.scene_dinner` and `script.scene_visitors`. Works today (there's only one media
+  player this whole dashboard ever controls) but is one more place a future rename or a second
+  media player would need to be remembered.
+- **Look up the Music chip's own configured `entity`** (chosen). One source of truth
+  (`config.js`'s Music chip entry), already the pattern `syncDynamicPlaylistsFromHA()` uses to find
+  the same chip for an unrelated reason — reusing an established lookup rather than inventing a
+  second one.
+
+For whether every scene bubble's off-tap should stop music unconditionally, versus opting in:
+
+- **A per-bubble `stopsMusic` flag**, defaulting to false. More precise if a lighting-only scene
+  ever gets added to this chip, but that scene doesn't exist yet, and both real bubbles today
+  (Dinner, Visitors) do start music via their scripts. Rejected as speculative config surface for a
+  case with no current instance — the same objection this document has already raised for the
+  grouped-scenes and script-vs-snapshot questions above.
+- **Unconditional** (chosen). Stopping an idle `media_player` and turning off an already-off
+  Harmony hub are no-ops, not errors, so there is no real cost to a bubble that never touches music
+  running this anyway. Simplest correct behavior for what exists today; add the flag later if a
+  scene that must *not* touch music actually shows up.
+
+For how strict Visitors' on-indicator should be:
+
+- **Keep any-on** (rejected, this is the bug pde reported). Reads "on" the instant a single light
+  is on anywhere in the house, for any reason — Dinner, a manual switch, another scene entirely —
+  which isn't "Visitors is active" by any reading pde was willing to accept.
+- **All-on, `allMustBeOn`** (chosen). Matches "every single light in the house is on" literally.
+  The tradeoff pde is accepting knowingly: with 34 individually-controlled entities (a few already
+  shown in the ninth pass to be occasionally slow or unresponsive over CIP), the indicator will be
+  a stricter, rarer "on" than any other chip's — a feature here, not the accidental side effect it
+  would be if any-on had just been left in place with a bigger list.
+
+### Verification (tenth pass)
+
+- `node --test test/screen-a.test.cjs`: 132/132 (3 new: `allMustBeOn` requiring every affected
+  entity — including the empty-list edge case, where `.every()` on nothing is vacuously true and
+  needs an explicit guard to still read "off" — and `togglePopupScene` picking the activate branch
+  instead of the clear branch when `allMustBeOn` reads a partially-lit bubble as off). Every
+  existing on->off test (`scene.bedroom_evening`, the grouped Primary-Suite-shaped case, Dinner's
+  `activate` case) updated to expect the two additional full-undo calls after the lights, via one
+  shared assertion helper rather than repeating the same two lines three times. The `loadSceneToggle`
+  test harness gained a minimal `CONFIG` stub (one `isMusicChip` control) so `togglePopupScene`'s new
+  lookup resolves inside the sandboxed `vm` context the same way it does in the real page.
+- Live-tested the full-undo path directly: ran `script.scene_dinner` (lights on, Harmony on
+  Airplay, `media_player.crestron` playing `library://radio/1`), then issued the exact three calls
+  `togglePopupScene`'s off-branch now makes — `homeassistant.turn_off` on `light.dinner_lights`,
+  `media_player.media_stop`, `remote.turn_off` on `remote.harmony_hub` — and confirmed all three
+  landed: lights off, player `idle`, Harmony `off`. Two of the group's thirteen members
+  (`light.kitchen_pathway`, `light.kitchen_perimeter` — the same pair flagged as occasionally
+  unresponsive in the ninth pass) again didn't respond to the on-command within several seconds,
+  independent of anything this pass changed; confirmed harmless to this test by checking the other
+  eleven members directly rather than relying on the group's own aggregate state.
+- Deployed `dist/config.js` and `dist/homie-dashboard.html` to
+  `/config/www/community/homie-dashboard/`, prior copies backed up with a timestamp, `config.js`
+  re-spliced and diff-verified (only the `allMustBeOn` addition showed). `HOMIE_ASSET_VERSION`
+  bumped `20260904.1` → `20260904.2` for real this time (both files changed, so per the ninth pass's
+  new convention both cache-busting tokens moved together), matched exactly by `homie-dash`'s
+  Lovelace iframe `?v=`.
+- House left with all lights off, music idle, and Harmony off after live testing, matching a clean
+  state rather than whatever partial state the flaky pair left behind.
