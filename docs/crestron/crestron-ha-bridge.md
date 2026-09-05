@@ -111,11 +111,11 @@ Proven live:
 - Both CIP sessions register, sync and hold. On first sync the bridge independently reproduced the
   read-only recon baseline: Garage Sconces high on both `d185` and `d244`, nothing else, which is
   the alias resolution working on real state.
-- Writes reach the house. Pool Bath (`d245`), North Sink (`d241`) and Patio North (`d164`/`d188`)
-  were each switched on and off from Home Assistant and followed. So were all four Kitchen loads
-  after identification, including Island's `press_on`/`press_off` split (join 27 to turn on, 29 to
-  turn off) exercised through the real `light.turn_on`/`light.turn_off` services, not just the
-  identification tooling.
+- Writes reach the house. Pool Bath (`d245`), North Sink (`d241`), Patio North (`d164`/`d188`) and
+  Dining Room Powder (`d127` on, `d102` off) were each switched on and off from Home Assistant and
+  followed. So were all four Kitchen loads after identification, including Island's
+  `press_on`/`press_off` split (join 27 to turn on, 29 to turn off) exercised through the real
+  `light.turn_on`/`light.turn_off` services, not just the identification tooling.
 - Idempotence holds against real hardware. A second `turn_on` on a load already on presses nothing;
   a second press would have turned the light off. Confirmed for both a toggle load and, offline,
   for Island's separate-join case.
@@ -125,11 +125,14 @@ Proven live:
 Established before deployment and unchanged by it:
 
 - Registration through end of state dump takes about 1.1s.
-- The AADS panel slot carries no per-load analog level join, so its twenty-six loads are on/off
-  only. Two analog joins exist on the whole slot and both are audio gauges. The MC2E's Kitchen
-  channels are different: every one of them is a dimmer, and Island's `a22` proves it. Brightness is
-  still out of scope pending the Phase 2 dimmer pass; `level_join` on the `Load` dataclass records
-  what identification finds so that pass does not have to re-derive it.
+- The AADS panel slot carries no per-load analog level join, so the bridge has no way to command a
+  specific level for any of its twenty-six loads today. That is not the same as the loads
+  themselves being on/off fixtures: all but four of the thirty loads across both links are
+  dimmer-capable, AADS ones included, not just the MC2E's Kitchen channels. Toggling one of those
+  loads through the panel slot's single digital join recalls whatever level the load's own program
+  logic treats as "on," which is not necessarily full brightness. Brightness is still out of scope
+  pending the Phase 2 dimmer pass; `level_join` on the `Load` dataclass records what identification
+  finds so that pass does not have to re-derive it.
 - The AADS does not drop a client that stops answering heartbeats, at least not within 149s.
 - Twenty-three offline tests pass, covering the codec against recorded frames, the load table's
   safety invariants, and the toggle logic including idempotence, concurrency, alias resolution,
@@ -145,6 +148,25 @@ Still open:
 - Whether Island's on-join (27) recalls a fixed preset level or ramps proportionally to how long
   it's held. Not resolved during identification; see
   [crestron-xpanel-control-path.md](crestron-xpanel-control-path.md#kitchen-identification-resolved-2026-09-03).
+
+## Powder needed its own on-join, like Island
+
+Reported 2026-09-05: `light.turn_on` on Dining Room Powder lit the `binary_sensor` and confirmed
+`d102` high within a second, same as `light.turn_off` always had, but the physical light did not
+come on. That asymmetry ruled out a bad join, a guard rejection, and a stale template light in the
+same session: pressing `d102` was proven, live, to reliably flip the AADS's own feedback for that
+load in both directions, and the load table matched
+[crestron-load-room-worksheet.md](crestron-load-room-worksheet.md) exactly. The cause was the gap
+already on record above: Powder is dimmer-capable, like all but four of the thirty loads, and `d102`
+specifically recalls a level low enough to read as off. Pde confirmed live from real panels that the
+Living Rm (`d127`) and Kitchen (`d142`) Powder buttons both turn it on dimmed, where `d102` does not.
+
+`d142` is inside `FORBIDDEN_AADS_WRITE`, so it was never a candidate; `d127` was. Fixed the same way
+Island was: `dining_room_powder` now carries `press_on=127`, leaving `join=102` as both the feedback
+join and the off-join, unchanged from before. Deployed and confirmed live 2026-09-05: `light.turn_on`
+presses `d127` and the light comes on dimmed, `light.turn_off` presses `d102` and it goes dark, both
+watched directly on the fixture. Brightness itself is still out of scope pending Phase 2; this only
+fixes on/off for one load whose "on" join happened to be a bad pick, the same way Island's did.
 
 ## Two bugs worth remembering
 
