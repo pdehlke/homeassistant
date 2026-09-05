@@ -1,11 +1,11 @@
 # The Home Assistant to Crestron lighting bridge
 
-The daemon that connects Home Assistant's thirty `light.*` entities to the real lighting loads,
-using the control path proven in
+The daemon that connects Home Assistant's twenty-nine `light.*` entities to the real lighting
+loads, using the control path proven in
 [crestron-tsw-panel-control-path.md](crestron-tsw-panel-control-path.md).
 
-Written and deployed 2026-09-02. **Live: both links registered, all thirty lights bound to it,
-driving real loads.** See [Status](#status) for exactly what is proven and what is not.
+Written and deployed 2026-09-02. **Live: both links registered, all twenty-nine lights bound to
+it, driving real loads.** See [Status](#status) for exactly what is proven and what is not.
 
 ## What it is
 
@@ -73,7 +73,7 @@ two places on purpose: `const._validate()` rejects a table containing a forbidde
 import time, so a bad entry fails at Home Assistant startup rather than lying dormant until someone
 turns that light on, and `bridge._guard()` checks again immediately before bytes reach the wire.
 
-The write surface is exactly the twenty-six canonical AADS joins plus, later, the Kitchen joins on
+The write surface is exactly the twenty-five canonical AADS joins plus, later, the Kitchen joins on
 the MC2E. Nothing else is ever sent. `d91`, the Lights subsystem-entry join, was considered as a
 way to make the AADS's interpretation of the shared range explicit and deliberately not used: the
 bridge never writes that range, so `d91` buys no safety while changing processor state in a way
@@ -84,9 +84,13 @@ Receiving a forbidden join is expected and fine. Powder reports on `d142` and Ou
 
 ## Load table
 
-Thirty loads. Twenty-six on the AADS panel slot, four on the MC2E XPanel, together covering all
-forty-one load buttons in
-[crestron-load-room-worksheet.md](crestron-load-room-worksheet.md).
+Twenty-nine loads. Twenty-five on the AADS panel slot, four on the MC2E XPanel, together covering
+forty of the forty-one load buttons in
+[crestron-load-room-worksheet.md](crestron-load-room-worksheet.md). The forty-first, `d103`
+("Perimeter" on the Dining page), goes untracked: reported 2026-09-05 and confirmed by pde, it
+drives the same physical fixture as Kitchen Pathway rather than a load of its own, so it was
+dropped instead of kept as a duplicate `kitchen_perimeter` entity. `Load.aliases` can't express it
+either, since it only covers joins on one link and this pair spans AADS and MC2E.
 
 Where a load appears on several zone pages the canonical join is the one pressed and the rest only
 report, which is how Outdoor Kitchen stays one entity across five buttons. Feedback on any alias
@@ -103,8 +107,9 @@ for the full identification record.
 
 ## Status
 
-**Live since 2026-09-02, all thirty loads since 2026-09-03.** Both links registered, all thirty
-lights bound to it, driving real loads.
+**Live since 2026-09-02, at full coverage since 2026-09-03.** Both links registered, all lights
+bound to it, driving real loads. Thirty loads at first; twenty-nine since 2026-09-05, when
+`kitchen_perimeter` was dropped as a duplicate of Kitchen Pathway rather than a load of its own.
 
 Proven live:
 
@@ -126,15 +131,15 @@ Established before deployment and unchanged by it:
 
 - Registration through end of state dump takes about 1.1s.
 - The AADS panel slot carries no per-load analog level join, so the bridge has no way to command a
-  specific level for any of its twenty-six loads today. That is not the same as the loads
-  themselves being on/off fixtures: all but four of the thirty loads across both links are
+  specific level for any of its twenty-five loads today. That is not the same as the loads
+  themselves being on/off fixtures: all but four of the twenty-nine loads across both links are
   dimmer-capable, AADS ones included, not just the MC2E's Kitchen channels. Toggling one of those
   loads through the panel slot's single digital join recalls whatever level the load's own program
   logic treats as "on," which is not necessarily full brightness. Brightness is still out of scope
   pending the Phase 2 dimmer pass; `level_join` on the `Load` dataclass records what identification
   finds so that pass does not have to re-derive it.
 - The AADS does not drop a client that stops answering heartbeats, at least not within 149s.
-- Twenty-three offline tests pass, covering the codec against recorded frames, the load table's
+- Twenty-five offline tests pass, covering the codec against recorded frames, the load table's
   safety invariants, and the toggle logic including idempotence, concurrency, alias resolution,
   refusal on unknown state, and the on/off-join split.
 
@@ -157,7 +162,7 @@ come on. That asymmetry ruled out a bad join, a guard rejection, and a stale tem
 same session: pressing `d102` was proven, live, to reliably flip the AADS's own feedback for that
 load in both directions, and the load table matched
 [crestron-load-room-worksheet.md](crestron-load-room-worksheet.md) exactly. The cause was the gap
-already on record above: Powder is dimmer-capable, like all but four of the thirty loads, and `d102`
+already on record above: Powder is dimmer-capable, like all but four of the twenty-nine loads, and `d102`
 specifically recalls a level low enough to read as off. Pde confirmed live from real panels that the
 Living Rm (`d127`) and Kitchen (`d142`) Powder buttons both turn it on dimmed, where `d102` does not.
 
@@ -167,6 +172,27 @@ join and the off-join, unchanged from before. Deployed and confirmed live 2026-0
 presses `d127` and the light comes on dimmed, `light.turn_off` presses `d102` and it goes dark, both
 watched directly on the fixture. Brightness itself is still out of scope pending Phase 2; this only
 fixes on/off for one load whose "on" join happened to be a bad pick, the same way Island's did.
+
+## Kitchen Perimeter was never a real load
+
+Reported 2026-09-05: `light.kitchen_pathway` and `light.kitchen_perimeter` are the same physical
+fixture, not two loads. `kitchen_perimeter` was built against `d103` ("Perimeter" on the Dining
+page) on the strength of
+[crestron-load-room-worksheet.md](crestron-load-room-worksheet.md)'s reading of the Pathway/
+Perimeter naming collision as four separate loads, one pair per room. That reading was wrong for
+the Kitchen half of the pair: `d103` drives the same fixture as `kitchen_pathway` (MC2E join 25),
+confirmed by pde. It also retroactively explains the "occasionally unresponsive" pair noted during
+Homie Dashboard's scenes-chip work (see
+[homie-scenes-chip.md](../homie-dashboard/homie-scenes-chip.md)'s eleventh pass) — commanding one
+join and reading the other's independent feedback looks exactly like flakiness.
+
+`kitchen_perimeter` is removed from the load table rather than turned into an alias of
+`kitchen_pathway`: `Load.aliases` only covers other joins on the same link, and this pair spans
+AADS (`d103`) and MC2E (`kitchen_pathway`'s join 25), which the dataclass has no way to express.
+`d103` is simply untracked now — still a real button on a real panel, just one with no HA entity
+behind it, the same as any other physical control this project hasn't wired up. Removed from the
+bridge, the `Dinner Lights` and `Dinner Only` light groups, the Visitors scene's entity list (both
+the dashboard bubble and `script.scene_visitors`), and the "Dinner Lights" HA scene snapshot.
 
 ## Two bugs worth remembering
 
@@ -182,7 +208,7 @@ but mishandled the feedback". A source-level test now fails if `async_register` 
 **A light bound to a feedback entity needs an availability template.** Binding `state` to
 `is_state('binary_sensor.crestron_<load>', 'on')` makes the light read `off` whenever that sensor is
 `unavailable`, which is a lie in two cases that matter: the four unmapped Kitchen loads, and any CIP
-link outage, where all twenty-six AADS loads would claim the house is dark. Fixed by setting
+link outage, where all twenty-five AADS loads would claim the house is dark. Fixed by setting
 `availability` to `has_value('binary_sensor.crestron_<load>')`, which is false for both unknown and
 unavailable.
 

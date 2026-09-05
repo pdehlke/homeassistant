@@ -8,10 +8,11 @@ The split is forced rather than chosen. The DSC alarm keypad page reuses AADS jo
 with Fire, Medical and Panic on `d146`, `d147` and `d148`, and every page in the panel project has
 `DigitalJoinOffset` 0, so this is one join space genuinely shared rather than an artifact. Kitchen
 Range (`d141`), Island (`d143`), Kitchen Pathway (`d145`) and Cabinet (`d147`) have no join outside
-that range, so those four cannot be driven from the panel slot at all. Every other load that
+that range, so those four cannot be driven from the panel slot at all.* Every other load that
 touches the range has a safe alias on another zone page: Powder is pressed at `d102` rather than
-`d142`, Outdoor Kitchen at `d104` rather than `d144`, and Kitchen Perimeter was always at `d103` on
-the Dining page.
+`d142`, and Outdoor Kitchen at `d104` rather than `d144`.
+
+\* Not quite true of Pathway; see the correction below.
 
 The alternative was to establish that the AADS gates the shared range on the subsystem-entry join
 (`d91` Lights versus `d93` Alarm) and then use `d141`-`d147` directly on one connection. That
@@ -35,3 +36,15 @@ and reported unavailable rather than guessed at. See
 [crestron-xpanel-control-path.md](../crestron/crestron-xpanel-control-path.md) for the press map
 and [crestron-tsw-panel-control-path.md](../crestron/crestron-tsw-panel-control-path.md) for the
 alarm collision.
+
+## Correction (2026-09-05)
+
+There never was a "Kitchen Perimeter" load. `d103`, labeled "Perimeter" on the Dining page, turned
+out to be a safe alias for Kitchen Pathway (`d145`, forbidden), not a fourth distinct Kitchen
+fixture as `crestron-load-room-worksheet.md`'s original "two loads sharing a label" read of the
+Pathway/Perimeter pair concluded. So Kitchen Pathway did have a join outside the forbidden range
+all along, `d103`, it just wasn't recognized as the same load until the MC2E identification pass
+gave it a working alternate path (join 25) and the two were later found to be one fixture. The
+`kitchen_perimeter` Load entry built against `d103` has been dropped from the bridge rather than
+turned into an alias; see [crestron-ha-bridge.md](../crestron/crestron-ha-bridge.md) for why an
+AADS/MC2E pair can't be expressed as one Load's aliases.

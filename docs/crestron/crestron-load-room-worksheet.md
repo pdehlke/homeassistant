@@ -26,10 +26,18 @@ case and it is proven: on 2026-09-02 pressing `d104` drove `d144`, `d187`, `d206
 and `d247` high in the same instant. Five buttons, one load, one room.
 
 Sometimes it is two loads sharing a label that the page header disambiguates for
-whoever is standing at the panel. `Pathway` and `Perimeter` are that case,
-confirmed by pde: four separate loads, one pair in the Kitchen and one in the
+whoever is standing at the panel. `Pathway` and `Perimeter` were read as that
+case on 2026-09-02: four separate loads, one pair in the Kitchen and one in the
 Living Room, sharing two labels between them. The rooms in this table are the
-authority, so two rows with the same name and different rooms are two loads.
+authority, so two rows with the same name and different rooms are two loads --
+**except that the Kitchen half of this specific pair was wrong.** Confirmed by
+pde 2026-09-05: `d103` ("Perimeter" on the Dining page) drives the same fixture
+as the Kitchen's own Pathway (reached separately via the MC2E, since `d145`,
+Kitchen's own "Pathway" button, sits inside the forbidden alarm range). There is
+no distinct "Kitchen Perimeter" load; `d103`'s row below is kept for the
+historical record but the bridge does not track it. The Living Room's own
+Pathway/Perimeter pair (`d121`/`d125`) is unaffected -- this correction is
+specific to `d103`.
 
 Four Home Assistant areas carry no row here: Garage, Gym, Garage Mechanical
 Closet and North Mechanical Closet. Confirmed 2026-09-02 as genuinely having no
@@ -48,11 +56,13 @@ Guest Suite.
 | ------ | --------------- | ----- | ------------------------------ | --------------- |
 | `d101` | Table           | load  | -                              | Dining Room     |
 | `d102` | Powder          | load  | `d127`, `d142`                 | Dining Room     |
-| `d103` | Perimeter       | load  | `d125`                         | Kitchen         |
+| `d103` | Perimeter       | load* | `d125`                         | Kitchen         |
 | `d104` | Outdoor Kitchen | load  | `d144`, `d187`, `d206`, `d247` | Outdoor Kitchen |
 | `d105` | North           | load  | -                              | Dining Room     |
 | `d106` | Living Off      | group | `d146`                         | Living Room     |
 | `d107` | South           | load  | -                              | Dining Room     |
+
+\* Not a load of its own; drives the Kitchen's own Pathway fixture. See the note above.
 | `d108` | Area Off        | group | `d128`, `d148`, `d168`, `d208` | Dining Room     |
 
 ## Living Rm (`LIGHT-pg01-zn02`)

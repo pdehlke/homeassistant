@@ -806,3 +806,21 @@ For how strict Visitors' on-indicator should be:
   Lovelace iframe `?v=`.
 - House left with all lights off, music idle, and Harmony off after live testing, matching a clean
   state rather than whatever partial state the flaky pair left behind.
+
+## Eleventh pass: Kitchen Perimeter was never a real load (2026-09-05)
+
+The "flaky pair" flagged in the ninth and tenth passes, `light.kitchen_pathway` and
+`light.kitchen_perimeter`, wasn't two loads occasionally lagging each other. It was one physical
+fixture with two entities: `kitchen_perimeter` (AADS `d103`, labeled "Perimeter" on the Dining
+zone page) and `kitchen_pathway` (MC2E join 25) both drive the same Kitchen Pathway light.
+Commanding one and reading the other's independent feedback join is exactly what produces an
+"occasionally unresponsive" pattern that has nothing to do with CIP reliability. Confirmed by pde
+and dropped from `const.py` (see
+[crestron-ha-bridge.md](../crestron/crestron-ha-bridge.md) and the load-room worksheet for the
+mechanism-level detail); `kitchen_perimeter` is gone from the bridge, the Dinner scene's light
+group, and the Visitors bubble's `entities` list, `light.kitchen_pathway` unchanged. The
+[fifth-pass light list](#fifth-pass-refilled-with-dinner-a-script-backed-scene-2026-09-03) and the
+[sixth-pass 30-entity dump](#sixth-pass-visitors-same-mechanism-over-every-light-in-the-house-2026-09-03)
+above both still show `light.kitchen_perimeter` as it stood on 2026-09-03; left as the historical
+record of what was built and verified at the time, not corrected in place. Current counts: Dinner's
+group has twelve members instead of thirteen, and Visitors' `entities` list has 29 instead of 30.
