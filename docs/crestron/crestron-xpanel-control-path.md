@@ -160,6 +160,15 @@ generalizing Island's on/off split for whatever the Phase 2 dimmer pass finds
 next among the other MC2E modules (`0x70`-`0x73`, `0x75`, `0x76`), all of which
 are dimmers.
 
+**Superseded in part, 2026-09-06.** Pathway's join 25 above still exists and is still correct
+about what the panel project's join map looks like, but the bridge no longer presses it: `d103`,
+a safe AADS alias found the next day (see
+[crestron-load-room-worksheet.md](crestron-load-room-worksheet.md)), replaced it entirely, so
+Pathway needs no MC2E join any more. Range, Island and Cabinet are unaffected; they have no such
+alias anywhere in the panel project. Full record in
+[crestron-ha-bridge.md](crestron-ha-bridge.md#kitchen-pathway-moved-off-the-mc2e-entirely) and
+[issue #22](https://github.com/pdehlke/homeassistant/issues/22).
+
 ## The slot mirrors the wall panels
 
 Established 2026-09-02. The slot does not merely echo feedback for joins we

@@ -73,8 +73,8 @@ two places on purpose: `const._validate()` rejects a table containing a forbidde
 import time, so a bad entry fails at Home Assistant startup rather than lying dormant until someone
 turns that light on, and `bridge._guard()` checks again immediately before bytes reach the wire.
 
-The write surface is exactly the twenty-five canonical AADS joins plus, later, the Kitchen joins on
-the MC2E. Nothing else is ever sent. `d91`, the Lights subsystem-entry join, was considered as a
+The write surface is exactly the twenty-six canonical AADS joins plus, for the three Kitchen loads
+that still need it, the MC2E joins. Nothing else is ever sent. `d91`, the Lights subsystem-entry join, was considered as a
 way to make the AADS's interpretation of the shared range explicit and deliberately not used: the
 bridge never writes that range, so `d91` buys no safety while changing processor state in a way
 that has not been characterised.
@@ -84,7 +84,7 @@ Receiving a forbidden join is expected and fine. Powder reports on `d142` and Ou
 
 ## Load table
 
-Twenty-nine loads. Twenty-five on the AADS panel slot, four on the MC2E XPanel, together covering
+Twenty-nine loads. Twenty-six on the AADS panel slot, three on the MC2E XPanel, together covering
 forty of the forty-one load buttons in
 [crestron-load-room-worksheet.md](crestron-load-room-worksheet.md). The forty-first, `d103`
 ("Perimeter" on the Dining page), goes untracked: reported 2026-09-05 and confirmed by pde, it
@@ -96,14 +96,15 @@ Where a load appears on several zone pages the canonical join is the one pressed
 report, which is how Outdoor Kitchen stays one entity across five buttons. Feedback on any alias
 is mirrored onto the canonical join, so state has exactly one place to be read from.
 
-The four Kitchen loads were identified 2026-09-03 (issue #18) and are wired the same as any other
-load, though not all as simple toggles. Three (Cabinet, Kitchen Pathway, Range) are ordinary
+The four Kitchen loads were identified 2026-09-03 (issue #18) and were wired the same as any
+other load, though not all as simple toggles. Three (Cabinet, Kitchen Pathway, Range) are ordinary
 toggles. Island's channel turned out to be a dimmer rather than a switch, with a separate on join
 and off join rather than one toggled both ways; the `Load` dataclass's `press_on`/`press_off`
 fields generalize that split for whatever the Phase 2 dimmer pass finds among the other MC2E
 channels, all of which are dimmers. See
 [crestron-xpanel-control-path.md](crestron-xpanel-control-path.md#kitchen-identification-resolved-2026-09-03)
-for the full identification record.
+for the full identification record. Kitchen Pathway no longer needs any of this: see
+[Kitchen Pathway moved off the MC2E entirely](#kitchen-pathway-moved-off-the-mc2e-entirely) below.
 
 ## Status
 
@@ -193,6 +194,29 @@ AADS (`d103`) and MC2E (`kitchen_pathway`'s join 25), which the dataclass has no
 behind it, the same as any other physical control this project hasn't wired up. Removed from the
 bridge, the `Dinner Lights` and `Dinner Only` light groups, the Visitors scene's entity list (both
 the dashboard bubble and `script.scene_visitors`), and the "Dinner Lights" HA scene snapshot.
+
+## Kitchen Pathway moved off the MC2E entirely
+
+Done 2026-09-06 ([issue #22](https://github.com/pdehlke/homeassistant/issues/22), asked after pde
+questioned whether the MC2E connection was still needed at all now that the AADS panel project
+covers the same Kitchen buttons by name). It doesn't, not fully: Range (`d141`), Island (`d143`)
+and Cabinet (`d147`) have no safe join anywhere else in the panel project, confirmed by
+exhaustively walking every one of its 41 load buttons, so they still need the MC2E and the second
+CIP connection stays. Pathway is the one exception. `d103`, the alias described directly above in
+["Kitchen Perimeter was never a real load"](#kitchen-perimeter-was-never-a-real-load), was already
+proven live on 2026-09-05 to drive Pathway's own fixture and sits outside `FORBIDDEN_AADS_WRITE`,
+so it needed no new discovery, only wiring it in as `kitchen_pathway`'s canonical join instead of
+leaving it untracked.
+
+`kitchen_pathway` moved from `_MC2E_LOADS` (join 25) to `_AADS_LOADS` (join 103) in `const.py`.
+Deployed the same way as every other live change here: backed up the running `const.py`, uploaded
+under a temp name, MD5-verified byte-identical, atomic-renamed into place, `check_config` run
+before restarting Home Assistant. Confirmed live afterward: `binary_sensor.crestron_kitchen_pathway`
+now reports `link: aads, join: 103` instead of `link: mc2e, join: 25`, and a real `light.turn_on`
+/ `light.turn_off` round trip through the Home Assistant entity flipped the feedback and the
+template light exactly as it did on the MC2E, restoring the load to the `off` state it was found
+in. Range, Island, Cabinet and one AADS load were spot-checked after the restart and came back
+unaffected.
 
 ## Two bugs worth remembering
 

@@ -48,3 +48,16 @@ gave it a working alternate path (join 25) and the two were later found to be on
 `kitchen_perimeter` Load entry built against `d103` has been dropped from the bridge rather than
 turned into an alias; see [crestron-ha-bridge.md](../crestron/crestron-ha-bridge.md) for why an
 AADS/MC2E pair can't be expressed as one Load's aliases.
+
+## Correction (2026-09-06)
+
+`d103`'s discovery in the correction above was acted on, not just recorded.
+[Issue #22](https://github.com/pdehlke/homeassistant/issues/22) asked whether the MC2E connection
+was still needed at all, since the panel project genuinely does contain buttons for all four
+Kitchen loads. Answer: partly. Kitchen Pathway moved from the MC2E (join 25) to the AADS (`d103`)
+and needs the MC2E no longer. Range (`d141`), Island (`d143`) and Cabinet (`d147`) still do:
+[crestron-load-room-worksheet.md](../crestron/crestron-load-room-worksheet.md)'s table, built by
+exhaustively walking all 41 load buttons across all 8 zone pages, shows none of the three has an
+alias anywhere in the project the way Pathway, Powder and Outdoor Kitchen do. The second CIP
+connection stays for those three. Full record in
+[crestron-ha-bridge.md](../crestron/crestron-ha-bridge.md#kitchen-pathway-moved-off-the-mc2e-entirely).

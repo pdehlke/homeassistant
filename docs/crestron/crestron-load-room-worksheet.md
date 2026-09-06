@@ -32,12 +32,18 @@ Living Room, sharing two labels between them. The rooms in this table are the
 authority, so two rows with the same name and different rooms are two loads --
 **except that the Kitchen half of this specific pair was wrong.** Confirmed by
 pde 2026-09-05: `d103` ("Perimeter" on the Dining page) drives the same fixture
-as the Kitchen's own Pathway (reached separately via the MC2E, since `d145`,
-Kitchen's own "Pathway" button, sits inside the forbidden alarm range). There is
-no distinct "Kitchen Perimeter" load; `d103`'s row below is kept for the
-historical record but the bridge does not track it. The Living Room's own
-Pathway/Perimeter pair (`d121`/`d125`) is unaffected -- this correction is
-specific to `d103`.
+as the Kitchen's own Pathway. There is no distinct "Kitchen Perimeter" load.
+The Living Room's own Pathway/Perimeter pair (`d121`/`d125`) is unaffected --
+this correction is specific to `d103`.
+
+`d103`'s row below is kept for the historical record, but as of 2026-09-06
+([issue #22](https://github.com/pdehlke/homeassistant/issues/22)) it is no
+longer merely "kept" -- it is exactly the join the bridge presses for Kitchen
+Pathway. `d145`, Kitchen's own "Pathway" button, still sits inside the
+forbidden alarm range and is still never pressed; `d103` is the safe alias
+that replaced the MC2E as Pathway's control path entirely. See
+[crestron-ha-bridge.md](crestron-ha-bridge.md#kitchen-pathway-moved-off-the-mc2e-entirely)
+for the migration.
 
 Four Home Assistant areas carry no row here: Garage, Gym, Garage Mechanical
 Closet and North Mechanical Closet. Confirmed 2026-09-02 as genuinely having no
