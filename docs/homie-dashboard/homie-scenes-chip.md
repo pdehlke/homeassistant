@@ -824,3 +824,19 @@ group, and the Visitors bubble's `entities` list, `light.kitchen_pathway` unchan
 above both still show `light.kitchen_perimeter` as it stood on 2026-09-03; left as the historical
 record of what was built and verified at the time, not corrected in place. Current counts: Dinner's
 group has twelve members instead of thirteen, and Visitors' `entities` list has 29 instead of 30.
+
+## Twelfth pass: Holiday joins the Lights chip, deliberately not Visitors (2026-09-06)
+
+`light.outside_holiday` (`d221`, the Modes page's "Holiday" button, traced by pde to the outdoor
+eave receptacles rather than the dead scene macro it was assumed to be) was added to the Lights
+chip's Outside group, between Garage Sconces and Home Perimeter. Full mechanism-level detail is in
+[crestron-ha-bridge.md](../crestron/crestron-ha-bridge.md#holiday-a-real-load-hiding-on-the-modes-page).
+
+Unlike every previous addition to the Lights chip, this one did **not** also go into Visitors.
+Asked directly, pde chose to leave it out: seasonal decorative lighting isn't what "every light on
+for guests" is supposed to mean, even though Visitors' whole design intent since the
+[tenth pass](#tenth-pass-off-is-a-full-undo-and-visitors-indicator-finally-means-what-it-says-2026-09-04)
+has been exactly that phrase. Visitors' `entities` count stays at 29; the Lights chip's own light
+count goes to 34. The two counts no longer describe the same set, on purpose, and the tests were
+updated to assert the exclusion by name rather than just leaving the count alone and hoping a
+reader notices.

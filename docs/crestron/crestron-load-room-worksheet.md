@@ -138,16 +138,26 @@ Guest Suite.
 
 ## Modes (`LIGHT-pg01-zn07`)
 
-| Join   | Name       | Kind  | Also   | Room |
-| ------ | ---------- | ----- | ------ | ---- |
-| `d221` | Holiday    | scene | -      |      |
-| `d222` | Security   | scene | `d242` |      |
-| `d223` | Vacation   | scene | -      |      |
-| `d224` | Party      | scene | -      |      |
-| `d225` | Goodbye    | scene | -      |      |
-| `d226` | (blank)    | blank | -      |      |
-| `d227` | Good Night | scene | -      |      |
-| `d228` | (blank)    | blank | -      |      |
+Filled in as `scene` for every button 2026-09-02, on the theory that a page called
+"Modes" holds macros rather than loads. That held for six of the eight, but not
+Holiday: pde traced it physically 2026-09-06 and found it switches a real
+fixture, the outdoor eave receptacles used for holiday lights, not a macro over
+other loads. Reclassified below on that basis
+([issue #19](https://github.com/pdehlke/homeassistant/issues/19)). Security,
+Vacation and Party are unresolved, not confirmed either way: pde saw no visible
+effect from any of them at a physical panel, tested before Holiday's own
+button was traced separately.
+
+| Join   | Name       | Kind  | Also   | Room    |
+| ------ | ---------- | ----- | ------ | ------- |
+| `d221` | Holiday    | load  | -      | Outside |
+| `d222` | Security   | scene | `d242` |         |
+| `d223` | Vacation   | scene | -      |         |
+| `d224` | Party      | scene | -      |         |
+| `d225` | Goodbye    | scene | -      |         |
+| `d226` | (blank)    | blank | -      |         |
+| `d227` | Good Night | scene | -      |         |
+| `d228` | (blank)    | blank | -      |         |
 
 ## Others (`LIGHT-pg01-zn08`)
 
@@ -164,12 +174,12 @@ Guest Suite.
 
 ## Distinct load names
 
-28 names across 41 load buttons. Fill the tables above rather than this list; it
-is here to show the size of the job.
+29 names across 42 load buttons, since Holiday's reclassification (above). Fill
+the tables above rather than this list; it is here to show the size of the job.
 
 `Ambient`, `Bath Diagonal`, `Bath Perimeter`, `Bed Diagonal`, `Bed Perimeter`,
 `Cabinet`, `Door`, `East Hall`, `East Seating`, `Entry Center`,
-`Entry Perimeter`, `Garage Sconces`, `Hallway`, `Home Perimeter`, `Island`,
-`North`, `North Sink`, `Outdoor Kitchen`, `Pathway`, `Patio North`,
+`Entry Perimeter`, `Garage Sconces`, `Hallway`, `Holiday`, `Home Perimeter`,
+`Island`, `North`, `North Sink`, `Outdoor Kitchen`, `Pathway`, `Patio North`,
 `Patio South`, `Perimeter`, `Pool Bath`, `Powder`, `Range`, `South`, `Table`,
 `West Seating`.
