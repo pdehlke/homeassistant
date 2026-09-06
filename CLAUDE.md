@@ -174,10 +174,9 @@ Do not change anything until you have checked the status of every repository the
 confirmed the live release and commit state against `git` and the running instance. The checkpoint
 below records both, and it will be out of date sooner than it looks.
 
-## Next-session checkpoint, 2026-09-03
+## Next-session checkpoint, 2026-09-04
 
-**Home Assistant drives all thirty of the house's lighting loads now.** This is the biggest thing
-in the project and it is newer than most of the documents around it. A custom integration that
+**Home Assistant drives all thirty of the house's lighting loads.** A custom integration that
 registers as a physically unplugged TSW-752 touch panel controls every one of them end to end over
 CIP. Read [docs/crestron/crestron-ha-bridge.md](./docs/crestron/crestron-ha-bridge.md) before
 touching anything lighting-related, along with
@@ -192,31 +191,63 @@ The one rule not to get wrong: the DSC alarm keypad shares AADS joins `d130` thr
 them, enforced both at table-import time and immediately before bytes reach the wire. Receiving
 those joins is expected and fine; only writing is refused. Do not remove either check.
 
-Before this, every `light.*` entity was a placeholder backed by an `input_boolean`. Those and every
-HA scene were deleted. Scenes are a later phase: the scene count is zero and the Homie Scenes chip
-still points at the deleted ones ([issue #16](https://github.com/pdehlke/homeassistant/issues/16)).
-
 The last four loads, the Kitchen ones, were identified and wired 2026-09-03
-([issue #18](https://github.com/pdehlke/homeassistant/issues/18), now closed). Three are ordinary
+([issue #18](https://github.com/pdehlke/homeassistant/issues/18), closed). Three are ordinary
 toggles; Island's MC2E channel turned out to be a dimmer with a separate on join and off join
 rather than one toggle, which is why `Load` in `const.py` now carries `press_on`/`press_off`
 fields rather than assuming every load presses one join both ways. Every other MC2E channel the
 Kitchen slot reaches is a dimmer too, so expect Phase 2 (a dedicated brightness pass, not started)
 to lean on that same shape. Full record in
 [crestron-xpanel-control-path.md](./docs/crestron/crestron-xpanel-control-path.md#kitchen-identification-resolved-2026-09-03).
+`sensor.homie_lights_status`'s hardcoded entity list, the other lighting-adjacent bug
+([issue #17](https://github.com/pdehlke/homeassistant/issues/17)), is also fixed and closed.
+
+**Scenes are no longer empty.** Every `light.*` entity and every HA scene had been deleted during
+the lighting rebuild, leaving the Homie Scenes chip pointing at nothing
+([issue #16](https://github.com/pdehlke/homeassistant/issues/16), closed). It now holds two real,
+script-backed scenes: `script.scene_dinner` and `script.scene_visitors`. Neither is a native HA
+`scene.*` snapshot, because a snapshot can't express the TV-off conditional or the music
+service-call chain both scenes need; the dashboard's scene mechanism
+(`sceneAffectedEntities()`/`togglePopupScene()`) was generalized, additively, to activate something
+other than a bubble's own `entities` list. Full design and verification in
+[homie-scenes-chip.md](./docs/homie-dashboard/homie-scenes-chip.md)'s "Fifth pass" and "Sixth pass"
+sections. As of the last commit touching that doc, pde's own visual, on-device confirmation of the
+live tap-through was still outstanding; check whether that happened before assuming the chip is
+fully validated.
+
+**A/V join mapping started, not yet acted on.** The same TSW-752 panel dump mined for lighting also
+covers room-by-room source, volume, and power control, which the panels already expose but Home
+Assistant does not. Static analysis plus three rounds of pde's own live corrections are written up
+in [issue #20](https://github.com/pdehlke/homeassistant/issues/20), `ready-for-agent` — read the
+issue itself, it's the spec of record. The one finding worth knowing before touching anything
+Living-Room-audio-related: Living Room and the panel's "Great Room" label are the same room,
+driven by an **external Integra AV receiver/preamp that Crestron cannot reach at all**; the AADS
+only ever sees the Integra's fixed output as one more line input. The Integra is reachable via
+Harmony, which Home Assistant already integrates — pde suspects that'll end up necessary for full
+Living Room source control, recorded in the issue as a non-goal, not yet a decision to build
+anything. The next step needs the Cresnet tap physically connected, so it needs pde at the machine.
+
+**A second scenes thread opened and stalled.** [Issue #19](https://github.com/pdehlke/homeassistant/issues/19)
+was meant to wire the Crestron Modes page's four scene buttons (Holiday/Security/Vacation/Party)
+into the same chip, but pde tried all four live from a physical panel and saw no visible effect on
+the house. It's `needs-info`, not `ready-for-agent`, until it's known whether those buttons are
+dead in this installation, do something not visually obvious, or have non-independent feedback.
+Don't confuse it with issue #20; both are panel investigations but otherwise unrelated.
 
 Live release and commit state go stale fast, so confirm with `git` and the live instance rather
-than trusting this line: at the time of writing, Homie is at `20260903.1`, this repo is at
-`c46f3e9`, the fork is at `0ea40f7`, and CresnetMon is at `39f3f40` on `macos-port-python`. All
+than trusting this line: at the time of writing, Homie is at `20260903.4`, this repo is at
+`d72a7b6`, the fork is at `d37cb39`, and CresnetMon is at `0e0fa0f` on `macos-port-python`. All
 three were clean and in sync.
 
-With the lighting buildout's headline work done, the open threads are smaller and independent
-rather than one obvious next step. [Issue #17](https://github.com/pdehlke/homeassistant/issues/17)
-(`sensor.homie_lights_status` hardcoded against entities that no longer match reality) is now
-directly testable against real loads for the first time. [Issue #16](https://github.com/pdehlke/homeassistant/issues/16)
-(Scenes chip pointing at deleted scenes) and [issue #1](https://github.com/pdehlke/homeassistant/issues/1)
-(the Cresnet Path B spike, superseded by CIP working but never formally closed) are both still open
-and `ready-for-agent`.
+With lighting and the first scenes pass both done, the open threads are smaller and independent
+rather than one obvious next step. [Issue #20](https://github.com/pdehlke/homeassistant/issues/20)
+is the freshest and best-specified. [Issue #19](https://github.com/pdehlke/homeassistant/issues/19)
+needs live panel behavior established before any HA-side work starts. [Issue #1](https://github.com/pdehlke/homeassistant/issues/1)
+(the Cresnet Path B spike, superseded by CIP working but never formally closed) is still open and
+`ready-for-agent`. [Issue #8](https://github.com/pdehlke/homeassistant/issues/8) (A/V speaker
+selection dropdown broken) and [issue #9](https://github.com/pdehlke/homeassistant/issues/9)
+(Energy panel scope) are both `needs-triage` and may turn out to overlap with #20's findings once
+that lands, worth checking before starting either from scratch.
 
 Two older Homie items still deferred, both predating the lighting work and neither re-verified
 since 2026-08-07:
