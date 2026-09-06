@@ -1,5 +1,42 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-09-06 (Lights status double-counted light groups, issue #17's fix had a gap)
+
+pde noticed the Lights chip read "5 on" while the Overview A/B status grid's Lights tile read
+"6 on" at the same moment, and asked whether deleting Kitchen Perimeter had left something behind.
+It hadn't: `light.kitchen_perimeter` is confirmed gone (404, not lingering in the registry or
+anywhere else), and the Lights chip's own count was correct. The sensor was wrong.
+
+`sensor.homie_lights_status`'s state template, fixed for issue #17 on 2026-09-03 to count
+`states.light | selectattr('state', 'eq', 'on') | list | count` instead of a hardcoded entity
+list, has a gap the original fix didn't anticipate: a Home Assistant light *group* is itself an
+entity in the `light.` domain, so the naive domain-wide count includes it alongside its own
+members. Three light groups exist now that didn't when issue #17 was fixed
+(`light.dinner_lights`, created 2026-09-04 and documented below; `light.dinner_only` and
+`light.evening_lights`, both created directly in Home Assistant with no dashboard-side record).
+At the moment pde noticed this, `light.dinner_only`'s three members (Cabinet, Pathway, Range) were
+all genuinely on, so the group itself also read "on," inflating the domain count from 5 to 6.
+Separate from the "needs every member on" group-aggregation gotcha flagged to pde in the eighth
+pass below: that one is about when a group reads "on" at all, this one is about the group being
+counted as an extra light in the first place.
+
+Fixed by rejecting any `light.` entity that carries an `entity_id` attribute, the attribute every
+Home Assistant light group exposes (its member list) and no real light does:
+
+```jinja
+{% set lights = states.light | rejectattr('attributes.entity_id', 'defined') | selectattr('state', 'eq', 'on') | list | count %}
+{{ 'All Off' if lights == 0 else lights ~ ' On' }}
+```
+
+Structural rather than a hardcoded exclusion list, matching the reasoning behind the original
+issue #17 fix, so a fourth group later doesn't reopen this. Verified against live state before and
+after via `POST /api/template`: 33 real `light.*` entities existed, 5 genuinely on, matching the
+Lights chip exactly; the fixed template rendered "5 On" against that same live state. Applied
+through the "Homie Lights Status" template helper's options flow (`POST
+/api/config/config_entries/options/flow`, entry `01KZEA7MEMXVMVGM8TKDEFFFWZ`, same helper and same
+method as the original fix), confirmed live afterward: `sensor.homie_lights_status` reads "5 On".
+No fork change, no release bump, same as the original fix.
+
 ## Checkpoint: 2026-09-04, later still again (off is a full undo; Visitors means all 34, not any 1)
 
 pde answered the two open questions from the checkpoint just below with no ambiguity: off should
