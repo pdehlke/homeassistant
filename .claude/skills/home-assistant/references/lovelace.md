@@ -263,6 +263,19 @@ The replacement was verified in a fresh Playwright CLI session on 2026-08-15:
 For styling work, use UIX and verify the computed property that matters. Do not reopen the closed
 card-mod investigation for a backward fix.
 
+### Liquid Glass: periodic blur artifacts on Firefox, fixed by hiding the sidebar
+
+A page with several Liquid-Glass-themed `ha-card`s (each carrying its own `backdrop-filter:
+blur(8px)` `::before` overlay, plus the theme's own sidebar/header blur) can show periodic dark
+rectangular flicker on Firefox-family browsers (confirmed on Zen/Firefox 154, WebRender). Ask which
+browser is rendering the artifact before diagnosing; Chromium and Firefox have completely separate
+`backdrop-filter` implementations and bug histories, and assuming Chromium because that's what this
+skill's own `playwright-cli` tooling uses is a real trap, cost a full diagnostic pass here. Full
+investigation, the Chromium red herring, and the fix (Home Assistant's own "Always hide the
+sidebar" profile setting, which removes the one fixed-position blur layer in the mix) are in
+[docs/native-dashboards/liquid-glass-backdrop-filter-flicker.md](../../../../docs/native-dashboards/liquid-glass-backdrop-filter-flicker.md)
+in the `pdehlke/homeassistant` repo.
+
 ## Verify visually
 
 The whole point of a dashboard is how it looks, so screenshot it. See the Playwright section of [api-access.md](api-access.md) for the auth pattern and its token-safety requirements.
