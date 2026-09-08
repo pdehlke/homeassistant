@@ -98,28 +98,29 @@ Notes, planning, and specs for my Home Assistant buildout.
 - [crestron-apex-control-plane.md](docs/crestron/crestron-apex-control-plane.md)
 
   Feasibility of a bidirectional Home Assistant to Crestron to Apex Destiny 6100 alarm control
-  plane. Why Cresnet sniffing is not the mechanism that unlocks it, why an XSIG interface added
-  to the existing AADS program exposing its Apex arm/disarm/status signals is the cleanest
-  route, and where the fallback reverse-engineering targets are if that's not enough. Parked, and
-  its mechanism is now known to be wrong; read the next entry before quoting it to anyone.
+  plane. Superseded 2026-09-08: the house's alarm panel is confirmed a DSC PC1864, and no Apex
+  Destiny 6100 has ever been present. Kept as the historical record of a wrong hypothesis; read
+  [crestron-alarm-integration-paths.md](docs/crestron/crestron-alarm-integration-paths.md) instead
+  for current, correct research.
 
 - [crestron-alarm-integration-paths.md](docs/crestron/crestron-alarm-integration-paths.md)
 
   Researched 2026-09-08 in response to issue #24's real intent: real alarm hardware control, not
-  just the virtual Alarmo layer. Identifies the Apex Destiny 6100 as an Ademco/Honeywell panel, not
-  DSC, which reframes the open DSC-vs-Apex puzzle. Compares integrating through Crestron against
-  wiring a Home Assistant-facing interface directly onto the DSC panel's own Keybus (which does not
-  require disconnecting anything, and does not depend on resolving the puzzle), covers real hardware
-  options and prices, and maps the physical panel's controls onto Alarmo/HA equivalents.
+  just the virtual Alarmo layer. Compares integrating through Crestron against wiring a Home
+  Assistant-facing interface directly onto the DSC panel's own Keybus (which does not require
+  disconnecting anything), covers real hardware options and prices, and maps the physical panel's
+  controls onto Alarmo/HA equivalents. Recommends the direct-Keybus path. Written while the panel's
+  identity was still an open puzzle and updated the same day once pde visually confirmed it: DSC
+  PC1864, DSC PK5500 keypad, not an Ademco Destiny 6100.
 
 - [crestron-alarm-open-questions.md](docs/crestron/crestron-alarm-open-questions.md)
 
-  Alarm findings unparked 2026-09-08, plus the one alarm rule that stays in force regardless: never
-  press unknown joins on the AADS, because its program carries a virtual keypad across eight
-  partitions. Records what the AADS's compiled program actually contains, why its DSC PowerSeries
-  modules sit oddly against a visually confirmed Apex Destiny panel, the three readings of that
-  contradiction, and the read-only tests that would settle it. Updated 2026-09-08 with the finding
-  that the Apex Destiny 6100 is Ademco-made, not DSC.
+  Alarm findings unparked and then resolved 2026-09-08, plus the one alarm rule that stays in force
+  regardless: never press unknown joins on the AADS, because its program carries a virtual keypad
+  across eight partitions. Records what the AADS's compiled program actually contains, the puzzle of
+  why its DSC PowerSeries modules once sat oddly against a panel misidentified as an Apex Destiny
+  6100, and how pde's direct visual confirmation of the real panel (a DSC PC1864) closed it for
+  good.
 
 - [crestron-alarm-zone-inventory.md](docs/crestron/crestron-alarm-zone-inventory.md)
 
@@ -143,7 +144,7 @@ Notes, planning, and specs for my Home Assistant buildout.
   How the Alarmo virtual alarm integration is configured on this instance: area and arm modes, the
   22-of-24 zone sensor mapping and the type/mode reasoning behind it, what's deliberately left for
   pde to decide (a disarm PIN), and a gotcha in Alarmo's own area-config endpoint. No connection to
-  the real Crestron/DSC/Apex hardware; see [issue #24](https://github.com/pdehlke/homeassistant/issues/24)
+  the real Crestron/DSC hardware; see [issue #24](https://github.com/pdehlke/homeassistant/issues/24)
   for why Alarmo exists here and how it wires into Homie Dashboard.
 
 ### Device Alerts

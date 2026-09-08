@@ -15,7 +15,7 @@ Four findings changed it:
   with no reprogramming at all, but it reaches only the Kitchen. See
   [crestron-xpanel-control-path.md](crestron-xpanel-control-path.md).
 - **2026-09-01.** The MC2E's compiled program was retrieved and searched. It contains no alarm
-  logic of any kind, which moves the Apex work out of this document.
+  logic of any kind, which moves the alarm work out of this document.
 - **2026-09-02.** Every route to whole-house control that avoids a programmer has now been tested
   and eliminated. The AADS's two abandoned app slots are page-gated and report nothing while lights
   are switched. The MC2E's XPanel slot was proven to mirror wall-panel activity, and still showed
@@ -142,7 +142,7 @@ Actions, in order:
 7. Leave the owner with complete, editable source and a documented interface another programmer can
    maintain.
 
-Moving the Apex alarm integration off the AADS remains an owner objective, but it is no longer part
+Moving the DSC alarm integration off the AADS remains an owner objective, but it is no longer part
 of this document. See [Separately priced work](#separately-priced-work).
 
 ## Verified existing system
@@ -162,12 +162,12 @@ Keypad rooms: 62 and 66 `201 - Master Bed`; 63 `104 - Outdoor Kitchen`; 64 and 6
 65 `202 - Master Bathroom`; 67 `103 - Foyer`; 6A `105 - Great Room`; 6D `203 - Studio`.
 
 The MC2E is the IP master of the EISC to the AADS at CIP ID 05. It provides two bidirectional COM
-ports, neither of which is required unless the Apex work is added back in.
+ports, neither of which is required unless the DSC alarm work is added back in.
 
 ### AADS, audio and panels
 
 Runs its own live program and owns the four TSW-752 panels at IP-IDs 11-14, a CEN-IDOC at IP-ID 51,
-the audio matrix and amplifier, the Apex serial connection, an ST-IO at Cresnet ID `0A` on a
+the audio matrix and amplifier, the DSC alarm panel's serial connection, an ST-IO at Cresnet ID `0A` on a
 physically separate AADS-owned Cresnet leg, and two stale offline `CHV-TSTAT` definitions at `E1`
 and `E2`.
 
@@ -209,8 +209,8 @@ The MC2E is retained only if all of the following hold, per
 4. Processor firmware and the Home Assistant integration hold a stable connection under expected
    signal volume.
 5. Existing Cresnet operation is healthy and within power and network limits.
-6. A bidirectional COM port is available for Apex, **only if** the separately priced Apex work is
-   included.
+6. A bidirectional COM port is available for the DSC alarm system, **only if** the separately
+   priced DSC alarm work is included.
 7. The programmer will deliver and support the modified 2-Series source.
 
 If any condition fails, migrate to a CP3N: recreate the complete lighting and keypad program,
@@ -368,7 +368,7 @@ invoke signal converge before the existing action logic rather than duplicating 
 
 Alarm credential handling is governed by
 [ADR 0009](../adr/0009-alarm-credentials-stay-in-crestron.md) and applies to the separately priced
-Apex work.
+DSC alarm work.
 
 ## Change and cutover
 
@@ -437,13 +437,16 @@ password, dealer lock, or dependency on an undisclosed custom module is acceptab
 
 Removed from this document on 2026-09-01. Both remain owner objectives and neither is cancelled.
 
-**Apex alarm migration.** The MC2E's compiled program was searched and contains zero occurrences of
+**DSC alarm migration.** The MC2E's compiled program was searched and contains zero occurrences of
 alarm, Apex, zone, motion, siren, passcode, panic, or intrusion. The only "security" hit is
 `G-Security`, a lighting scene. The alarm lives entirely on the AADS, so moving it is an AADS-side
-job with its own risks and its own test regime. It is scoped in
-[crestron-apex-control-plane.md](crestron-apex-control-plane.md). Folding it into the lighting job
-made both harder to price. (The house's alarm is confirmed not professionally monitored, so no
-monitoring-company test window applies to that test regime; see
+job with its own risks and its own test regime. It was originally scoped, under the "Apex" name
+later found wrong, in
+[crestron-apex-control-plane.md](crestron-apex-control-plane.md) (superseded); the current,
+DSC-correct version of the same scope is Path A in
+[crestron-alarm-integration-paths.md](crestron-alarm-integration-paths.md#path-a-integrate-via-crestron).
+Folding it into the lighting job made both harder to price. (The house's alarm is confirmed not
+professionally monitored, so no monitoring-company test window applies to that test regime; see
 [crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-safety-rule).)
 
 **A/V proxying.** Exposing every AADS zone, source, tuner, and metadata function through the

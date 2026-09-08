@@ -32,10 +32,13 @@ Kitchen offline until you disconnect. And the claim below that these slots "can 
 without displacing anything" was true when written and is not true now; check `WHO` on the console
 before taking a slot.
 
-The alarm caution in [crestron-apex-control-plane.md](crestron-apex-control-plane.md) becomes more
+The alarm caution in
+[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-safety-rule) becomes more
 important rather than less: the surface now being impersonated is the TSW-752, which is exactly
-where the Apex interface lives. Findings about the MC2E containing no alarm logic are specific to
-that processor and do not license join probing on the panel side.
+where the real alarm interface lives (a DSC PC1864, confirmed 2026-09-08; earlier drafts of this
+caution named it "the Apex interface," which was a misidentification — see that document's
+resolution). Findings about the MC2E containing no alarm logic are specific to that processor and
+do not license join probing on the panel side.
 
 ## Verified topology
 

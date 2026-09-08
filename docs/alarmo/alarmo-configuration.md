@@ -7,9 +7,10 @@ the spec of record for why Alarmo exists here at all and how it wires into Homie
 document covers the Home Assistant side only.
 
 Alarmo is a virtual, HA-native alarm engine. It has no connection to the house's real
-Crestron/DSC/Apex hardware and none is planned as part of this work; see
-[crestron-alarm-open-questions.md](../crestron/crestron-alarm-open-questions.md) for that separate,
-unresolved puzzle.
+Crestron/DSC hardware and none is planned as part of this work; see
+[crestron-alarm-integration-paths.md](../crestron/crestron-alarm-integration-paths.md) for the
+separate research into actually reaching that real hardware (the house's alarm panel is a DSC
+PC1864, confirmed 2026-09-08).
 
 ## Install
 
@@ -93,8 +94,9 @@ delay or bypass behavior against. In particular, `use_entry_delay`/`use_exit_del
 `auto_bypass` were deliberately left at Alarmo's own per-sensor defaults (omitted from every `POST
 /api/alarmo/sensors` call) rather than guessed at — which door is "the" entry/exit path is a
 house-specific fact this session had no way to confirm, and fabricating it risked being
-confidently wrong in a way nothing would catch. Revisit once the DSC-vs-Apex puzzle gives the zones
-real state, at which point live behavior (or pde's own knowledge of the house) can settle it
+confidently wrong in a way nothing would catch. Revisit once a real DSC integration (see
+[crestron-alarm-integration-paths.md](../crestron/crestron-alarm-integration-paths.md)) gives the
+zones real state, at which point live behavior (or pde's own knowledge of the house) can settle it
 properly.
 
 ## Verified live, 2026-09-08

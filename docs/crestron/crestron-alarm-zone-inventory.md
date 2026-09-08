@@ -113,8 +113,13 @@ Three readings, and this document does not choose between them:
    bypass state is not something a light or an LED would show.
 
 Nothing here presses a join to distinguish these. Doing so is exactly what
-[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-safety-rule) rules out
-without settling the DSC-vs-Apex puzzle first. **Recorded here for a decision, not resolved:**
+[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-safety-rule) rules out.
+The panel-identity puzzle referenced when this section was written is now resolved (the panel is a
+DSC PC1864, confirmed 2026-09-08 — see
+[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#resolved-2026-09-08-direct-visual-confirmation-dsc-not-apex)),
+but that only narrows which of the three readings above is likely; it does not confirm the AADS's
+serial link to the panel is actually transacting, which is what would settle this collision.
+**Recorded here for a decision, not resolved:**
 `FORBIDDEN_AADS_WRITE` could be widened to `d201`-`d224` on the strength of this document alone,
 identifying the range by name exactly as the safety rule asks, but doing so would make
 `outside_holiday` fail `const._validate()` at import, since it has no other join anywhere in the

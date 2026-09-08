@@ -262,12 +262,13 @@ E-Good Morning   F-Good Night   G-Security   H-Entertain
 The worst outcome of pressing an unknown join on this processor is that lights
 change.
 
-**This is scoped to the MC2E and must not be generalised.** The caution in
-`crestron-apex-control-plane.md` about alarm functions on joins applies fully to
-the TSW-752 panels and the AADS. That matters more now than when it was written:
-the current integration impersonates a TSW-752, so it operates on exactly the
-surface that reaches the Apex. Nothing established about the MC2E licenses blind
-join probing there.
+**This is scoped to the MC2E and must not be generalised.** The safety rule in
+[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-safety-rule) about alarm
+functions on joins applies fully to the TSW-752 panels and the AADS. That matters more now than
+when it was written: the current integration impersonates a TSW-752, so it operates on exactly the
+surface that reaches the real alarm system (a DSC PC1864, confirmed 2026-09-08 — see that document
+for the resolution of what was, when this section was originally written, believed to be an Apex
+Destiny 6100). Nothing established about the MC2E licenses blind join probing there.
 
 ## Retrieving the program
 

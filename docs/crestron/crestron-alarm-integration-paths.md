@@ -10,6 +10,17 @@ Two things distinguish this document from every prior alarm document in this rep
 the Apex Destiny 6100's actual manufacturer for the first time, and it evaluates a path — wiring
 directly to the DSC panel, bypassing Crestron — that no prior document considered.
 
+**Resolved, same day.** Everything below through "The hedge" was written against the
+strong-but-unconfirmed reading that DSC PowerSeries is the real, live system. It is no longer
+unconfirmed: pde visually identified the actual panel later the same day. It is a **DSC PC1864**,
+with a **DSC PK5500** keypad in the pantry — not an Ademco Destiny 6100, which was never actually
+present in this house. See
+[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#resolved-2026-09-08-direct-visual-confirmation-dsc-not-apex)
+for the resolution. The Ademco research directly below is kept for the record; it was the
+best-supported reading right up until the direct check ran, and the hardware options and
+recommendation it leads to (Path B, DSC Keybus) are the ones that turned out correct. Only the
+[hedge section](#the-hedge-if-its-actually-the-ademco-system) at the end is now fully moot.
+
 ## New evidence: the Apex Destiny 6100 is an Ademco/Honeywell panel, not DSC
 
 This alone reframes [crestron-alarm-open-questions.md](crestron-alarm-open-questions.md)'s central
@@ -65,11 +76,20 @@ already laid out:
    read-only with respect to the house (SDEBUG only toggles console print flags, never sends bus or
    serial commands) and self-tears-down in a `finally` block even on failure.
 
-Until one of those runs, everything below is planning against the strong-but-unconfirmed reading
-that DSC PowerSeries is the real, live, currently-integrated system, with the Ademco Destiny 6100
-as a legacy holdover. If the SDEBUG capture instead shows COM-A silent, that flips the recommendation
-below: reading 3 would be live after all, and the direct-wire target changes from DSC to Ademco (see
-[the hedge](#the-hedge-if-its-actually-the-ademco-system) at the end).
+**Update, same day: settled by direct inspection instead.** Item 1 above turned out unnecessary in
+the form written — pde didn't need to check the keypad's live status, he read the panel itself. It
+is a DSC PC1864 with a DSC PK5500 keypad. There is no Ademco Destiny 6100 in this house and never
+has been; the original visual identification that started this whole line of research was simply
+wrong. The SDEBUG capture (item 2) is still unrun and still blocked by the harness's permission
+classifier, but it was only ever needed to confirm *which brand*, and that question is now closed by
+a stronger form of evidence than SDEBUG would have produced. What SDEBUG would still tell us, if
+run, is narrower: whether the AADS's serial link to the panel is actively transacting today, not
+which panel it's wired to.
+
+Everything below was written planning against the strong-but-unconfirmed reading that DSC
+PowerSeries is the real, live, currently-integrated system. That reading is now confirmed rather
+than merely strong-but-unconfirmed, so [the hedge](#the-hedge-if-its-actually-the-ademco-system) at
+the end is moot and left only for the record.
 
 ## Path A: integrate via Crestron
 
@@ -82,11 +102,14 @@ new network path.
 
 What it actually requires, in order:
 
-1. **Settle the puzzle first** (above). Extending the bridge to write into `d130`-`d148`/`d93` — the
-   range `FORBIDDEN_AADS_WRITE` currently refuses categorically — is exactly the kind of change
+1. **The panel identity is now settled** (DSC PC1864, above) — that no longer blocks this path. What
+   still gates writing into `d130`-`d148`/`d93`, the range `FORBIDDEN_AADS_WRITE` currently refuses
+   categorically, is confirming the AADS's serial link to the panel is actually live, exactly the kind
+   of change
    [crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-safety-rule)'s safety rule
    exists to gate. That rule doesn't get relaxed by writing new code around it; it gets relaxed by
-   answering the puzzle it was written for.
+   confirming the integration it guards is real and transacting, ideally via the still-blocked SDEBUG
+   capture.
 2. **Identify every join by name from the retrieved program**, the same standard the lighting work
    held itself to for all twenty-nine loads. The zone joins (`d201`-`d224`) are already named; the
    arm/disarm/status joins inside `d130`-`d148`/`d93` are not — that range is currently known only as
@@ -111,7 +134,7 @@ there would be nothing live to expose.
 This is the same shape of work `crestron-xsig-programmer-scope.md` already priced separately as
 "Apex alarm migration," and the same one `crestron-apex-control-plane.md`'s Option 1 (add an XSIG
 bridge to the AADS) describes — both written before the DSC finding, both still structurally correct
-once "Apex" is read as "whichever system the puzzle above confirms is live."
+once "Apex" is read as "the DSC PC1864 that's actually installed."
 
 ## Path B: wire directly to the (real) DSC panel
 
@@ -160,12 +183,11 @@ generically.
 
 ### What this doesn't require
 
-No Crestron programmer, no touching `FORBIDDEN_AADS_WRITE` or the AADS's live program at all, no
-resolution of the DSC-vs-Apex puzzle (the puzzle is about what Crestron talks to, not about the DSC
-panel itself, and this path never asks Crestron), and no dependency on the DSC PowerSeries Crestron
-modules being live code rather than dead code. This is the one path here that doesn't need the
-blocked SDEBUG capture to proceed, provided the "which panel is real" hedge below is settled instead
-(and the pantry keypad's own live-or-dark status, item 1 above, already answers that for free).
+No Crestron programmer, no touching `FORBIDDEN_AADS_WRITE` or the AADS's live program at all, and no
+dependency on the DSC PowerSeries Crestron modules being live code rather than dead code — this path
+wires straight to the panel's own Keybus and never asks Crestron anything. This was already the one
+path here that didn't need the blocked SDEBUG capture to proceed, and now that the panel identity is
+directly confirmed (DSC PC1864), nothing about Path B is still waiting on anything.
 
 ## Reimplementing the panel design in Home Assistant
 
@@ -187,7 +209,13 @@ Nothing here needs new dashboard code beyond what already exists for the virtual
 generically off `CONFIG.alarmEntity`. The work is entirely on the backend side (Path A or B), not the
 frontend.
 
-## The hedge: if it's actually the Ademco system
+## The hedge: if it's actually the Ademco system (moot, kept for the record)
+
+**This section no longer applies.** It was written while the panel's identity was still an inference
+rather than a direct observation. pde has since read the panel itself: it is a DSC PC1864, not an
+Ademco Destiny 6100, and no Ademco hardware has ever been confirmed present in this house. Kept
+below unedited because the reasoning was sound given what was known at the time, and because it's
+the record of why Path B's hardware research didn't have to wait on the puzzle either way.
 
 If the pantry keypad turns out dark (no live status) and/or the SDEBUG capture shows COM-A silent —
 i.e., reading 3 is confirmed and the DSC integration really is dead code — the live system is the
@@ -214,13 +242,14 @@ non-Crestron adapter.
 
 **Path B, direct DSC Keybus interface**, is the better starting point, independent of which hardware
 option (EnvisaLink vs. ESPHome DIY) pde prefers. It doesn't wait on a Crestron programmer, doesn't
-touch the AADS's live program or its forbidden-write range, doesn't depend on resolving the DSC-vs-
-Apex puzzle (only on the much smaller "is the DSC keypad alive" check), and produces a genuinely
-real, authoritative `alarm_control_panel` rather than one mediated through a program whose alarm
-logic has never been directly observed running. Path A remains available later — nothing about
-building Path B forecloses it — but it inherits the full puzzle-resolution and Crestron-programmer
-cost for a capability Path B gets more directly.
+touch the AADS's live program or its forbidden-write range, and produces a genuinely real,
+authoritative `alarm_control_panel` rather than one mediated through a program whose alarm logic has
+never been directly observed running. Path A remains available later — nothing about building Path B
+forecloses it — but it inherits the Crestron-programmer cost and the still-open "is the AADS's
+serial link actually transacting" question for a capability Path B gets more directly.
 
-Before ordering hardware: confirm the pantry keypad shows live status (free, visual, pde's own next
-visit to the panel) and, ideally, run the blocked SDEBUG capture (needs pde's go-ahead) to firm up
-which system is actually live rather than committing to DSC-specific hardware on inference alone.
+The panel identity question that used to gate ordering hardware is now settled: DSC PC1864, DSC
+PK5500 keypad, confirmed by direct inspection. What's still worth a five-minute check before
+ordering, per [the Keybus section above](#does-this-require-disconnecting-the-dsc-from-the-aads-no),
+is how many keypad-class devices are already on this house's Keybus and the remaining current
+headroom — routine DSC installation hygiene, unrelated to which panel brand this house has.

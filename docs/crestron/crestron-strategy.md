@@ -171,13 +171,18 @@ above, since both involve disturbing the same low-voltage wiring at the same loc
 point the model, count, and room assignments are already known well enough to scope replacement
 hardware per room.
 
-## Alarm system: no recommendation yet
+## Alarm system: DSC PC1864 confirmed
 
-The alarm panel's brand is confirmed DSC, but the exact model and the ST-IO's wiring are still open
-(see [crestron-migration.md](crestron-migration.md#alarm-system-status-unknown) for the field notes and
-what's been ruled out so far). DSC covers a wide range of panels with different Home Assistant
-integration stories, so no recommendation can be made here until the model is known. This is the
-top-priority verification item precisely because it blocks a decision, not because it is hard.
+**Resolved 2026-09-08.** The panel is a DSC PC1864; the pantry wall unit that first confirmed the
+DSC brand is the keypad, a DSC PK5500, a separate device. Both confirmed by direct visual
+inspection (see [crestron-migration.md](crestron-migration.md#alarm-system-dsc-pc1864-confirmed-2026-09-08)
+for the field notes). The researched integration recommendation lives in
+[crestron-alarm-integration-paths.md](crestron-alarm-integration-paths.md): wiring a Home
+Assistant-facing interface directly onto the panel's own DSC Keybus, bypassing Crestron entirely,
+over extending the existing Crestron/AADS alarm integration through XSIG. This section is no longer
+the blocking item it once was; the ST-IO's exact wiring, tracked in
+[crestron-migration.md](crestron-migration.md#alarm-system-dsc-pc1864-confirmed-2026-09-08), remains
+open but is no longer a prerequisite for either path.
 
 ## HVAC: independent of Crestron
 

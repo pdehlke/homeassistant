@@ -1,17 +1,28 @@
 # Home Assistant, Crestron, and Apex Destiny 6100 Control Plane
 
-## Status: parked, and its mechanism is wrong
+## Status: superseded — the panel it names does not exist in this house
 
-**Do not quote a programmer from this document as written.** The alarm panel it names is correct,
-confirmed visually by the house owner. The mechanism is not. The AADS's live program does its
-arming, disarming, and status through DSC PowerSeries modules, and the Destiny 6100 serial
-parameters below come from Crestron's generic module documentation rather than from anything
-observed in this house.
+**Do not use this document for planning, and do not quote a programmer from it as written.** Both
+the panel name and the mechanism it describes are wrong. pde visually confirmed, 2026-09-08, that
+the real alarm panel is a **DSC PC1864** with a **DSC PK5500** keypad — not an Apex Destiny 6100, and
+no Ademco/Honeywell hardware has ever been confirmed present in this house. The "visual
+confirmation" cited in earlier versions of this document's status note was a misidentification of
+the panel model, not of the mechanism. The AADS's live program has always done its arming,
+disarming, and status through DSC PowerSeries modules; that was never a contradiction to resolve,
+it was the correct answer all along, matching the panel that is actually installed.
 
-That contradiction is unresolved and alarm work is parked behind lighting. See
-[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md), which also carries the safety
-rule that stays in force meanwhile. The rest of this document is left as written because the
-correct rewrite depends on which reading of the contradiction turns out to be true.
+Full resolution and sourcing:
+[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#resolved-2026-09-08-direct-visual-confirmation-dsc-not-apex),
+which also carries the safety rule that stays in force for any AADS slot work. The corrected,
+current research — including the direct-to-DSC-Keybus alternative this document never
+considered — is [crestron-alarm-integration-paths.md](crestron-alarm-integration-paths.md).
+
+The rest of this document is left as written, Apex references and all, as the record of a real
+(if wrong) hypothesis and the reasoning that supported it at the time. Everywhere below that says
+"Apex" or "Destiny 6100," read "the DSC PC1864" instead; everywhere it cites Crestron's official
+Destiny 6100 module documentation, read that citation as void — this house's AADS never ran that
+module family, per the binary analysis in
+[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#what-the-aads-program-actually-contains).
 
 ## Conclusion
 

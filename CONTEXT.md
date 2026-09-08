@@ -190,7 +190,7 @@ and IP master of the Ethernet link to AADS.
 
 **AADS** (Adagio Audio Distribution System):
 Amp/matrix/tuner hardware with its own onboard 2-Series control engine; owns the ST-IO's Cresnet
-leg, the four TSW-752 panels, and (currently) the Apex alarm system's RS-232 connection.
+leg, the four TSW-752 panels, and (currently) the DSC PC1864 alarm panel's RS-232 connection.
 
 **CP3N**:
 Fallback control processor that would fully replace MC2E as Cresnet master and HA XSIG host, used
@@ -234,23 +234,25 @@ processors.
 _Avoid_: ISC, XSIG/ISC. Distinct from XSIG above: EISC is processor-to-processor, XSIG is
 Home Assistant-facing.
 
-**Alarm keypad**:
-The DSC-branded wall-mounted interface unit (faceplate visible in the pantry). A user-facing
-keypad, not the alarm system itself.
-_Avoid_: don't call this "the alarm panel" — that's a different component (see below); an earlier
-doc used the two loosely and should be tightened.
+**Alarm keypad / DSC PK5500**:
+The DSC-branded wall-mounted interface unit in the pantry, model confirmed 2026-09-08 by direct
+visual inspection. A user-facing keypad, not the alarm system itself.
+_Avoid_: don't call this "the alarm panel" — that's a different component (see below), a distinct
+physical device even though both are DSC.
 
-**Alarm panel / Apex Destiny 6100**:
-An Ademco/Honeywell-made alarm control system, visually confirmed present in the house and
-originally believed to be the thing any HA arm/disarm/status integration would talk to. As of
-2026-09-08 this is unsettled: the AADS's live program integrates with a real **DSC PowerSeries**
-system instead (a different manufacturer entirely, not a rebrand), so the Apex Destiny 6100 may be
-a legacy holdover rather than the currently-live panel. See
-[crestron-alarm-open-questions.md](docs/crestron/crestron-alarm-open-questions.md) and
-[crestron-alarm-integration-paths.md](docs/crestron/crestron-alarm-integration-paths.md).
+**Alarm panel / DSC PC1864**:
+The house's real alarm control panel, a DSC PowerSeries panel confirmed 2026-09-08 by direct visual
+inspection, matching the `S2_DSC_PowerSeries_*` modules the AADS's compiled program has run all
+along. An earlier identification of this panel as an "Apex Destiny 6100" (an Ademco/Honeywell
+product, not a DSC one) was wrong from the start; no Ademco/Honeywell hardware has ever been
+confirmed present in this house. See
+[crestron-alarm-open-questions.md](docs/crestron/crestron-alarm-open-questions.md#resolved-2026-09-08-direct-visual-confirmation-dsc-not-apex)
+for the resolution and
+[crestron-alarm-integration-paths.md](docs/crestron/crestron-alarm-integration-paths.md) for the
+resulting integration research.
 _Avoid_: don't conflate with Alarmo below — Alarmo is a virtual Home Assistant alarm layer with no
-connection to either physical system. Also don't assume "Apex Destiny 6100" and "the live alarm
-panel" are the same thing without checking the documents above first.
+connection to the physical panel. Don't call this "Apex" or "Apex Destiny 6100" in new writing; that
+name referred to a panel that was never actually in this house.
 
 **Path A**:
 The near-term design for reaching HA-Crestron control: hire a programmer to add a scoped XSIG
@@ -274,7 +276,7 @@ _Avoid_: don't read this document as having decided where the alarm bridge lives
 standing open item (see Alarm bridge below).
 
 **Alarm bridge (location)**:
-Open item: whether the Apex alarm system's XSIG exposure ends up hosted on AADS (keeping it as the
+Open item: whether the DSC alarm system's XSIG exposure ends up hosted on AADS (keeping it as the
 alarm bridge) or moved to MC2E/CP3N. Not yet decided.
 
 **REPORTCRESNET**:
@@ -288,7 +290,7 @@ The real, specific, actively-maintained third-party Home Assistant integration
 (`nielsfaber/alarmo`, installed via HACS), providing a virtual `alarm_control_panel` entity fed by
 ordinary HA sensors. Chosen because it is the exact feature the original Homie Dashboard author
 built full support for and announced in their own v1.1.0 changelog as "Alarmo controls." Has no
-connection to the house's real Crestron/DSC/Apex hardware; arming or disarming it does not touch
+connection to the house's real Crestron/DSC hardware; arming or disarming it does not touch
 the physical alarm system. See [issue #24](https://github.com/pdehlke/homeassistant/issues/24).
 _Avoid_: reading "Alarmo" as the original Homie Dashboard author's own (non-native-English) word
 for "Alarm." Checked and rejected: the un-forked upstream repository uses the identical spelling

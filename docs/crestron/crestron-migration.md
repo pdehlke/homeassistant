@@ -346,12 +346,23 @@ with it, unless the ST-IO is rewired onto the MC2E's Cresnet leg before the AADS
 other replacement I/O path. This is now a hard dependency of the AADS replacement work in
 [crestron-strategy.md](crestron-strategy.md#audio-replacing-the-aads), not an optional follow-up.
 
-## Alarm system: status unknown
+## Alarm system: DSC PC1864, confirmed 2026-09-08
 
-Not yet known whether the alarm system is wired into Crestron at all. Two plausible tie-in points exist
-in the current hardware. The alarm panel itself is a wall panel in the kitchen pantry, not rack-mounted,
-and the wire runs between it and the living room AV cabinet are inside walls and not traceable by hand.
-Confirming a tie-in means checking both ends independently, not following one continuous wire:
+**Resolved 2026-09-08.** The alarm panel is a **DSC PC1864**; the wall unit in the kitchen pantry
+whose faceplate first confirmed the DSC brand (below) is the keypad, a **DSC PK5500**, not the panel
+itself — both visually confirmed by pde. See
+[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#resolved-2026-09-08-direct-visual-confirmation-dsc-not-apex)
+for the full resolution (an earlier, wrong identification of the panel as an Apex Destiny 6100 is
+what "status unknown" in this heading used to track) and
+[crestron-alarm-integration-paths.md](crestron-alarm-integration-paths.md) for the resulting
+integration recommendation. The rest of this section is left as written below as the field-note
+record of how the brand was pinned down before the model was.
+
+Until 2026-09-08, it was not known whether the alarm system was wired into Crestron at all. Two
+plausible tie-in points exist in the current hardware. The keypad itself is a wall unit in the
+kitchen pantry, not rack-mounted, and the wire runs between it and the living room AV cabinet are
+inside walls and not traceable by hand. Confirming a tie-in means checking both ends independently,
+not following one continuous wire:
 
 - The ST-IO's 8 relay outputs and 4 analog/digital inputs, which are exactly the kind of dry-contact
   interface an alarm panel would use for a Crestron tie-in (arm/disarm relay, zone status contacts).
@@ -395,17 +406,19 @@ Confirming a tie-in means checking both ends independently, not following one co
   program includes an `.ird` IR driver database file, so this port is plausibly in active use for
   something, not just present unused.
 
-**Brand confirmed: DSC.** Visible on the faceplate of the pantry wall panel. The exact model is still
-unknown; the faceplate doesn't come off easily and identifying it further is deferred for now. DSC
-covers a wide range of panels (PowerSeries, Neo, and older lines) with different Home Assistant
-integration stories, so the recommendation in
-[crestron-strategy.md](crestron-strategy.md#alarm-system-no-recommendation-yet) still waits on the
-model.
+**Brand confirmed: DSC.** Visible on the faceplate of the pantry wall panel, which turned out to be
+the keypad rather than the panel itself (see the terminology trap noted in
+[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-terminology-trap-resolved)).
+**Model confirmed 2026-09-08: the panel is a DSC PC1864, and the pantry keypad is a DSC PK5500**,
+both by direct visual inspection. DSC PowerSeries panels have a clear, well-precedented Home
+Assistant integration story; see
+[crestron-alarm-integration-paths.md](crestron-alarm-integration-paths.md) for the researched
+recommendation, which supersedes the "no recommendation yet" status this section used to point at in
+[crestron-strategy.md](crestron-strategy.md#alarm-system-dsc-pc1864-confirmed).
 
-Until the exact model is known and the ST-IO's wiring is worked out, no integration recommendation can
-be made. Other common panel families (Honeywell/Resideo, Qolsys, Interlogix/GE) are ruled out now that
-the brand is confirmed. This is the top item in the checklist below because it blocks a decision, not
-because it is hard.
+The ST-IO's wiring is still unresolved and unrelated to the model question above; the two paragraphs
+below and the checklist item after them predate the model confirmation and are left as written for
+the field-note record.
 
 ## Open verification checklist
 
@@ -426,12 +439,14 @@ because it is hard.
       the lighting bus: the ST-IO's leg is a separate, independently-powered Cresnet bus from MC2E's,
       not a shared one. The 8 relays are harder since nothing can trigger them remotely; rely on
       labels, wire characteristics, and what's visible inside the alarm panel's own cover.
-- [ ] Identify the alarm panel's exact model. Brand confirmed DSC (2026-08-04) from the faceplate; the
-      faceplate doesn't come off easily so the model is still unknown. Need a way to read it without
-      prying the cover off - check for a label inside the door if it opens without full removal. (Note,
-      2026-09-08: the DSC-branded faceplate is the keypad, not necessarily the live panel — see
-      [crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-terminology-trap) and
-      [crestron-alarm-integration-paths.md](crestron-alarm-integration-paths.md).)
+- [x] Identify the alarm panel's exact model. Brand confirmed DSC (2026-08-04) from the pantry
+      faceplate, which turned out to be the keypad, not the panel (a distinction this item's earlier
+      wording missed — see
+      [crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-terminology-trap-resolved)).
+      **Model confirmed 2026-09-08 by direct visual inspection of the panel itself: DSC PC1864. The
+      pantry keypad is a DSC PK5500.** See
+      [crestron-alarm-integration-paths.md](crestron-alarm-integration-paths.md) for what this
+      unblocks.
 - [x] Identify the exact Lennox thermostat model installed. Two units, both iComfort S30, named
       North and South.
 - [ ] Count how many audio zones and line inputs are actually in active use on the AADS today. Not
