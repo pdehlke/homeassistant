@@ -164,6 +164,31 @@ Verified only for the default `dayGridMonth` view. The list/week/day FullCalenda
 different `.fc-list-*` / `.fc-timegrid-*` classes and were not tested; expect the same problem
 there if anyone switches views on a themed instance and hits an unstyled white panel again.
 
+### Combining a pierced and an unpierced UIX rule on one card
+
+Confirmed 2026-09-07 building `dashboard-clock`'s Home Status card: `uix.style` as an object can mix
+a `"."` key (plain CSS applied unpierced, in the card's own shadow root, the same scope a plain
+string value targets) with one or more `"<selector>$"` pierce keys, in the same config. Needed when
+a card wants both kinds at once, for example a `:host` custom-property rule reaching a differently
+-nested element via inheritance alongside a `display: flex` rule that has to physically land inside
+a nested shadow root because `display` doesn't inherit:
+
+```json
+"uix": {
+  "style": {
+    ".": ":host { --ha-card-header-font-size: 30px; }",
+    "ha-markdown$": "ha-markdown-element { display: flex; gap: 32px; }"
+  }
+}
+```
+
+This resolves an ambiguity this doc previously only guessed at: external UIX documentation describes
+a nested-dictionary form for pierce keys (`{"ha-markdown $": {"h3": "color: purple;"}}`) that
+disagreed with the flat CSS-block-string form already confirmed working here for
+`ha-full-calendar$` above. Tested directly rather than trusting either source: the flat CSS-block
+form is correct, the `"."` key works as the unpierced counterpart, and the external doc's nested
+form was not attempted.
+
 ## mini-media-player (kalkih/mini-media-player v1.16.12): two undocumented config keys
 
 Confirmed 2026-08-14 building the Office dashboard's now-playing footer (see

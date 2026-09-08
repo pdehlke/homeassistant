@@ -152,6 +152,85 @@ Verified after saving by re-measuring the live shadow DOM rather than trusting t
 title rendered at 30px/60px, body and its `<li>` elements at 17.5px/28px, both exactly the
 25%-larger target with line-height scaling proportionally as predicted.
 
+## A fifth status item and a two-column layout, 2026-09-07
+
+Between the font-size change above and this one, pde moved the card to the top of its column and
+increased the content font size further by hand through the Lovelace UI, to 20.5px; those edits are
+reflected in the current live config but weren't made through this skill's scripts, so there's no
+separate record of exactly when. He then asked for a fifth item, `Vacuum:`, mirroring Homie
+Dashboard's own "Robot" status grid item on its Overview A/B screens, and for the card to become a
+header plus two columns: Lights/HVAC/Media on the left, EV/Vacuum on the right.
+
+**What "mirroring" Robot means.** Read directly from the Homie Dashboard fork's `dist/config.js`
+and `dist/homie-dashboard.html`: the "Robot" grid item has no `onValue`/`offValue` pair and no
+`unit`, so `_refreshStatGrid()` takes its plain-passthrough branch and displays
+`sensor.homie_robot_status`'s raw state string verbatim, with no threshold, mapping, icon, or color
+logic at all. Reproducing it faithfully means exactly one thing: template that same sensor directly,
+`{{ states('sensor.homie_robot_status') }}`, the same pattern already used for `sensor.
+homie_lights_status`.
+
+**Two-column layout: raw HTML considered and rejected.** The obvious approach was wrapping the two
+groups in `<div>`s with a class, then styling that class via UIX. Rejected without trying it live:
+Home Assistant's markdown card sanitizes rendered HTML through the `xss` library's tag/attribute
+whitelist (`markdown-worker.ts` in `home-assistant/frontend`), not DOMPurify, and confirming whether
+`div`, `class`, or `style` survive that whitelist would have meant the same kind of guesswork this
+project's own rules argue against. A structural alternative avoided the question entirely: two
+separate markdown bullet lists, split by a `---` thematic break, render as two sibling `<ul>`
+elements plus an `<hr>`, confirmed live by walking the shadow DOM. `<ul>`/`<li>`/`<hr>` were already
+known to render (the four-item version already used `<li>`), so nothing new needed sanitizer
+verification at all.
+
+```
+- Lights: {{ lights_n }} On
+- HVAC: {{ hvac_n }} On
+- Media: {{ media_text }}
+
+---
+
+- EV: {{ ev_text }}
+- Vacuum: {{ vacuum_text }}
+```
+
+**The layout itself needed real shadow-piercing, resolved empirically.** The two `<ul>`s' direct
+parent, `<ha-markdown-element>`, lives inside `ha-markdown`'s own separate internal shadow root, one
+level deeper than where the font-size fix above could reach by relying on inherited properties.
+`display: flex` doesn't inherit, so there was no equivalent shortcut this time; reaching it requires
+UIX's shadow-piercing selector syntax, the exact form of which this project's own docs and an
+external UIX documentation fetch had already disagreed about (see the font-size section above).
+Tested directly on the live card rather than trusting either source: `uix.style` as an object with a
+`"."` key for the unpierced base rules and a `"<selector>$"` key for pierced ones, each holding a
+plain CSS-block string, works exactly as this project's own prior `ha-full-calendar$` example
+implied.
+
+```yaml
+uix:
+  style:
+    ".": |
+      :host {
+        --ha-card-header-font-size: 30px;
+      }
+      ha-markdown {
+        font-size: 20.5px;
+      }
+    "ha-markdown$": |
+      ha-markdown-element {
+        display: flex;
+        gap: 32px;
+        align-items: flex-start;
+      }
+      hr {
+        display: none;
+      }
+```
+
+Verified live in three stages before touching the real content: first that setting `display: flex`
+directly on the located `<ha-markdown-element>` via an inline-style probe actually produced the
+side-by-side layout, then that the same effect landed through the `uix.style` object form once
+deployed, then a final screenshot with the real Jinja content and all five items showing correct
+live values (`Lights: 0 On`, `HVAC: 2 On`, `Media: Idle`, `EV: Charging`, `Vacuum: Charging`,
+the last two agreeing since both read real activity at the same moment). Browser console showed
+only the same two pre-existing errors already documented below; nothing new from this change.
+
 ## Initial verification
 
 Confirmed live via `playwright-cli` as the `Pete` admin account (storage-state file built from

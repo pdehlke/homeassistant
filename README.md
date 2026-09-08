@@ -258,14 +258,16 @@ Notes, planning, and specs for my Home Assistant buildout.
 - [clock-home-status-card.md](docs/native-dashboards/clock-home-status-card.md)
 
   A "Home Status" markdown card added to `dashboard-clock` below the solar production gauge,
-  listing Lights/HVAC/Media/EV as a four-line vertical list in the same Liquid Glass theme as its
-  neighbors. The three ambiguous derivations resolved with pde before building it: HVAC counts
-  zones actively heating or cooling rather than just enabled, Media counts only `playing` (not
-  `paused`) as "now playing," and EV state is derived from the vehicle-connected sensor plus
-  charging power rather than the charger's own unreliable status text. Also covers recovering the
-  card after a same-day UI edit pasted its own YAML into its `content` field, and sizing its title
-  and body text up 25% via a `--ha-card-header-font-size` UIX override that cascades through the
-  card's own shadow boundary without needing to pierce it.
+  listing Lights/HVAC/Media/EV/Vacuum in the same Liquid Glass theme as its neighbors. The
+  ambiguous derivations resolved with pde before building it: HVAC counts zones actively heating or
+  cooling rather than just enabled, Media counts only `playing` (not `paused`) as "now playing," EV
+  state is derived from the vehicle-connected sensor plus charging power rather than the charger's
+  own unreliable status text, and Vacuum mirrors Homie Dashboard's own "Robot" status grid item, a
+  plain passthrough of one sensor's raw state. Also covers recovering the card after a same-day UI
+  edit pasted its own YAML into its `content` field, sizing its text up via a
+  `--ha-card-header-font-size` UIX override that cascades through the card's own shadow boundary
+  without needing to pierce it, and later a genuine shadow-piercing UIX rule (finally resolving this
+  project's earlier uncertainty about the pierce syntax) splitting the list into two columns.
 
 - [liquid-glass-backdrop-filter-flicker.md](docs/native-dashboards/liquid-glass-backdrop-filter-flicker.md)
 
