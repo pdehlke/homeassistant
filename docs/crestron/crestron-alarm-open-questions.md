@@ -104,6 +104,30 @@ Cheapest first. None of these requires pressing a join.
    and receiving answers, the integration is live. If it has been timing out since 2019, it is dead
    code and reading 3 above as correct.
 
+## New evidence, 2026-09-07: the zone status page, and a live collision
+
+[crestron-alarm-zone-inventory.md](crestron-alarm-zone-inventory.md) statically read a second
+alarm page in the TSW-752 project, `ALARM-DSC-pg02-zones`, that this document's original pass never
+walked. It lists 24 zones on AADS digital joins `d201`-`d224`, entirely by reading the retrieved
+panel XML, no live connection made.
+
+That range turns out to collide with the live lighting bridge in a way the `d130`-`d148` range
+never did: `outside_holiday` **presses** `d221` directly, in current production use, and `d221` is
+also that page's "Room 4 East Wins" zone. Every other lighting/alarm collision on record is a
+read-only alias sitting inside a range nothing presses; this is a write. See
+[crestron-alarm-zone-inventory.md](crestron-alarm-zone-inventory.md#two-collisions-this-inventory-found-that-lighting-work-did-not-know-about)
+for the three unresolved readings of what that means and why nothing here was changed to resolve
+it: doing so trades away a working feature (Holiday has no other join in the whole panel project)
+against a risk the DSC-vs-Apex puzzle above still hasn't settled. A second, read-only collision
+(`d206`, shared with `outdoor_kitchen`'s alias) and two smaller gaps in `FORBIDDEN_AADS_WRITE`
+(`d149`, `d187`/`d188`) are recorded there too.
+
+This sharpens why the puzzle above still matters even though lighting is done and stable: if
+reading 3 (the DSC modules are dead code) is correct, the `d221` collision is inert. If reading 1
+(subsystem gating) or reading 2 (a later, separate DSC install) is correct instead, a
+currently-shipping Home Assistant feature has been quietly exercising alarm-adjacent processor
+state since 2026-09-06 with no way, from here, to tell.
+
 ## What this corrects elsewhere
 
 [crestron-apex-control-plane.md](crestron-apex-control-plane.md) proposes exposing "the AADS's

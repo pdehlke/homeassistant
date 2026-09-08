@@ -264,6 +264,13 @@ Assistant, unresolved, not in the load table. Holiday's resolution doesn't imply
 theirs; it was traced separately and answered a different question (a real fixture behind the
 button) than the other three are still asking (any effect at all).
 
+**Correction, 2026-09-07.** `d221`, the join Holiday presses, is also a DSC alarm zone
+("Room 4 East Wins") on a panel page this project hadn't read yet when Holiday was wired. Nothing
+about Holiday's own behavior changes on the strength of this alone; see
+[crestron-alarm-zone-inventory.md](crestron-alarm-zone-inventory.md#d221-holidays-own-join-is-also-a-zone-join-and-it-is-actively-pressed)
+and [crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#new-evidence-2026-09-07-the-zone-status-page-and-a-live-collision)
+before touching Holiday or the alarm system again.
+
 ## Two bugs worth remembering
 
 **A service handler must be an `async def`, not a lambda returning a coroutine.** The first live

@@ -109,7 +109,15 @@ Notes, planning, and specs for my Home Assistant buildout.
   meanwhile: never press unknown joins on the AADS, because its program carries a virtual keypad
   across eight partitions. Records what the AADS's compiled program actually contains, why its DSC
   PowerSeries modules sit oddly against a visually confirmed Apex Destiny panel, the three readings
-  of that contradiction, and the read-only tests that would settle it.
+  of that contradiction, and the read-only tests that would settle it. Updated 2026-09-07 with a
+  newly found live collision between an alarm zone join and an already-shipping light.
+
+- [crestron-alarm-zone-inventory.md](docs/crestron/crestron-alarm-zone-inventory.md)
+
+  Twenty-four DSC alarm zones read statically off the TSW-752 panel project's own zone status page,
+  by name and AADS digital join, with no live connection made. Two collisions this inventory found
+  with the live lighting bridge, one of them a write, not just a read, plus the Home Assistant
+  placeholder entities it produced and what is deliberately still not wired up.
 
 - [crestron-xsig-programmer-scope.md](docs/crestron/crestron-xsig-programmer-scope.md)
 
