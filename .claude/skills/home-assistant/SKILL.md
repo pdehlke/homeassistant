@@ -6,8 +6,9 @@ description:
   change Home Assistant - entities, states, automations, scripts, scenes,
   helpers, integrations, Lovelace dashboards and cards, energy or Sense data,
   calendars, weather, or media playback. Tells you which of the three access
-  paths (HA MCP tools, REST API, WebSocket API) can actually do a given job, and
-  records this instance's quirks. Skip for other smart-home platforms.
+  paths (the `home-assistant` MCP server, REST API, WebSocket API) can actually
+  do a given job, and records this instance's quirks. Skip for other smart-home
+  platforms.
 ---
 
 # Home Assistant (pde's instance)
@@ -45,32 +46,42 @@ description:
   any client other than the device it was targeting. See
   [homie-dashboard-install-plan.md](../../../docs/homie-dashboard/homie-dashboard-install-plan.md)'s
   2026-08-10 and 2026-08-11 checkpoints.
+- The `home-assistant` MCP server (the `ha-mcp` add-on) is full read/write, not
+  the old read-only Assist-intent bridge — 78 tools covering automations,
+  scripts, scenes, dashboards, every registry, HACS, add-ons, and backups.
+  Verified live 2026-09-08. It runs on the HA VM's own LAN IP, not
+  `hass.ehlke.net` and not `0.0.0.0`. See
+  [references/mcp-server.md](references/mcp-server.md) before assuming it can't
+  do something, and before troubleshooting a `ConnectionRefused`.
 
 ## Pick the right access path
 
-Choosing wrong wastes a turn. The MCP server in particular cannot configure
-anything.
+Choosing wrong wastes a turn. As of 2026-09-08 the `home-assistant` MCP server
+(`mcp__home-assistant__*`, the `ha-mcp` add-on) is full read/write and covers
+nearly everything below in one interface — prefer it first. REST and
+WebSocket remain for the handful of things it doesn't do, or as a fallback
+when its tool schemas aren't loaded in the current session (see
+[references/mcp-server.md](references/mcp-server.md)).
 
-| Task                                                    | Path                                                         |
-| ------------------------------------------------------- | ------------------------------------------------------------ |
-| Read states, call services, control devices             | MCP tools (`mcp__HA__*`) or REST                             |
-| Automations, scripts, scenes, helpers (full CRUD)       | REST                                                         |
-| Install an integration (config flow)                    | REST                                                         |
-| History, logbook, templates, config check               | REST                                                         |
-| **Lovelace dashboards and cards**                       | WebSocket only                                               |
-| **Area / entity / device / label registry**             | WebSocket only                                               |
-| HACS repository list                                    | WebSocket only                                               |
-| Supervisor / add-ons                                    | WebSocket `supervisor/api`; REST `/api/hassio/*` returns 401 |
-| Anything inside an add-on's own API (e.g. MA favorites) | WebSocket, via an HA ingress session                         |
-
-The `mcp__HA__*` tools are the Assist intent bridge: turn on/off, media
-transport, volume, shopping list, timers, broadcast, `GetLiveContext`. They
-expose **no configuration surface at all**, and they only see entities exposed
-to Assist, which is a small subset. Do not reach for them to build or edit
-anything.
+| Task                                                     | Path                                          |
+| --------------------------------------------------------- | ----------------------------------------------- |
+| Read states, call services, control devices               | MCP or REST                                     |
+| Automations, scripts, scenes, helpers (full CRUD)          | MCP or REST                                     |
+| Lovelace dashboards and cards                               | MCP or WebSocket                                |
+| Area / entity / device / label / category registry          | MCP or WebSocket                                |
+| HACS repository list / management                            | MCP or WebSocket                                |
+| Backups, updates, add-ons ("apps")                             | MCP; REST `/api/hassio/*` returns 401           |
+| Install an integration (config flow)                            | MCP (`ha_set_integration`) or REST              |
+| History, logbook, templates, config check                        | MCP or REST                                     |
+| Anything inside an add-on's own API (e.g. MA favorites)            | WebSocket, via an HA ingress session            |
+| Visual verification (does it render right?)                         | `playwright-cli`, nothing else confirms this    |
+| Homie Dashboard file deploys                                          | SFTP — not an HA API concern at all             |
 
 For REST and WebSocket recipes, including the ready-made `scripts/haws.py`
-client, read [references/api-access.md](references/api-access.md).
+client, read [references/api-access.md](references/api-access.md). For the MCP
+server's connection details, full tool inventory, and how to verify it without
+waiting on tool schemas to load, read
+[references/mcp-server.md](references/mcp-server.md).
 
 ## Before changing anything
 
@@ -81,6 +92,10 @@ client, read [references/api-access.md](references/api-access.md).
   `/api/config/core/check_config` and by confirming the entity appears.
 - Prefer verifying visually when the task is visual. A saved config that
   validates can still render broken, which has happened here more than once.
+- The MCP server's write tools do their own validation and some maintain
+  auto-backups, but that doesn't relax this discipline — verify a write the
+  same way you would over REST or WebSocket. See
+  [references/mcp-server.md](references/mcp-server.md).
 
 ## Never leak the token
 
@@ -126,6 +141,11 @@ Tell pde immediately, plainly, and completely — what leaked, which token
 admin `$HA_TOKEN` and any other credential do), and recommend rotation. Then
 keep going with the task once he's acknowledged it; don't let the incident block
 unrelated work he's waiting on.
+
+The `home-assistant` MCP server's URL carries the same weight as `$HA_TOKEN` —
+its `/private_<secret>` path segment is its entire auth mechanism, full
+read/write. Same discipline, same rotation path if it leaks. See
+[references/mcp-server.md](references/mcp-server.md#treat-the-url-like-ha_token).
 
 ## Instance quirks worth knowing before you diagnose anything
 

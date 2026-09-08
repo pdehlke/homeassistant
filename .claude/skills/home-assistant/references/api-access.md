@@ -1,5 +1,11 @@
 # API access recipes
 
+As of 2026-09-08 the `home-assistant` MCP server (`mcp__home-assistant__*`) covers most of what's
+below directly — see [mcp-server.md](mcp-server.md) and prefer it first. The recipes here remain
+the reference for REST/WebSocket specifically, for whatever the MCP server doesn't cover, and for
+the gotchas documented below, which haven't all been individually re-tested against their MCP
+equivalents.
+
 All examples assume:
 
 ```bash

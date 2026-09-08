@@ -23,6 +23,10 @@ Config entries as of this snapshot (`GET /api/config/config_entries/entry`, 77 e
 
 `frosted_glass_manager` is a custom integration. New since the 2026-08-04 snapshot: `cloud` (Home Assistant Cloud / Nabu Casa, see [nabucasa-remote-ui-dns-fragility.md](../../../../docs/nabucasa-remote-access/nabucasa-remote-ui-dns-fragility.md)), `lennoxs30` (see [lennoxs30-integration.md](../../../../docs/lennox-climate/lennoxs30-integration.md)), `rachio` (see [rachio-zone-disabled-alert.md](../../../../docs/rachio/rachio-zone-disabled-alert.md)), `roborock` (see [roborock-status-mqtt-stall.md](../../../../docs/device-alerts/roborock-status-mqtt-stall.md)), `mobile_app` (two devices registered, see Notifications below), `harmony` (Logitech Harmony Hub, powers `remote.harmony_hub`, not written up anywhere yet), `lg_thinq` (powers the new `media_player.lg_webos_tv_um7300pua`, not the appliance line the name suggests), `openevse` (the garage EV charger, see the callout at the end of this section), `template`, `group`, `history_stats`, `moon`, `waqi`, `material_symbols`, `lg_thinq`.
 
+`ha-mcp` (the `home-assistant` MCP server, homeassistant-ai/ha-mcp) is a Supervisor add-on, so
+it doesn't show up in this config-entries list at all. See
+[mcp-server.md](mcp-server.md) for connection details and its tool inventory.
+
 **The garage EV charger (`openevse`) has no writeup anywhere in this archive.** It exposes charging status, current/power/voltage sensors, a settable charge rate, restart buttons, and vehicle-connected/divert-active/load-shaper-active binary sensors, all under `garage_ev_charger_*`. Worth a document of its own if it is staying.
 
 ## Sense energy monitor, and its dead detections
