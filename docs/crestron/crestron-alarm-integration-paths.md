@@ -170,6 +170,63 @@ five-minute check at the panel, not a redesign.
 | **[EyezOn EnvisaLink EVL-4EZR](https://www.eyezon.com/evl4.php)** | ~$110-120 | Plug into Keybus terminals, no soldering | Built into Home Assistant core (`envisalink` integration, [docs](https://www.home-assistant.io/integrations/envisalink/)). TCP/IP module that emulates a keypad. Some reported reliability issues with intermittent zone updates ([HA core issue #80441](https://github.com/home-assistant/core/issues/80441)). Also supports Honeywell/Ademco panels — see the hedge below. |
 | **[esphome-dsckeybus](https://github.com/Dilbert66/esphome-dsckeybus)** (ESP32 + level-shifting circuit) | ~$15-25 in parts | DIY: basic soldering, no official assembled board sold — community members have shared PCB designs but there's no vendor to just buy one from | Produces a native Home Assistant `alarm_control_panel` (states: armed_away/armed_home/armed_night/pending/disarmed/triggered), per-zone `binary_sensor`s, low-battery/bypass/alarm status sensors, PGM relay outputs, and **`alarm_trigger_panic`/`alarm_trigger_fire`** services — the panel's own Panic and Fire keypad functions, reachable from Home Assistant. Supports up to 8 partitions and 64 zones. Users report it as more reliable than Envisalink for zone updates. |
 
+### Network connectivity: EnvisaLink needs wired Ethernet, ESPHome doesn't
+
+Asked directly, 2026-09-08: there's no Ethernet near the panel and no viable way to run a line
+there. This matters, because the two hardware options above aren't equivalent on this axis.
+
+The EnvisaLink EVL-4EZR is **wired Ethernet only**. Its own spec page lists "100BaseT Ethernet
+Support" and an RJ45 connector as its sole network interface, with no WiFi mentioned anywhere
+([source](https://www.eyezon.com/evl4.php)). The only workaround the EnvisaLink community reports is
+adding a separate WiFi-to-Ethernet bridge next to it
+([source](https://www.alarmsystemstore.com/pages/envisalink-4-use-with-wifi-ethernet)) — which
+doesn't remove the constraint, it just adds a second device that also needs power and signal at the
+panel.
+
+`esphome-dsckeybus` doesn't have this problem. It runs on an ESP32, which has WiFi built in, so it
+was never going to need a wired network in the first place — it only needs 12V/aux power (already
+present at the Keybus terminals it wires into) and WiFi coverage reaching the panel's physical
+location, not a data line.
+
+Given the no-Ethernet constraint, `esphome-dsckeybus` is the only one of the two options that doesn't
+need a workaround to be viable in this house at all. It was already the cheaper, more-featured option
+in the table above; this makes it the clearer pick specifically for this installation, not just in
+general.
+
+### PC1864 specifically, not just "a DSC PowerSeries panel"
+
+Written against the generic "DSC PowerSeries" category when this document was first researched;
+confirmed against the exact model once pde identified it, 2026-09-08. Two things worth knowing now
+that weren't knowable before:
+
+- **This rules out the one real remaining risk to the hardware options above.** DSC's current
+  lineup spans three incompatible families: the old **Classic** series, **PowerSeries** (what the
+  PC1864 is), and **PowerSeries Neo**. Neo panels use a newer, encrypted Keybus variant ("Corbus")
+  that neither hobbyist library below can speak — `taligentx/dscKeybusInterface`'s own README states
+  plainly that Neo "use[s] a higher speed encrypted data protocol (Corbus) that is not currently
+  possible to support." Until the model was confirmed, "DSC PowerSeries" could in principle have
+  meant Neo, which would have made the whole EnvisaLink/ESPHome hardware section moot. It doesn't:
+  PC1864 is a classic PowerSeries panel, squarely in the supported family.
+- **Both hardware options above name the PC1864 explicitly**, not just the PowerSeries family
+  generically: the EnvisaLink EVL-4 series lists "PC5020 (864)... and PC1864" in its own compatible-panel
+  list ([source](https://www.alarmsystemstore.com/pages/envisalink-4-what-alarm-systems-are-compatible)),
+  and `taligentx/dscKeybusInterface` (the library `esphome-dsckeybus` wraps) lists it among the
+  panels "tested with," alongside PC1616 and PC1832
+  ([source](https://github.com/taligentx/dscKeybusInterface)).
+
+A second, independent corroboration: DSC's own spec sheet gives the PC1864 a maximum of **8
+partitions**
+([source](https://www.dsc.com/alarm-security-products/PC1864%20-%20PowerSeries%20Control%20Panel%20PC1864/2606)),
+exactly matching the eight instances of `S2_DSC_PowerSeries_Partition_Control_v1_0` in the AADS's
+compiled program (see
+[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#what-the-aads-program-actually-contains)).
+That's not proof the AADS's serial link to the panel is presently transacting, but it's one more
+data point that the program was written for this specific panel rather than some generic template.
+
+Net effect on the recommendation below: none of the reasoning changes, but the risk it used to carry
+("this needs to actually be classic PowerSeries once the model is known") is now closed rather than
+assumed.
+
 Either option gives Home Assistant a **genuine, hardware-backed `alarm_control_panel` entity** — not
 a placeholder, not something virtual. At that point Alarmo becomes optional rather than load-bearing:
 it could stay as the UI layer, with its zone list pointed at the real DSC-derived `binary_sensor`s
