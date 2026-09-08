@@ -82,7 +82,7 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 - [crestron-ha-bridge.md](docs/crestron/crestron-ha-bridge.md)
 
-  The daemon connecting Home Assistant's thirty light entities to the real loads: a custom
+  The daemon connecting Home Assistant's twenty-nine light entities to the real loads: a custom
   integration holding two CIP sessions, why it needs two rather than one, how discrete on/off is
   synthesised over buttons that only toggle, where the safety guard sits and why it is enforced
   twice, and an explicit account of what is proven, what is not yet deployed, and what is blocked.

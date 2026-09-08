@@ -45,6 +45,18 @@ that replaced the MC2E as Pathway's control path entirely. See
 [crestron-ha-bridge.md](crestron-ha-bridge.md#kitchen-pathway-moved-off-the-mc2e-entirely)
 for the migration.
 
+`d183`/`d246`'s "Home Perimeter" rows below have the same problem the original
+Pathway/Perimeter read did. Confirmed by pde 2026-09-06
+([issue #23](https://github.com/pdehlke/homeassistant/issues/23)): pressing
+either one lights the same garage dimmer LED as Door (`d181`), not a distinct
+Outside fixture. They are folded into `entry_door` as aliases in the bridge
+now, the same treatment `d103` got. The real Home Perimeter is a genuinely
+different physical control, a Foyer keypad button that turned out to operate
+Cresnet device `0x74` (a CLX-4HSW4) directly, entirely outside the digital join
+numbering this whole worksheet is built from. See
+[crestron-ha-bridge.md](crestron-ha-bridge.md#home-perimeter-was-never-a-real-load-either)
+for the full trace.
+
 Four Home Assistant areas carry no row here: Garage, Gym, Garage Mechanical
 Closet and North Mechanical Closet. Confirmed 2026-09-02 as genuinely having no
 Crestron lighting rather than as a gap in this map.
@@ -116,12 +128,14 @@ Guest Suite.
 | ------ | --------------- | ---- | ------------------------------ | --------------- |
 | `d181` | Door            | load | -                              | Entry           |
 | `d182` | Entry Center    | load | -                              | Entry           |
-| `d183` | Home Perimeter  | load | `d246`                         | Outside         |
+| `d183` | Home Perimeter  | load* | `d246`                         | Outside         |
 | `d184` | Entry Perimeter | load | -                              | Entry           |
 | `d185` | Garage Sconces  | load | `d244`                         | Outside         |
 | `d186` | Patio South     | load | `d126`, `d166`                 | Courtyard       |
 | `d187` | Outdoor Kitchen | load | `d104`, `d144`, `d206`, `d247` | Outdoor Kitchen |
 | `d188` | Patio North     | load | `d164`                         | Courtyard       |
+
+\* Not a load of its own; drives the same fixture as Door (`d181`). See the note above.
 
 ## Patio (`LIGHT-pg01-zn06`)
 
@@ -168,9 +182,11 @@ button was traced separately.
 | `d243` | East Hall       | load  | -                              | Guest Suite     |
 | `d244` | Garage Sconces  | load  | `d185`                         | Outside         |
 | `d245` | Pool Bath       | load  | -                              | Office          |
-| `d246` | Home Perimeter  | load  | `d183`                         | Outside         |
+| `d246` | Home Perimeter  | load* | `d183`                         | Outside         |
 | `d247` | Outdoor Kitchen | load  | `d104`, `d144`, `d187`, `d206` | Outdoor Kitchen |
 | `d248` | (blank)         | blank | -                              |                 |
+
+\* Not a load of its own; drives the same fixture as Door (`d181`). See the note above.
 
 ## Distinct load names
 

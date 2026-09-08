@@ -73,7 +73,7 @@ two places on purpose: `const._validate()` rejects a table containing a forbidde
 import time, so a bad entry fails at Home Assistant startup rather than lying dormant until someone
 turns that light on, and `bridge._guard()` checks again immediately before bytes reach the wire.
 
-The write surface is exactly the twenty-seven canonical AADS joins plus, for the three Kitchen loads
+The write surface is exactly the twenty-six canonical AADS joins plus, for the three Kitchen loads
 that still need it, the MC2E joins. Nothing else is ever sent. `d91`, the Lights subsystem-entry join, was considered as a
 way to make the AADS's interpretation of the shared range explicit and deliberately not used: the
 bridge never writes that range, so `d91` buys no safety while changing processor state in a way
@@ -84,13 +84,15 @@ Receiving a forbidden join is expected and fine. Powder reports on `d142` and Ou
 
 ## Load table
 
-Thirty loads. Twenty-seven on the AADS panel slot, three on the MC2E XPanel, together covering
+Twenty-nine loads. Twenty-six on the AADS panel slot, three on the MC2E XPanel, together covering
 forty-one of the forty-two load buttons in
 [crestron-load-room-worksheet.md](crestron-load-room-worksheet.md). Holiday (`d221`, the Modes
-page's "Holiday" button) is the newest of the twenty-seven: categorised as a scene in the original
-worksheet pass, reclassified 2026-09-06 once pde traced it physically to a real fixture. See
+page's "Holiday" button) joined 2026-09-06: categorised as a scene in the original worksheet pass,
+reclassified once pde traced it physically to a real fixture. See
 [Holiday: a real load hiding on the Modes page](#holiday-a-real-load-hiding-on-the-modes-page)
-below.
+below. `outside_home_perimeter` left the same day, folded into `entry_door` as an alias rather than
+a load of its own; see
+[Home Perimeter was never a real load either](#home-perimeter-was-never-a-real-load-either).
 
 The one gap is `d145`, Kitchen's own "Pathway" button: it sits inside the forbidden alarm range and
 has gone unreferenced by anything in the load table since `kitchen_pathway` moved onto its safe
@@ -123,7 +125,9 @@ for the full identification record. Kitchen Pathway no longer needs any of this:
 **Live since 2026-09-02, at full coverage since 2026-09-03.** Both links registered, all lights
 bound to it, driving real loads. Thirty loads at first; twenty-nine since 2026-09-05, when
 `kitchen_perimeter` was dropped as a duplicate of Kitchen Pathway rather than a load of its own;
-thirty again since 2026-09-06, when Holiday joined as a genuinely new load rather than a duplicate.
+thirty again since 2026-09-06, when Holiday joined as a genuinely new load rather than a duplicate;
+twenty-nine again later the same day, when `outside_home_perimeter` turned out to be the same kind
+of duplicate `kitchen_perimeter` was, this time of `entry_door`.
 
 Proven live:
 
@@ -146,15 +150,15 @@ Established before deployment and unchanged by it:
 
 - Registration through end of state dump takes about 1.1s.
 - The AADS panel slot carries no per-load analog level join, so the bridge has no way to command a
-  specific level for any of its twenty-seven loads today. That is not the same as the loads
-  themselves being on/off fixtures: all but four of the thirty loads across both links are
+  specific level for any of its twenty-six loads today. That is not the same as the loads
+  themselves being on/off fixtures: all but four of the twenty-nine loads across both links are
   dimmer-capable, AADS ones included, not just the MC2E's Kitchen channels. Toggling one of those
   loads through the panel slot's single digital join recalls whatever level the load's own program
   logic treats as "on," which is not necessarily full brightness. Brightness is still out of scope
   pending the Phase 2 dimmer pass; `level_join` on the `Load` dataclass records what identification
   finds so that pass does not have to re-derive it.
 - The AADS does not drop a client that stops answering heartbeats, at least not within 149s.
-- Twenty-seven offline tests pass, covering the codec against recorded frames, the load table's
+- Twenty-eight offline tests pass, covering the codec against recorded frames, the load table's
   safety invariants, and the toggle logic including idempotence, concurrency, alias resolution,
   refusal on unknown state, and the on/off-join split.
 
@@ -259,17 +263,69 @@ the house" design intent (see [homie-scenes-chip.md](../homie-dashboard/homie-sc
 pde's call, on the basis that seasonal decorative lighting isn't what "every light on for guests"
 means. Added to the Lights chip under Outside instead.
 
-Security, Vacation and Party remain exactly where issue #19 left them: untested through Home
-Assistant, unresolved, not in the load table. Holiday's resolution doesn't imply anything about
-theirs; it was traced separately and answered a different question (a real fixture behind the
-button) than the other three are still asking (any effect at all).
-
 **Correction, 2026-09-07.** `d221`, the join Holiday presses, is also a DSC alarm zone
 ("Room 4 East Wins") on a panel page this project hadn't read yet when Holiday was wired. Nothing
 about Holiday's own behavior changes on the strength of this alone; see
 [crestron-alarm-zone-inventory.md](crestron-alarm-zone-inventory.md#d221-holidays-own-join-is-also-a-zone-join-and-it-is-actively-pressed)
 and [crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#new-evidence-2026-09-07-the-zone-status-page-and-a-live-collision)
 before touching Holiday or the alarm system again.
+
+Security, Vacation and Party moved on independently after this section was first written. Party
+turned out real too, driving Door, Entry Center, East Hall and the Primary Suite hallway, confirmed
+physically the same way Holiday was. Security and Vacation are the opposite finding: watched
+through Home Assistant across the full `light`/`binary_sensor`/`switch`/`alarm_control_panel`
+entity set during a live press each, and neither moved anything at all, nor lit a garage dimmer LED
+either. Whether they're dead or belong to the DSC alarm's own unmapped logic is still open. None of
+the three are in the load table; see [issue #19](https://github.com/pdehlke/homeassistant/issues/19)
+for the full record rather than this section, which is Holiday's alone.
+
+## Home Perimeter was never a real load either
+
+The same Foyer-keypad chase that resolved Party turned up a second, unrelated correction. The
+bridge's `outside_home_perimeter` (AADS `d183`, alias `d246`) was never a distinct fixture: pde
+found the Foyer keypad's actual "Home Perimeter" button and traced it to the same garage dimmer LED
+as Door, then separately confirmed pressing `d183`/`d246` lights that same LED too. Same shape as
+the Kitchen Perimeter mixup, different pair. `d183` and `d246` are now aliases of `entry_door`
+rather than a load of their own.
+
+The real Home Perimeter turned out to be a genuinely different problem than a mislabeled join.
+Watching the bridge's own raw digital-join trace on the AADS while the Foyer button was pressed
+showed nothing move except the Goodbye/Good Night "everything's off" tell, the signature of a real
+load turning on and off with no join of its own visible on that connection. A Cresnet tap capture
+(read-only, `mac/poc_foyer_tap.py` in CresnetMon) caught a clean, twice-only burst at the press
+moments touching the Foyer keypad's own bus address (`0x67`) and device `0x74`, and a follow-up
+SDEBUG capture scoped to `0x74` on the MC2E's console confirmed it directly: "Digital Join 3 is
+High" / "Digital Join 3 is Low," six seconds apart, matching the press exactly.
+
+`0x74` is a CLX-4HSW4, a non-dimming switch module rather than a dimmer, and the one lighting
+module in the house's inventory that had never been tied to a fixture before this. Fitting, since
+Home Perimeter is an exterior floodlight circuit, not something anyone dims.
+
+This join cannot be added to the load table the way Kitchen Pathway's alias was. Every `Load` here
+is a join inside the AADS's or MC2E's own program, reached over CIP; `0x74`'s Digital Join 3 is that
+module's own internal Cresnet state, and nothing found here shows it relayed into either program's
+join space, consistent with both live tests seeing nothing at all. Making it controllable from Home
+Assistant needs new SIMPL program logic, the same category of fix issue #22's Phase B already named
+for the Kitchen loads, not a code change here. See
+[issue #23](https://github.com/pdehlke/homeassistant/issues/23) for the full trace and the options.
+
+**Cleanup completed 2026-09-08.** The code fix above (`entry_door` gaining `183`/`246` as aliases,
+`outside_home_perimeter` dropped from the load table) had been written and deployed but the
+downstream Home Assistant and Homie Dashboard cleanup that follows from it, same as
+[Kitchen Perimeter's](#kitchen-perimeter-was-never-a-real-load) removal from groups and scenes, had
+not. Finished now: the orphaned `light.outside_home_perimeter` template light (permanently
+`unavailable` once the bridge stopped feeding its backing `binary_sensor`) and the equally orphaned
+`binary_sensor.crestron_outside_home_perimeter` entity registry entry are both deleted; the
+`Visitors` scene script (`script.scene_visitors`) had `light.outside_home_perimeter` in its
+`light.turn_on` target and no longer does; Homie Dashboard's `config.js` dropped it from the Lights
+chip's Outside room and from the Visitors bubble's entity list, `HOMIE_ASSET_VERSION` bumped to
+`20260908.1` to bust the tablet's cache, and `test/screen-a.test.cjs` updated for the new counts (34
+lights and 33 Visitors entities both down by one). The still-uncommitted `custom_components/
+crestron_cip/cip.py` diagnostic (a raw per-join debug log, added and explicitly marked "Temporary"
+during this same investigation) was reverted rather than kept: its purpose was served once the
+Foyer tap capture found the real join, and this project tears down debug instrumentation once used
+rather than leaving it running by default. `mac/poc_foyer_tap.py`, the passive Cresnet-tap capture
+tool that did find it, is kept as permanent tooling alongside its siblings in `mac/`.
 
 ## Two bugs worth remembering
 
@@ -285,7 +341,7 @@ but mishandled the feedback". A source-level test now fails if `async_register` 
 **A light bound to a feedback entity needs an availability template.** Binding `state` to
 `is_state('binary_sensor.crestron_<load>', 'on')` makes the light read `off` whenever that sensor is
 `unavailable`, which is a lie in two cases that matter: the four unmapped Kitchen loads, and any CIP
-link outage, where all twenty-seven AADS loads would claim the house is dark. Fixed by setting
+link outage, where all twenty-six AADS loads would claim the house is dark. Fixed by setting
 `availability` to `has_value('binary_sensor.crestron_<load>')`, which is false for both unknown and
 unavailable.
 
