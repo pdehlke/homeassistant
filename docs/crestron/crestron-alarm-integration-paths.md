@@ -102,14 +102,18 @@ new network path.
 
 What it actually requires, in order:
 
-1. **The panel identity is now settled** (DSC PC1864, above) — that no longer blocks this path. What
-   still gates writing into `d130`-`d148`/`d93`, the range `FORBIDDEN_AADS_WRITE` currently refuses
-   categorically, is confirming the AADS's serial link to the panel is actually live, exactly the kind
-   of change
-   [crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-safety-rule)'s safety rule
-   exists to gate. That rule doesn't get relaxed by writing new code around it; it gets relaxed by
-   confirming the integration it guards is real and transacting, ideally via the still-blocked SDEBUG
-   capture.
+1. **Both prerequisites are now settled.** The panel identity (DSC PC1864, above) no longer blocks
+   this path, and the other gate — confirming the AADS's serial link to the panel is actually live,
+   not just wired to matching hardware — is also done: an SDEBUG capture of `Slot-02` on 2026-09-08
+   caught live DSC keypad LCD traffic in real time (a `901`/LCD-Update message decoding to a plain
+   idle-screen clock display, timestamped to the second it was captured). See
+   [crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#how-to-settle-it-when-the-time-comes)
+   for the capture detail. Writing into `d130`-`d148`/`d93`, the range `FORBIDDEN_AADS_WRITE`
+   currently refuses categorically, is still gated by
+   [crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-safety-rule)'s safety
+   rule, but the rule's own precondition for relaxing it, a real and transacting integration behind
+   it, is now met. The remaining work on this path is entirely the join-identification and
+   ADR-revision steps below, not further confirmation.
 2. **Identify every join by name from the retrieved program**, the same standard the lighting work
    held itself to for all twenty-nine loads. The zone joins (`d201`-`d224`) are already named; the
    arm/disarm/status joins inside `d130`-`d148`/`d93` are not — that range is currently known only as
@@ -338,12 +342,12 @@ non-Crestron adapter.
 EVL-4EZR plus a WiFi bridge is the pick — see
 [the hardware-options update above](#no-pre-made-esp32-board-exists--back-to-envisalink-with-a-wifi-bridge)
 for why the ESPHome DIY route dropped out once "buy, don't build" and "no Ethernet at the panel"
-were both on the table at once. Path B itself doesn't wait on a Crestron programmer, doesn't
-touch the AADS's live program or its forbidden-write range, and produces a genuinely real,
-authoritative `alarm_control_panel` rather than one mediated through a program whose alarm logic has
-never been directly observed running. Path A remains available later — nothing about building Path B
-forecloses it — but it inherits the Crestron-programmer cost and the still-open "is the AADS's
-serial link actually transacting" question for a capability Path B gets more directly.
+were both on the table at once. Path B itself doesn't wait on a Crestron programmer and doesn't
+touch the AADS's live program or its forbidden-write range. Path A remains available later — nothing
+about building Path B forecloses it, and Path A's own remaining blockers are now down to ordinary
+implementation work (the SDEBUG capture that used to gate it is done, see above) — but it still
+inherits the Crestron-programmer cost for a capability Path B gets more directly and without a
+programmer at all.
 
 The panel identity question that used to gate ordering hardware is now settled: DSC PC1864, DSC
 PK5500 keypad, confirmed by direct inspection. What's still worth a five-minute check before

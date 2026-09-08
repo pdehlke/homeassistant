@@ -103,17 +103,21 @@ Three readings, unresolved:
 
 ## How to settle it, when the time comes
 
-Cheapest first. None of these requires pressing a join.
+Cheapest first. None of these requires pressing a join. **All three below are now done** — see the
+"Resolved" sections further down for how each actually got settled.
 
 1. **Does the DSC keypad show live status?** Backlit, displaying Ready or zone text. A DSC
    PowerSeries keypad is a proprietary Keybus device that only speaks to DSC panel hardware, so a
-   live display implies live DSC hardware behind it. Purely visual.
+   live display implies live DSC hardware behind it. Purely visual. **Superseded, not literally
+   run**: pde identified the panel directly instead, a stronger check than this one.
 2. **Where does the AADS's COM-A cable physically land?** The program puts the alarm on
-   `Slot-02 / COM-A`.
+   `Slot-02 / COM-A`. **Not run, and no longer needed**: the SDEBUG capture in item 3 confirmed the
+   link is live without requiring a physical trace.
 3. **`SDEBUG` the AADS COM port, read-only.** Same technique that mapped the EISC on the MC2E,
    flags scoped narrowly and torn down in a `finally` block. If the DSC serial queue is transacting
    and receiving answers, the integration is live. If it has been timing out since 2019, it is dead
-   code and reading 3 above as correct.
+   code and reading 3 above as correct. **Run 2026-09-08: transacting, live, confirmed.** See the
+   "reading 3 is refuted" update above.
 
 ## New evidence, 2026-09-07: the zone status page, and a live collision
 
@@ -181,11 +185,17 @@ which direct inspection now rules out — there is no second chassis to be the "
 "gated subsystem." Reading 3 (the DSC modules are dead code) is the only one that survives even in
 principle, and it is now the least likely of the three: a full DSC PowerSeries module set, compiled
 for the one panel that is actually in this house, is exactly what a live integration looks like.
-Nothing here confirms the AADS's serial link to the panel is presently *transacting* — only that the
-hardware on both ends matches. An SDEBUG capture of `Slot-02/COM-A` (still blocked by the harness's
-permission classifier this session, still needs pde's go-ahead or his own hands on
-`CresnetMon/mac/sdebug.py`) or a live arm/disarm test from the physical keypad would settle that
-narrower, remaining question, but nothing further is needed to know which panel this house has.
+
+**Update, same day: reading 3 is refuted, not just unlikely.** The SDEBUG capture named above ran
+after all — pde added a scoped Bash permission rule for `sdebug.py`/`crestron_console.py`, which is
+all the earlier block needed. `SDEBUG -DON S02` against the AADS (`192.168.4.61`) for 25 seconds
+caught 436 bytes of live traffic on `Slot-02`, decoding to a DSC IT-100-style `901` (LCD Update)
+message whose payload is plainly readable: `Date     Time SEP 08/26 10:29a`, a DSC keypad's ordinary
+idle-screen clock display, timestamped 10:26:28 the same day. The AADS's serial link to the panel is
+not dead code sitting unused since 2019; it is actively receiving live keypad display traffic from
+the real DSC PC1864, in real time. Full capture command and raw bytes are in the session record; the
+narrower "is it actually transacting" question this section left open is now closed alongside the
+"which panel" question above it.
 
 The Ademco-manufacturer research immediately above stays in this document rather than being deleted:
 it was a real, correctly-sourced finding about the Destiny 6100 as a product, and it is the reasoning
