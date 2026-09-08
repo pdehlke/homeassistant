@@ -42,12 +42,14 @@ short version of where things stand and what's left.
 
 **Next physical steps, roughly in the order they'd naturally happen:**
 
-1. The ST-IO input test: disarm the alarm (put it on test with the monitoring company first if it's
-   monitored), trigger one zone at a time, watch the ST-IO's front-panel INPUT LEDs for a reaction.
-   Baseline recorded: PWR green, NET yellow, Input 1 red. This is now confirmed safe to do without any
+1. The ST-IO input test: disarm the alarm, trigger one zone at a time, watch the ST-IO's front-panel
+   INPUT LEDs for a reaction. No monitoring-company test window needed first — the house's alarm is
+   confirmed not professionally monitored (pde, 2026-09-08); see
+   [crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-safety-rule). Baseline
+   recorded: PWR green, NET yellow, Input 1 red. This is now confirmed safe to do without any
    risk to the lighting bus, since the ST-IO's leg is electrically separate from MC2E's.
 2. Alarm panel model number, without prying the faceplate off: check for a label inside the door if it
-   opens without full removal, or ask the monitoring company if it's monitored.
+   opens without full removal.
 3. AADS zone/input count: read the zone/source list off a TSW-752's audio screen, then check the AADS's
    own rear terminal blocks in the living room cabinet for what's actually wired.
 4. Console passwords: set one on both the MC2E and the AADS. Low effort, hasn't been done yet.
@@ -55,8 +57,8 @@ short version of where things stand and what's left.
    being home, can happen anytime.
 
 **Open questions only the homeowner can answer**, not resolvable by more telnet digging: what the
-ST-IO's 8 relay outputs actually drive (needs the empirical test or a look inside the alarm panel),
-and whether the alarm is professionally monitored and by whom.
+ST-IO's 8 relay outputs actually drive (needs the empirical test or a look inside the alarm panel).
+Whether the alarm is professionally monitored is no longer open: confirmed 2026-09-08, it is not.
 
 See [crestron-strategy.md](crestron-strategy.md#plan-of-attack) for the phased plan and "Open
 verification checklist" near the end of this document for the full, detailed list of what's open.
@@ -417,17 +419,19 @@ because it is hard.
       relay outputs, in the living room AV cabinet. A continuous wire trace to the pantry isn't
       possible, the run is inside walls, so this means checking both ends independently rather than
       following one physical cable. For the 4 inputs, the practical method is empirical, not a trace:
-      disarm the system (put it on test with the monitoring company first if it's monitored), then
-      trigger one zone at a time and watch which of the ST-IO's front-panel INPUT LEDs reacts. Baseline
-      before any testing: PWR green, NET yellow, Input 1 red, recorded 2026-08-04. Confirmed safe to
-      poke at without risking the lighting bus: the ST-IO's leg is a separate, independently-powered
-      Cresnet bus from MC2E's, not a shared one. The 8 relays are harder since nothing can trigger them
-      remotely; rely on labels, wire characteristics, and what's visible inside the alarm panel's own
-      cover, or call the monitoring company for install records if it's monitored.
+      disarm the system, then trigger one zone at a time and watch which of the ST-IO's front-panel
+      INPUT LEDs reacts. No monitoring-company test window needed first — the house's alarm is
+      confirmed not professionally monitored (pde, 2026-09-08). Baseline before any testing: PWR
+      green, NET yellow, Input 1 red, recorded 2026-08-04. Confirmed safe to poke at without risking
+      the lighting bus: the ST-IO's leg is a separate, independently-powered Cresnet bus from MC2E's,
+      not a shared one. The 8 relays are harder since nothing can trigger them remotely; rely on
+      labels, wire characteristics, and what's visible inside the alarm panel's own cover.
 - [ ] Identify the alarm panel's exact model. Brand confirmed DSC (2026-08-04) from the faceplate; the
       faceplate doesn't come off easily so the model is still unknown. Need a way to read it without
-      prying the cover off - check for a label inside the door if it opens without full removal, or ask
-      the monitoring company if it's monitored, they'll have it on file.
+      prying the cover off - check for a label inside the door if it opens without full removal. (Note,
+      2026-09-08: the DSC-branded faceplate is the keypad, not necessarily the live panel — see
+      [crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-terminology-trap) and
+      [crestron-alarm-integration-paths.md](crestron-alarm-integration-paths.md).)
 - [x] Identify the exact Lennox thermostat model installed. Two units, both iComfort S30, named
       North and South.
 - [ ] Count how many audio zones and line inputs are actually in active use on the AADS today. Not

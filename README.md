@@ -103,14 +103,23 @@ Notes, planning, and specs for my Home Assistant buildout.
   route, and where the fallback reverse-engineering targets are if that's not enough. Parked, and
   its mechanism is now known to be wrong; read the next entry before quoting it to anyone.
 
+- [crestron-alarm-integration-paths.md](docs/crestron/crestron-alarm-integration-paths.md)
+
+  Researched 2026-09-08 in response to issue #24's real intent: real alarm hardware control, not
+  just the virtual Alarmo layer. Identifies the Apex Destiny 6100 as an Ademco/Honeywell panel, not
+  DSC, which reframes the open DSC-vs-Apex puzzle. Compares integrating through Crestron against
+  wiring a Home Assistant-facing interface directly onto the DSC panel's own Keybus (which does not
+  require disconnecting anything, and does not depend on resolving the puzzle), covers real hardware
+  options and prices, and maps the physical panel's controls onto Alarmo/HA equivalents.
+
 - [crestron-alarm-open-questions.md](docs/crestron/crestron-alarm-open-questions.md)
 
-  Alarm findings parked until lighting is finished, plus the one alarm rule that stays in force
-  meanwhile: never press unknown joins on the AADS, because its program carries a virtual keypad
-  across eight partitions. Records what the AADS's compiled program actually contains, why its DSC
-  PowerSeries modules sit oddly against a visually confirmed Apex Destiny panel, the three readings
-  of that contradiction, and the read-only tests that would settle it. Updated 2026-09-07 with a
-  newly found live collision between an alarm zone join and an already-shipping light.
+  Alarm findings unparked 2026-09-08, plus the one alarm rule that stays in force regardless: never
+  press unknown joins on the AADS, because its program carries a virtual keypad across eight
+  partitions. Records what the AADS's compiled program actually contains, why its DSC PowerSeries
+  modules sit oddly against a visually confirmed Apex Destiny panel, the three readings of that
+  contradiction, and the read-only tests that would settle it. Updated 2026-09-08 with the finding
+  that the Apex Destiny 6100 is Ademco-made, not DSC.
 
 - [crestron-alarm-zone-inventory.md](docs/crestron/crestron-alarm-zone-inventory.md)
 
@@ -126,6 +135,16 @@ Notes, planning, and specs for my Home Assistant buildout.
   documented join contract. Why source recoverability is the gating question, what a compiled
   2-Series program can and cannot give back, and why the alarm and A/V work is now priced
   separately.
+
+### Alarmo
+
+- [alarmo-configuration.md](docs/alarmo/alarmo-configuration.md)
+
+  How the Alarmo virtual alarm integration is configured on this instance: area and arm modes, the
+  22-of-24 zone sensor mapping and the type/mode reasoning behind it, what's deliberately left for
+  pde to decide (a disarm PIN), and a gotcha in Alarmo's own area-config endpoint. No connection to
+  the real Crestron/DSC/Apex hardware; see [issue #24](https://github.com/pdehlke/homeassistant/issues/24)
+  for why Alarmo exists here and how it wires into Homie Dashboard.
 
 ### Device Alerts
 

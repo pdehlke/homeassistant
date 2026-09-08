@@ -440,9 +440,11 @@ Removed from this document on 2026-09-01. Both remain owner objectives and neith
 **Apex alarm migration.** The MC2E's compiled program was searched and contains zero occurrences of
 alarm, Apex, zone, motion, siren, passcode, panic, or intrusion. The only "security" hit is
 `G-Security`, a lighting scene. The alarm lives entirely on the AADS, so moving it is an AADS-side
-job with its own risks, its own test regime, and a monitoring-company test window. It is scoped in
+job with its own risks and its own test regime. It is scoped in
 [crestron-apex-control-plane.md](crestron-apex-control-plane.md). Folding it into the lighting job
-made both harder to price.
+made both harder to price. (The house's alarm is confirmed not professionally monitored, so no
+monitoring-company test window applies to that test regime; see
+[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-safety-rule).)
 
 **A/V proxying.** Exposing every AADS zone, source, tuner, and metadata function through the
 durable processor is a large inventory job against a subsystem the owner intends to replace. It

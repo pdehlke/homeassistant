@@ -241,10 +241,16 @@ _Avoid_: don't call this "the alarm panel" — that's a different component (see
 doc used the two loosely and should be tightened.
 
 **Alarm panel / Apex Destiny 6100**:
-The actual alarm control system, integrated with Crestron via RS-232 into AADS. The thing any HA
-arm/disarm/status integration would actually talk to.
+An Ademco/Honeywell-made alarm control system, visually confirmed present in the house and
+originally believed to be the thing any HA arm/disarm/status integration would talk to. As of
+2026-09-08 this is unsettled: the AADS's live program integrates with a real **DSC PowerSeries**
+system instead (a different manufacturer entirely, not a rebrand), so the Apex Destiny 6100 may be
+a legacy holdover rather than the currently-live panel. See
+[crestron-alarm-open-questions.md](docs/crestron/crestron-alarm-open-questions.md) and
+[crestron-alarm-integration-paths.md](docs/crestron/crestron-alarm-integration-paths.md).
 _Avoid_: don't conflate with Alarmo below — Alarmo is a virtual Home Assistant alarm layer with no
-connection to this physical system at all.
+connection to either physical system. Also don't assume "Apex Destiny 6100" and "the live alarm
+panel" are the same thing without checking the documents above first.
 
 **Path A**:
 The near-term design for reaching HA-Crestron control: hire a programmer to add a scoped XSIG

@@ -1,5 +1,70 @@
 # Homie Dashboard Installation Plan
 
+## Checkpoint: 2026-09-08 (Alarmo wired up: real security popup, Overview C card, Home Status tile)
+
+[Issue #24](https://github.com/pdehlke/homeassistant/issues/24)'s PRD, implemented and verified live
+the same session Alarmo was installed via HACS. Full HA-side reasoning (area/arm-mode setup, the
+22-zone type/mode mapping, an area-config gotcha) is in
+[alarmo-configuration.md](../alarmo/alarmo-configuration.md); this entry covers the dashboard side
+and repo state.
+
+Both topbar Security buttons (`#security-btn`, `#ov3-security-btn`) now call the upstream
+`openSecurity()` instead of this fork's own `showAlarmNotConfigured()`, which is gone along with its
+`HOMIE_CUSTOM.securityMessage()` — there's no more "Not Configured" state to render now that
+`alarm_control_panel.alarmo` is real. `_refreshOv3()`'s status sync no longer trusts
+`CONFIG.alarm.entity` to be kept in sync with `CONFIG.alarmEntity` by convention; it now falls back
+to `CONFIG.alarmEntity` when the former is unset, so the popup and Overview C's card can never point
+at different entities — the code fix the PRD preferred over just setting both config keys.
+`config.js`'s `ALARM_ENTITY` is `alarm_control_panel.alarmo`; `ALARM_CODE` stays empty, correctly,
+since Alarmo doesn't require a disarm code yet (see alarmo-configuration.md's open item — that needs
+a PIN value from pde, not something to invent). `sensor.homie_alarm_status`, deleted along with the
+rest of the placeholder Crestron-PoC fleet back on 2026-09-02, is rebuilt as a real template helper
+in the same one-line-Jinja pattern `sensor.homie_lights_status` already uses
+(`{{ states('alarm_control_panel.alarmo') | replace('_',' ') | title }}`, with an "Not Configured"
+guard for `unknown`/`unavailable`); the Home Status grid's "Alarm" tile reads it exactly as before,
+no config.js change needed there.
+
+**A real, previously-invisible bug was found and fixed during live verification, not before it:**
+the global Escape-key handler's security-overlay branch called `closeSecurity()`, which was never
+defined anywhere in the file — the real function is `closeSecurityOverlay()`. Harmless while the
+button was disabled (the overlay never opened, so Escape had nothing to close), it threw a bare
+`ReferenceError` the instant Escape was pressed with the popup open for real, confirmed live via
+Playwright before the one-line fix. A new test (`test/screen-a.test.cjs`) extracts the whole Escape
+handler and checks every `close*()` it calls actually resolves to a defined function, generically,
+so the same class of typo can't recur unnoticed in any of the handler's other dozen-plus branches.
+`test/screen-a.test.cjs`: 135/135 (132 before this round; 3 new, one repointed away from the retired
+`securityMessage()`).
+
+Deploy differed from the now-standard pattern in one way worth flagging: `homie-dashboard.html` and
+`homie-custom.js` were `sftp put` directly over the live files rather than uploaded under temp names
+and atomically renamed. Backups with a timestamp were taken first as usual, and every upload was
+`sha256sum`-verified byte-identical against the local copy immediately after, but a client mid-fetch
+during the (brief) overwrite window was a real, if small, possibility this time — worth going back
+to the temp-name-plus-rename pattern next round. `config.js` itself was *not* re-uploaded whole (its
+live copy carries the real `$HOMIE_TOKEN`, never touched); only its `ALARM_ENTITY` line was patched
+in place server-side via a scoped `sed`, confirmed after by grepping just that line back (never the
+token-bearing lines). `HOMIE_ASSET_VERSION` went `20260906.1` (the version already live before this
+session) → `20260908.1` (already bumped earlier the same day, unrelated to this work, but never
+matched to the iframe's own `?v=` until now) → `20260908.2` (topbar buttons, `_refreshOv3` fallback)
+→ `20260908.3` (the Escape-handler fix, found only after the `.2` deploy was already live); `homie-
+dash`'s Lovelace iframe `?v=` bumped to match each time, via `ha_config_set_dashboard`.
+
+Verified live end-to-end with Playwright against the deployed instance, not just passing unit tests:
+opened the real popup (showed live "DISARMED" from `alarm_control_panel.alarmo`, not the retired
+alert or an "Entity not found" message), armed Home (badge and topbar button both updated, confirmed
+independently via `ha_get_state`), pressed Escape to confirm the popup-close fix, disarmed again, and
+confirmed the Home Status grid's "Alarm" tile reads "Disarmed" live. Console carried the same six
+pre-existing, unrelated errors before and after (a duplicate `rss-news-card` custom-element
+registration, a 404 on `scoped-custom-element-registry`, a blocked `navigator.vibrate` call before
+first tap, and two `sensor.homie_dynamic_playlists`/empty-path 404s) — nothing new. Overview C's own
+`#ov3-security-card` was not independently screenshotted (a settings-panel navigation quirk got in
+the way, not this change); it reads the identical `_refreshOv3()` fallback the new unit test already
+covers precisely, and the same live Alarmo state the popup and the Home Status tile both proved out.
+
+`dist/config.js`, `dist/homie-custom.js`, `dist/homie-dashboard.html`, and `test/screen-a.test.cjs`
+all changed in the fork's working copy; deployed and live-verified as above, **not yet committed** —
+per this repo's standing rule, that's pde's call once he's seen it.
+
 ## Checkpoint: 2026-09-06 (Lights status double-counted light groups, issue #17's fix had a gap)
 
 pde noticed the Lights chip read "5 on" while the Overview A/B status grid's Lights tile read

@@ -2,12 +2,13 @@
 
 ## Status
 
-**Parked 2026-09-02, deliberately.** Lighting comes first and the alarm is picked up only if and
-when lighting is finished. Nothing here is a task. It is written down so the findings are not lost
-and so nobody re-derives them.
+**Unparked 2026-09-08.** Parked 2026-09-02 on the condition "picked up only if and when lighting is
+finished." Lighting is finished (see [crestron-ha-bridge.md](crestron-ha-bridge.md)'s Status
+section) and pde asked directly, the same day, to resume alarm integration work. See
+[crestron-alarm-integration-paths.md](crestron-alarm-integration-paths.md) for the research that
+followed and [issue #24](https://github.com/pdehlke/homeassistant/issues/24) for the live thread.
 
-One thing in this document stays in force while it is parked: the safety rule below. Everything
-else can wait.
+The safety rule below was never conditional on parked status and stays in force unchanged.
 
 ## The safety rule
 
@@ -32,7 +33,11 @@ Working rules for any AADS slot work:
 - Registering on a slot listen-only is safe. Do that first, and learn from watching.
 - Before writing to any join, identify it by name from the retrieved program.
 - Never sweep a join range on the AADS.
-- If alarm behavior is ever deliberately tested, the monitoring company goes on test mode first.
+- **The house's alarm is not professionally monitored** (confirmed by pde, 2026-09-08) — no
+  monitoring company, no central station, no test window to arrange before a deliberate test. This
+  removes the false-dispatch risk specifically; it does not relax the join-identification rules
+  above, which exist for other reasons (unknown local effects, corrupting alarm state, an unintended
+  siren or relay action).
 
 ## What the AADS program actually contains
 
@@ -127,6 +132,30 @@ reading 3 (the DSC modules are dead code) is correct, the `d221` collision is in
 (subsystem gating) or reading 2 (a later, separate DSC install) is correct instead, a
 currently-shipping Home Assistant feature has been quietly exercising alarm-adjacent processor
 state since 2026-09-06 with no way, from here, to tell.
+
+## New evidence, 2026-09-08: the Apex Destiny 6100 is an Ademco panel, not DSC
+
+Identified for the first time this session, in response to pde asking directly how to get Home
+Assistant onto the real alarm hardware: the **Apex Destiny 6100 was manufactured by Ademco**
+(later Honeywell), not DSC. DSC and Ademco are separate, competing companies with incompatible
+protocols — a single physical panel cannot be both, and Crestron's own module catalog treats them
+as entirely different integrations (confirming what `crestron-apex-control-plane.md` already
+suspected: its Destiny 6100 serial parameters are real, but for a module family the AADS's compiled
+program does not actually run).
+
+This reframes the three readings above. Reading 1 (subsystem gating on one system) now looks
+unlikely — DSC and Ademco genuinely can't be the same hardware. Reading 2 (the DSC arrived later,
+as a real second system) is now the best-supported: an older Ademco Destiny 6100 from the original
+Crestron-era install, later supplemented or replaced by a real DSC PowerSeries system whose
+integration was compiled 2019-11-15, matching the AADS's program exactly. Reading 3 (dead code)
+is weakened but not eliminated.
+
+Full writeup, sourcing, and — now that lighting is done and this is unparked — the actual
+integration paths this unblocks: [crestron-alarm-integration-paths.md](crestron-alarm-integration-paths.md).
+The two read-only confirmations this document already named (visual pantry-keypad check, an SDEBUG
+capture of the AADS's COM-A) are still the way to settle this for good; the SDEBUG attempt was
+blocked by the harness's permission classifier this session and needs pde's explicit go-ahead or his
+own hands on `CresnetMon/mac/sdebug.py`.
 
 ## What this corrects elsewhere
 

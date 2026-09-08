@@ -172,10 +172,13 @@ Home Assistant should also represent unavailable or stale feedback explicitly;
 a sent command must not be treated as successful until the Apex reports the
 expected partition state.
 
-Any direct serial implementation should preserve normal keypad operation,
-central-station reporting, fire and life-safety behavior, and the Apex panel's
-local autonomy. Home Assistant should be an additional control surface, not a
-component required for the alarm panel to function.
+Any direct serial implementation should preserve normal keypad operation, fire
+and life-safety behavior, and the Apex panel's local autonomy. Home Assistant
+should be an additional control surface, not a component required for the
+alarm panel to function. (Central-station reporting was listed here
+originally; the house's alarm is confirmed not professionally monitored, so
+there is no central station to preserve reporting to. See
+[crestron-alarm-open-questions.md](crestron-alarm-open-questions.md#the-safety-rule).)
 
 ## Recommended next verification
 
