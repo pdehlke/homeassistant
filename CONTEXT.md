@@ -243,6 +243,8 @@ doc used the two loosely and should be tightened.
 **Alarm panel / Apex Destiny 6100**:
 The actual alarm control system, integrated with Crestron via RS-232 into AADS. The thing any HA
 arm/disarm/status integration would actually talk to.
+_Avoid_: don't conflate with Alarmo below — Alarmo is a virtual Home Assistant alarm layer with no
+connection to this physical system at all.
 
 **Path A**:
 The near-term design for reaching HA-Crestron control: hire a programmer to add a scoped XSIG
@@ -272,6 +274,50 @@ alarm bridge) or moved to MC2E/CP3N. Not yet decided.
 **REPORTCRESNET**:
 A telnet console command on MC2E/AADS that enumerates devices on a Cresnet leg without physical
 sniffing hardware — the method used for this instance's device inventory.
+
+### Alarm (Alarmo)
+
+**Alarmo**:
+The real, specific, actively-maintained third-party Home Assistant integration
+(`nielsfaber/alarmo`, installed via HACS), providing a virtual `alarm_control_panel` entity fed by
+ordinary HA sensors. Chosen because it is the exact feature the original Homie Dashboard author
+built full support for and announced in their own v1.1.0 changelog as "Alarmo controls." Has no
+connection to the house's real Crestron/DSC/Apex hardware; arming or disarming it does not touch
+the physical alarm system. See [issue #24](https://github.com/pdehlke/homeassistant/issues/24).
+_Avoid_: reading "Alarmo" as the original Homie Dashboard author's own (non-native-English) word
+for "Alarm." Checked and rejected: the un-forked upstream repository uses the identical spelling
+and capitalization in its own changelog, and the integration is real and independently documented
+by parties unconnected to Homie Dashboard. Not a translation artifact; don't genericize it to
+"Alarm" in this project's docs or code.
+
+**DSC alarm zone**:
+One input the house's real DSC alarm system watches — a door or window contact, a motion sensor, a
+photobeam, or a heat detector — read by name and Crestron digital join (`d201`-`d224`) from the
+TSW-752 panel project's own zone-status page, twenty-four total. See
+[crestron-alarm-zone-inventory.md](docs/crestron/crestron-alarm-zone-inventory.md). Represented in
+Home Assistant as `binary_sensor.alarm_zone_*` entities, currently all `unknown` pending live data;
+two (`d206`, `d221`) are excluded from Alarmo's zone list because they share a Crestron join with a
+live Home Assistant light (see
+[crestron-ha-bridge.md](docs/crestron/crestron-ha-bridge.md#holiday-a-real-load-hiding-on-the-modes-page)).
+_Avoid_: don't confuse with Rachio's unrelated "Zone" (an irrigation area, see Rachio/Irrigation
+below), or with a Crestron TSW-752 lighting "zone page" (a UI grouping of load buttons, e.g.
+"Dining" or "Kitchen", see [crestron-tsw-panel-control-path.md](docs/crestron/crestron-tsw-panel-control-path.md)).
+Three different uses of the word "zone" across this project's subsystems; none are interchangeable.
+
+### Garage door opener
+
+**MyQ**:
+The Chamberlain/LiftMaster garage door opener system currently controlling this house's garage
+doors. Not integrated with Home Assistant, and not planned to be while it remains MyQ: the vendor
+is documented as actively hostile to third-party and local integration, repeatedly breaking
+community integrations by changing its API against them.
+
+**ratgdo**:
+An open-hardware ESP-based garage door controller board; the likely replacement path for MyQ if and
+when pde switches away from it. That switch is what would make real `cover.*` control of the garage
+doors possible, including the garage buttons on Alarmo's security card (see
+[issue #24](https://github.com/pdehlke/homeassistant/issues/24)). Not yet purchased or installed —
+a stated future plan, not a current integration.
 
 ### Lennox / Climate
 
