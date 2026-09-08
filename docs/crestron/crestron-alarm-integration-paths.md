@@ -191,7 +191,44 @@ location, not a data line.
 Given the no-Ethernet constraint, `esphome-dsckeybus` is the only one of the two options that doesn't
 need a workaround to be viable in this house at all. It was already the cheaper, more-featured option
 in the table above; this makes it the clearer pick specifically for this installation, not just in
-general.
+general. **Superseded by the next section**: this reasoning assumed building the ESP32 device was an
+acceptable ask. It isn't, for this installation.
+
+### No pre-made ESP32 board exists — back to EnvisaLink, with a WiFi bridge
+
+Asked directly, 2026-09-08: pde wants to buy a finished device, not build one. Checked, rather than
+assumed: **no vendor sells an assembled `esphome-dsckeybus`/`dscKeybusInterface` board.** The
+project's own maintainer said so directly when a user asked the identical question: "No there isnt
+one for the esp32... It's a very simple circuit so most people just build it on a piece of proto
+board" ([source](https://github.com/Dilbert66/esphome-dsckeybus/discussions/140)). The community
+PCB designs referenced there (WT32-ETH01, ESP32-C3 Super Mini + a level shifter) are bare board
+files, not something orderable pre-assembled. This removes the ESP32 DIY option from consideration
+entirely, not just as a preference — there's nothing to buy.
+
+That reopens the EnvisaLink EVL-4EZR, with the no-Ethernet problem solved a different way: pair it
+with an off-the-shelf **WiFi-to-Ethernet bridge** (a commodity WiFi range extender with an Ethernet
+port, roughly $20-30) sitting next to it. Plug the bridge into the EnvisaLink with a short Ethernet
+cable, power both, done — two retail boxes and one cable, no soldering, no code. This is a real
+product category (used routinely to get smart-home hubs and game consoles onto WiFi when they only
+have an Ethernet jack), not a novel workaround specific to this problem.
+
+A second pre-assembled option surfaced in this research, with real caveats: **AlarmDecoder** sells
+finished hardware (AD2USB, AD2Serial, and an "AD2pHAT" bundle that ships with a Raspberry Pi,
+pre-flashed SD card, and case) that supports DSC PowerSeries, and the Raspberry Pi-based bundle has
+WiFi built into the Pi itself. Not independently verified enough to recommend over EnvisaLink: their
+store had a documented stretch of being effectively unpurchaseable (a Home Assistant Community
+thread tracks reports of it being unavailable from late 2024 into November 2025, then coming back)
+([source](https://community.home-assistant.io/t/status-of-alarmdecoder/811073)), their DSC
+PowerSeries support was historically added via beta firmware rather than being the primary target
+(Ademco/Honeywell Vista is), and current pricing could not be confirmed — their storefront is a
+JS-rendered Square site this session's tooling couldn't read past the page title. Worth pde checking
+directly if EnvisaLink-plus-bridge doesn't appeal, not ruled out, just unverified.
+
+**Recommendation, updated:** EnvisaLink EVL-4EZR plus a commodity WiFi bridge, not
+`esphome-dsckeybus`. It's a mature, official Home Assistant core integration from a stable dedicated
+vendor, and the bridge workaround is a five-minute plug-together job rather than a project. The rest
+of this document's Path B reasoning (multi-drop Keybus, no disconnection required, PC1864
+compatibility) is unaffected by which hardware option is chosen.
 
 ### PC1864 specifically, not just "a DSC PowerSeries panel"
 
@@ -297,8 +334,11 @@ non-Crestron adapter.
 
 ## Recommendation
 
-**Path B, direct DSC Keybus interface**, is the better starting point, independent of which hardware
-option (EnvisaLink vs. ESPHome DIY) pde prefers. It doesn't wait on a Crestron programmer, doesn't
+**Path B, direct DSC Keybus interface**, is the better starting point. On hardware, EnvisaLink
+EVL-4EZR plus a WiFi bridge is the pick — see
+[the hardware-options update above](#no-pre-made-esp32-board-exists--back-to-envisalink-with-a-wifi-bridge)
+for why the ESPHome DIY route dropped out once "buy, don't build" and "no Ethernet at the panel"
+were both on the table at once. Path B itself doesn't wait on a Crestron programmer, doesn't
 touch the AADS's live program or its forbidden-write range, and produces a genuinely real,
 authoritative `alarm_control_panel` rather than one mediated through a program whose alarm logic has
 never been directly observed running. Path A remains available later — nothing about building Path B
