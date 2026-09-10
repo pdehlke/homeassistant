@@ -139,16 +139,75 @@ Guest Suite.
 
 ## Patio (`LIGHT-pg01-zn06`)
 
+Filled in as `scene` for every non-load button 2026-09-02, on the same "grouped
+programming, not loads" theory used for the Modes page. A CIP-only trace on 2026-09-10
+(registering on the freed TSW-752 slot and watching which digital joins responded to each
+press) undercounted what these buttons actually do, and its raw findings are kept below only
+as a record of that gap, not as the final answer. **pde confirmed by direct, on-site
+observation what each button actually drives:**
+
+| Join   | Name           | Drives, per pde's direct observation |
+| ------ | -------------- | ------------------------------------- |
+| `d201` | Path           | Entry Center + Patio Pathway (the south-pathway subset of the Patio South circuit) |
+| `d202` | Night          | The courtyard's four corners |
+| `d203` | Fiesta         | The four corners, Patio Sconces, the south pathway, and Entry Center + Perimeter |
+| `d204` | Patio (All On) | Every patio light, but not the entry lights or Outdoor Kitchen |
+| `d205` | Club           | Entry Perimeter, Patio Sconces, and a subset of the east/west/north corners |
+| `d207` | Pool           | Entry Center, Patio Sconces, and a subset of the east/west/north/south corners |
+
+Several of the fixtures named above (the four corners, Patio Sconces, the south pathway) have
+no button of their own anywhere in the panel project and no existing Load in
+`custom_components/crestron_cip/const.py`, and most of the six buttons above never produced a
+correlated join in the CIP-only trace at all — see "What the CIP-only trace saw" below for why.
+**pde's call: wire each button up as one opaque macro Load rather than chase down every
+individual fixture inside it**, since he expects to use these as whole scenes in future
+automations rather than address their contents separately. Done 2026-09-10: all six are real
+`Load` entries in `const.py` now (`courtyard_path`, `courtyard_night`, `courtyard_fiesta`,
+`courtyard_patio_all_on`, `courtyard_club`, `courtyard_pool`), wired into Home Assistant as
+Template Lights in the Courtyard area exactly like every other load, and added to the Homie
+Dashboard's Lights chip under Courtyard.
+
 | Join   | Name            | Kind  | Also                           | Room            |
 | ------ | --------------- | ----- | ------------------------------ | --------------- |
-| `d201` | Path            | scene | -                              |                 |
-| `d202` | Night           | scene | -                              |                 |
-| `d203` | Fiesta          | scene | -                              |                 |
-| `d204` | Patio (All On)  | scene | -                              |                 |
-| `d205` | Club            | scene | -                              |                 |
+| `d201` | Path            | load  | -                               | Courtyard       |
+| `d202` | Night           | load  | -                               | Courtyard       |
+| `d203` | Fiesta          | load  | -                               | Courtyard       |
+| `d204` | Patio (All On)  | load  | -                               | Courtyard       |
+| `d205` | Club            | load  | -                               | Courtyard       |
 | `d206` | Outdoor Kitchen | load  | `d104`, `d144`, `d187`, `d247` | Outdoor Kitchen |
-| `d207` | Pool            | scene | -                              |                 |
-| `d208` | Area Off        | group | `d108`, `d128`, `d148`, `d168` |                 |
+| `d207` | Pool            | load  | -                               | Courtyard       |
+| `d208` | Area Off        | group | `d108`, `d128`, `d148`, `d168` | -               |
+
+Each button's own indicator join (`d201`-`d205`, `d207`) doubles as its feedback: it clears on
+Area Off or when a different button in the same mutually-exclusive scene-selector group takes
+over, the same behavior Goodbye/Good Night have always shown on the Modes page. Verified live
+2026-09-10 for all six: `light.turn_on` through Home Assistant correctly activated each macro
+(confirmed against every CIP-visible correlate below) and `light.turn_off` on the same join
+cleanly reversed it, including the courtyard's own known loads Fiesta and Patio (All On) had
+turned on. No `press_on`/`press_off` split needed; ordinary toggle behavior throughout.
+
+**What the CIP-only trace saw**, incomplete and superseded by pde's direct observation above:
+Path (`d201`) correlated with Entry Center (`d182`) turning on; Patio Pathway never surfaced on
+any join. Fiesta (`d203`) correlated with Patio South (`d126`/`d166`/`d186`) and Entry
+Perimeter (`d184`); the four corners, Patio Sconces and south pathway it also drives never did.
+Patio (All On) (`d204`) correlated with Patio North (`d164`/`d188`). Night (`d202`), Club
+(`d205`) and Pool (`d207`) produced no correlated digital-join change in an 8-second watch
+window each, despite each one genuinely driving real fixtures per pde.
+
+The likely reason a CIP-only trace missed real fixtures: it only sees what the AADS panel
+project reports back to a registered panel client. `outside_home_perimeter`'s history in
+this same document is the precedent — the real Home Perimeter circuit turned out to be a
+direct Cresnet command to `0x74`, never visible on any digital or analog join the panel
+reports at all, findable only via SDEBUG on the Cresnet bus. Some or all of Night, Club, Pool
+and the uncorrelated parts of Path/Fiesta most likely work the same way. Nobody has chased
+those down to real Cresnet device/join numbers, and per pde's call above, nobody needs to:
+the macro Loads work end to end without it.
+
+Patio's own Area Off (`d208`) turned off Patio North and Patio South but did not reach Entry
+Center or Entry Perimeter, left on by Path and Fiesta during testing and turned off afterward
+via Home Assistant (`light.turn_off`) instead. Its feedback join is aliased with the other
+four Area Off buttons (the `Also` column above), but its press action is scoped to this page's
+own loads, not a house-wide reset.
 
 ## Modes (`LIGHT-pg01-zn07`)
 
@@ -190,12 +249,13 @@ button was traced separately.
 
 ## Distinct load names
 
-29 names across 42 load buttons, since Holiday's reclassification (above). Fill
-the tables above rather than this list; it is here to show the size of the job.
+35 names across 48 load buttons, since the Patio page's six scene buttons were wired up as
+opaque macro Loads (above). Fill the tables above rather than this list; it is here to show
+the size of the job.
 
 `Ambient`, `Bath Diagonal`, `Bath Perimeter`, `Bed Diagonal`, `Bed Perimeter`,
-`Cabinet`, `Door`, `East Hall`, `East Seating`, `Entry Center`,
-`Entry Perimeter`, `Garage Sconces`, `Hallway`, `Holiday`, `Home Perimeter`,
-`Island`, `North`, `North Sink`, `Outdoor Kitchen`, `Pathway`, `Patio North`,
-`Patio South`, `Perimeter`, `Pool Bath`, `Powder`, `Range`, `South`, `Table`,
-`West Seating`.
+`Cabinet`, `Club`, `Door`, `East Hall`, `East Seating`, `Entry Center`,
+`Entry Perimeter`, `Fiesta`, `Garage Sconces`, `Hallway`, `Holiday`,
+`Home Perimeter`, `Island`, `Night`, `North`, `North Sink`, `Outdoor Kitchen`,
+`Path`, `Pathway`, `Patio (All On)`, `Patio North`, `Patio South`, `Perimeter`,
+`Pool`, `Pool Bath`, `Powder`, `Range`, `South`, `Table`, `West Seating`.

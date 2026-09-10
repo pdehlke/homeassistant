@@ -1,10 +1,10 @@
 # The Home Assistant to Crestron lighting bridge
 
-The daemon that connects Home Assistant's thirty `light.*` entities to the real lighting
+The daemon that connects Home Assistant's thirty-five `light.*` entities to the real lighting
 loads, using the control path proven in
 [crestron-tsw-panel-control-path.md](crestron-tsw-panel-control-path.md).
 
-Written and deployed 2026-09-02. **Live: both links registered, all thirty lights bound to
+Written and deployed 2026-09-02. **Live: both links registered, all thirty-five lights bound to
 it, driving real loads.** See [Status](#status) for exactly what is proven and what is not.
 
 ## What it is
@@ -84,8 +84,8 @@ Receiving a forbidden join is expected and fine. Powder reports on `d142` and Ou
 
 ## Load table
 
-Twenty-nine loads. Twenty-six on the AADS panel slot, three on the MC2E XPanel, together covering
-forty-one of the forty-two load buttons in
+Thirty-five loads. Thirty-two on the AADS panel slot, three on the MC2E XPanel, together covering
+forty-seven of the forty-eight load buttons in
 [crestron-load-room-worksheet.md](crestron-load-room-worksheet.md). Holiday (`d221`, the Modes
 page's "Holiday" button) joined 2026-09-06: categorised as a scene in the original worksheet pass,
 reclassified once pde traced it physically to a real fixture. See
@@ -93,6 +93,17 @@ reclassified once pde traced it physically to a real fixture. See
 below. `outside_home_perimeter` left the same day, folded into `entry_door` as an alias rather than
 a load of its own; see
 [Home Perimeter was never a real load either](#home-perimeter-was-never-a-real-load-either).
+
+Six more joined 2026-09-10: the Patio page's scene buttons (Path, Night, Fiesta, Patio All On,
+Club, Pool), also categorised as scenes in the original worksheet pass. A CIP-only trace
+undercounted what they actually do; pde confirmed by direct, on-site observation that each is a
+real combination of fixtures, several of which (the courtyard's four corners, Patio Sconces, the
+south pathway) have no join a CIP-only trace can ever see, the same class of gap
+`outside_home_perimeter` turned out to be in. Unlike Holiday, these were wired up as opaque macro
+Loads rather than resolved fixture by fixture: pde's call, since he expects to use them as whole
+scenes in future automations. See
+[crestron-load-room-worksheet.md](crestron-load-room-worksheet.md#patio-light-pg01-zn06) for the
+full breakdown of what each button drives.
 
 The one gap is `d145`, Kitchen's own "Pathway" button: it sits inside the forbidden alarm range and
 has gone unreferenced by anything in the load table since `kitchen_pathway` moved onto its safe
@@ -127,7 +138,9 @@ bound to it, driving real loads. Thirty loads at first; twenty-nine since 2026-0
 `kitchen_perimeter` was dropped as a duplicate of Kitchen Pathway rather than a load of its own;
 thirty again since 2026-09-06, when Holiday joined as a genuinely new load rather than a duplicate;
 twenty-nine again later the same day, when `outside_home_perimeter` turned out to be the same kind
-of duplicate `kitchen_perimeter` was, this time of `entry_door`.
+of duplicate `kitchen_perimeter` was, this time of `entry_door`; thirty-five since 2026-09-10, when
+the Patio page's six scene-button macros (Path, Night, Fiesta, Patio All On, Club, Pool) joined as
+opaque Loads.
 
 Proven live:
 
