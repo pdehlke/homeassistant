@@ -127,6 +127,14 @@ program presumably gates the meaning of `d130`-`d148` on that. **That gating is 
 panel project and has not been confirmed against the AADS program's logic.** Treat the whole range
 as unsafe.
 
+**Confirmed live 2026-09-15, and it is wider than this section assumed.** The gate is real, it is
+per slot, and it governs the whole lighting subsystem rather than only the ambiguous join range: an
+AADS slot that has not pressed `d91` is sent no lighting joins at all and has every load press
+silently dropped. A power cut cleared the latch this bridge had been living on unknowingly, and
+that is what pressing `d91` restored. Full account in
+[crestron-lights-subsystem-gating.md](crestron-lights-subsystem-gating.md). Nothing about `d93` or
+the `d130`-`d148` range changes: still never written, and still unsafe.
+
 This costs nothing in practice. The Kitchen is the one zone already reachable by a safe route: the
 MC2E XPanel at `IP-ID 0x03` drives five Kitchen loads on joins 21-35, documented in
 [crestron-xpanel-control-path.md](crestron-xpanel-control-path.md). Use that and never send anything

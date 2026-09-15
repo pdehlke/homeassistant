@@ -87,6 +87,15 @@ Notes, planning, and specs for my Home Assistant buildout.
   synthesised over buttons that only toggle, where the safety guard sits and why it is enforced
   twice, and an explicit account of what is proven, what is not yet deployed, and what is blocked.
 
+- [crestron-lights-subsystem-gating.md](docs/crestron/crestron-lights-subsystem-gating.md)
+
+  Why a house power cut on 2026-09-15 killed every Crestron load in Home Assistant except the three
+  on the MC2E while the wall keypads went on working: the AADS admits a panel slot to the lighting
+  subsystem only after that slot presses `d91`, and the program had been holding panel 13 inside it
+  since before the panel was unplugged. The diagnosis in the order it came in, the six hypotheses
+  that had to be killed with measurements, the `SDEBUG` captures that settled it, what it corrects
+  in the earlier page-gating conclusion, and the two-phase session the bridge now uses.
+
 - [crestron-load-room-worksheet.md](docs/crestron/crestron-load-room-worksheet.md)
 
   Every button on the TSW-752 lighting pages mapped to the Home Assistant area its load actually

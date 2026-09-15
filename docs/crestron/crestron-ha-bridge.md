@@ -54,6 +54,14 @@ proof-of-concept client is blocking and Home Assistant cannot host a blocking so
 format is unchanged and the tests assert against the exact frames recorded in the live transcripts,
 so a codec change that still round-trips but no longer matches the wire fails.
 
+Coming up on the AADS link takes two phases, not one. Registering is not enough: the processor
+admits a slot to the lighting subsystem only once that slot presses `d91`, and until then it
+reports no lighting joins and acts on none. So the session presses `d91` when the registration dump
+ends and waits for the subsystem's own dump before calling itself synced, because syncing on the
+menu dump alone would have every load report `off` on no evidence at all. That is not a theoretical
+concern: it is what the bridge did for four hours on 2026-09-15 after a power cut restarted the
+AADS program. See [crestron-lights-subsystem-gating.md](crestron-lights-subsystem-gating.md).
+
 ## The two decisions that shaped it
 
 Both are recorded as ADRs because they are the parts a future reader would otherwise have to

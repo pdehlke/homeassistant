@@ -218,6 +218,15 @@ pressing joins inverts that ordering in the worst possible way. Full rule in
    page-gated identically. **The second half of that was wrong.** A TSW-752 slot is not page-gated,
    and claiming one is exactly the way around this. It does still cost a working panel.
 
+   **Corrected again 2026-09-15: a TSW-752 slot _is_ page-gated, identically.** The 2026-09-02 test
+   was accurate and its conclusion was not: `IP-ID 0x13` was already inside the Lights subsystem,
+   latched there by the AADS program since before panel 13 was unplugged, so nothing in that
+   session had to open it. A house power cut restarted the program, cleared the latch, and the slot
+   behaved exactly like `0x15` and `0x16` did here. Pressing `d91` opens it. The route still works
+   and nothing else in this document changes; what changes is that the gate was never the thing
+   separating a TSW-752 slot from an app slot. See
+   [crestron-lights-subsystem-gating.md](crestron-lights-subsystem-gating.md).
+
 ## What would kill this
 
 Written before the test, and one of them landed:
