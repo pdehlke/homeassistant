@@ -87,6 +87,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   synthesised over buttons that only toggle, where the safety guard sits and why it is enforced
   twice, and an explicit account of what is proven, what is not yet deployed, and what is blocked.
 
+- [crestron-dimming-enablement.md](docs/crestron/crestron-dimming-enablement.md)
+
+  Why holding most keypad and panel buttons does not dim the light, even though the load is on a
+  Crestron dimmer: press-and-hold dimming is a per-button model in the D3 Pro project behind the
+  MC2E's program, and the CLX modules have no ramp input of their own. The three independent causes
+  that all look identical at the fixture, why the AADS is not involved, why holding a learnable
+  scene button overwrites the scene instead, and what this opens up for the Phase 2 brightness pass.
+
 - [crestron-lights-subsystem-gating.md](docs/crestron/crestron-lights-subsystem-gating.md)
 
   Why a house power cut on 2026-09-15 killed every Crestron load in Home Assistant except the three
