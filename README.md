@@ -104,6 +104,18 @@ Notes, planning, and specs for my Home Assistant buildout.
   that had to be killed with measurements, the `SDEBUG` captures that settled it, what it corrects
   in the earlier page-gating conclusion, and the two-phase session the bridge now uses.
 
+- [crestron-av-zone-control-path.md](docs/crestron/crestron-av-zone-control-path.md)
+
+  The six-zone audio system mapped from the same TSW-752 panel project that gave up the lighting
+  joins, and reachable the same way over CIP with no Cresnet tap. The zone, source, volume and
+  power joins, the read surface that static analysis missed, and the finding that each panel slot
+  carries its own independent zone cursor rather than the house having one. What live testing
+  showed about source-select powering a zone on, per-source volume presets, volume as a ramp that
+  resets to zero on a processor reboot, and a useful range confined to the top fifth of the scale.
+  The FM tuner found on source 5, with eight configured presets and no display page on any panel.
+  Why the lighting bridge's slot cannot be shared, the entity models this leaves open, why Living
+  Room can never be one of the six, and the all-rooms AirPlay button that is the next thing built.
+
 - [crestron-load-room-worksheet.md](docs/crestron/crestron-load-room-worksheet.md)
 
   Every button on the TSW-752 lighting pages mapped to the Home Assistant area its load actually
