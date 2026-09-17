@@ -174,91 +174,105 @@ Do not change anything until you have checked the status of every repository the
 confirmed the live release and commit state against `git` and the running instance. The checkpoint
 below records both, and it will be out of date sooner than it looks.
 
-## Next-session checkpoint, 2026-09-04
+## Next-session checkpoint, 2026-09-17
 
-**Home Assistant drives all thirty of the house's lighting loads.** A custom integration that
-registers as a physically unplugged TSW-752 touch panel controls every one of them end to end over
-CIP. Read [docs/crestron/crestron-ha-bridge.md](./docs/crestron/crestron-ha-bridge.md) before
-touching anything lighting-related, along with
+**Home Assistant drives all thirty of the house's lighting loads.** A custom integration
+registering as a physically unplugged TSW-752 touch panel controls every one of them over CIP. Read
+[docs/crestron/crestron-ha-bridge.md](./docs/crestron/crestron-ha-bridge.md) before touching
+anything lighting-related, along with
 [ADR 0066](./docs/adr/0066-crestron-bridge-needs-two-cip-connections.md) and
 [ADR 0067](./docs/adr/0067-discrete-on-off-synthesised-in-the-bridge.md).
 
 The integration lives in the **CresnetMon** repo at `custom_components/crestron_cip/`, not here,
 because this repo takes no deployable code. It is deployed to `/config/custom_components/` by SFTP.
 
-The one rule not to get wrong: the DSC alarm keypad shares AADS joins `d130` through `d148` plus
-`d93`, with Fire, Medical and Panic on `d146`, `d147` and `d148`. The bridge never writes any of
-them, enforced both at table-import time and immediately before bytes reach the wire. Receiving
-those joins is expected and fine; only writing is refused. Do not remove either check.
+### Two rules not to get wrong
 
-The last four loads, the Kitchen ones, were identified and wired 2026-09-03
-([issue #18](https://github.com/pdehlke/homeassistant/issues/18), closed). Three are ordinary
-toggles; Island's MC2E channel turned out to be a dimmer with a separate on join and off join
-rather than one toggle, which is why `Load` in `const.py` now carries `press_on`/`press_off`
-fields rather than assuming every load presses one join both ways. Every other MC2E channel the
-Kitchen slot reaches is a dimmer too, so expect Phase 2 (a dedicated brightness pass, not started)
-to lean on that same shape. Full record in
-[crestron-xpanel-control-path.md](./docs/crestron/crestron-xpanel-control-path.md#kitchen-identification-resolved-2026-09-03).
-`sensor.homie_lights_status`'s hardcoded entity list, the other lighting-adjacent bug
-([issue #17](https://github.com/pdehlke/homeassistant/issues/17)), is also fixed and closed.
+**The DSC alarm keypad shares AADS joins `d130` through `d148` plus `d93`**, with Fire, Medical and
+Panic on `d146`, `d147` and `d148`. The bridge never writes any of them, enforced both at
+table-import time and immediately before bytes reach the wire. Receiving those joins is expected
+and fine; only writing is refused. Do not remove either check.
 
-**Scenes are no longer empty.** Every `light.*` entity and every HA scene had been deleted during
-the lighting rebuild, leaving the Homie Scenes chip pointing at nothing
-([issue #16](https://github.com/pdehlke/homeassistant/issues/16), closed). It now holds two real,
-script-backed scenes: `script.scene_dinner` and `script.scene_visitors`. Neither is a native HA
-`scene.*` snapshot, because a snapshot can't express the TV-off conditional or the music
-service-call chain both scenes need; the dashboard's scene mechanism
-(`sceneAffectedEntities()`/`togglePopupScene()`) was generalized, additively, to activate something
-other than a bubble's own `entities` list. Full design and verification in
-[homie-scenes-chip.md](./docs/homie-dashboard/homie-scenes-chip.md)'s "Fifth pass" and "Sixth pass"
-sections. As of the last commit touching that doc, pde's own visual, on-device confirmation of the
-live tap-through was still outstanding; check whether that happened before assuming the chip is
-fully validated.
+**A panel slot holds exactly one subsystem at a time**, entered by pressing `d75` for AV, `d80` for
+Climate, `d91` for Lights or `d93` for Alarm. The AADS reuses join numbers across subsystems, so
+`d101` is Dining Room Table inside Lights and the AppleTV menu inside AV. Two consequences. The
+bridge must press `d91` on every new session, because the latch lives in the running AADS program
+and a processor restart clears it, which is what took every AADS-backed load offline on 2026-09-15
+([crestron-lights-subsystem-gating.md](./docs/crestron/crestron-lights-subsystem-gating.md)). And
+any future code that switches a slot into another subsystem must not emit a lighting join while it
+is there.
 
-**A/V join mapping started, not yet acted on.** The same TSW-752 panel dump mined for lighting also
-covers room-by-room source, volume, and power control, which the panels already expose but Home
-Assistant does not. Static analysis plus three rounds of pde's own live corrections are written up
-in [issue #20](https://github.com/pdehlke/homeassistant/issues/20), `ready-for-agent` — read the
-issue itself, it's the spec of record. The one finding worth knowing before touching anything
-Living-Room-audio-related: Living Room and the panel's "Great Room" label are the same room,
-driven by an **external Integra AV receiver/preamp that Crestron cannot reach at all**; the AADS
-only ever sees the Integra's fixed output as one more line input. The Integra is reachable via
-Harmony, which Home Assistant already integrates — pde suspects that'll end up necessary for full
-Living Room source control, recorded in the issue as a non-goal, not yet a decision to build
-anything. The next step needs the Cresnet tap physically connected, so it needs pde at the machine.
+### Scenes
 
-**A second scenes thread opened and stalled.** [Issue #19](https://github.com/pdehlke/homeassistant/issues/19)
-was meant to wire the Crestron Modes page's four scene buttons (Holiday/Security/Vacation/Party)
-into the same chip, but pde tried all four live from a physical panel and saw no visible effect on
-the house. It's `needs-info`, not `ready-for-agent`, until it's known whether those buttons are
-dead in this installation, do something not visually obvious, or have non-independent feedback.
-Don't confuse it with issue #20; both are panel investigations but otherwise unrelated.
+Two real, script-backed scenes on the Homie Scenes chip: `script.scene_dinner` and
+`script.scene_visitors`. Neither is a native HA `scene.*` snapshot, because a snapshot cannot
+express the TV-off conditional or the music service-call chain. Design and verification in
+[homie-scenes-chip.md](./docs/homie-dashboard/homie-scenes-chip.md).
 
-Live release and commit state go stale fast, so confirm with `git` and the live instance rather
-than trusting this line: at the time of writing, Homie is at `20260903.4`, this repo is at
-`d72a7b6`, the fork is at `d37cb39`, and CresnetMon is at `0e0fa0f` on `macos-port-python`. All
-three were clean and in sync.
+### A/V is mapped and live-verified, and nothing is built yet
 
-With lighting and the first scenes pass both done, the open threads are smaller and independent
-rather than one obvious next step. [Issue #20](https://github.com/pdehlke/homeassistant/issues/20)
-is the freshest and best-specified. [Issue #19](https://github.com/pdehlke/homeassistant/issues/19)
-needs live panel behavior established before any HA-side work starts. [Issue #1](https://github.com/pdehlke/homeassistant/issues/1)
-(the Cresnet Path B spike, superseded by CIP working but never formally closed) is still open and
-`ready-for-agent`. [Issue #8](https://github.com/pdehlke/homeassistant/issues/8) (A/V speaker
-selection dropdown broken) and [issue #9](https://github.com/pdehlke/homeassistant/issues/9)
-(Energy panel scope) are both `needs-triage` and may turn out to overlap with #20's findings once
-that lands, worth checking before starting either from scratch.
+The same panel project that gave up the lighting joins also covers room-by-room source, volume and
+power for the AADS's six audio zones, and the same CIP route reaches all of it with no Cresnet tap.
+Full map and live evidence in
+[crestron-av-zone-control-path.md](./docs/crestron/crestron-av-zone-control-path.md); the working
+thread is [issue #20](https://github.com/pdehlke/homeassistant/issues/20), whose two comments
+correct two claims still standing in its own body.
 
-Two older Homie items still deferred, both predating the lighting work and neither re-verified
-since 2026-08-07:
+What shapes any future work:
 
-- The close-time filter-reset test on the floors card's expand button is not mutation-sensitive (a
-  later unfiltered `openThermostat()` independently clears the filter). The implementation is
-  correct; the test does not independently prove it. No issue filed, so this note is the only
-  record of it.
-- `.ov3-col3`'s `justify-content: space-between` leaves an ugly gap between the security and floors
-  cards when no purifier entity is configured. Cosmetic rather than an overflow. Tracked as
-  [issue #10](https://github.com/pdehlke/homeassistant/issues/10).
+- The zone cursor is **per slot**, so Home Assistant gets its own and will not move the physical
+  panels. But there is one volume join per slot, so only one zone is readable at a time and six
+  always-live zone entities would be dishonest.
+- **One slot can carry both lighting and audio by taking turns.** A subsystem switch costs about
+  half a second and re-entry re-dumps live state. So this needs a write lock in the integration,
+  not a second sacrificed touch panel.
+- Volume is hold-to-ramp only, with no working direct analog write, and it resets to zero on a
+  processor reboot. The speakers are inaudible below roughly 80% of full scale, so the useful range
+  is the top fifth of 0-65535.
+- Selecting a source powers the zone on and overwrites the volume with a per-source preset, so
+  volume must always be set after the source.
+
+**The next deliverable pde asked for** is a Homie Dashboard button setting every room to AirPlay at
+90%. The button is a small part of it; Home Assistant has no AV entities at all yet, so the order
+is subsystem switching plus the write lock in `crestron_cip`, then zone and volume services, then
+an HA script walking the six zones, then the button. Design that first step together with
+[issue #25](https://github.com/pdehlke/homeassistant/issues/25), which is the same machinery.
+
+Source identity beyond AirPlay is blocked on pde, not on an agent: the AADS and Integra wiring has
+been customised and the Integra's input labels do not match what they select.
+
+### Live release and commit state
+
+This goes stale fast, so confirm with `git` and the live instance rather than trusting the line. At
+the time of writing, all three repositories were clean and in sync with their remotes: this repo at
+`48e8743`, the fork at `82d923f` with `HOMIE_ASSET_VERSION` `20260910.1` matching the live file,
+and CresnetMon at `4434da2` on `macos-port-python`.
+
+### Open threads
+
+`ready-for-agent`: [#25](https://github.com/pdehlke/homeassistant/issues/25) (re-enter Lights when
+a press goes unconfirmed), [#24](https://github.com/pdehlke/homeassistant/issues/24) (Alarmo PRD),
+[#20](https://github.com/pdehlke/homeassistant/issues/20) (A/V),
+[#11](https://github.com/pdehlke/homeassistant/issues/11) and
+[#10](https://github.com/pdehlke/homeassistant/issues/10) (Homie cosmetics),
+[#1](https://github.com/pdehlke/homeassistant/issues/1) (Cresnet Path B spike, effectively
+superseded by CIP working but never formally closed).
+
+`ready-for-human`: [#23](https://github.com/pdehlke/homeassistant/issues/23) (the real Home
+Perimeter join is outside both CIP connections),
+[#21](https://github.com/pdehlke/homeassistant/issues/21),
+[#14](https://github.com/pdehlke/homeassistant/issues/14),
+[#13](https://github.com/pdehlke/homeassistant/issues/13),
+[#12](https://github.com/pdehlke/homeassistant/issues/12).
+
+`needs-info`: [#22](https://github.com/pdehlke/homeassistant/issues/22) (retire the MC2E XPanel
+connection where the join map allows).
+
+`needs-triage`: [#9](https://github.com/pdehlke/homeassistant/issues/9) (Energy panel scope) and
+[#8](https://github.com/pdehlke/homeassistant/issues/8) (A/V speaker selection dropdown broken).
+#8 may overlap with the A/V findings above; read them before starting it from scratch.
+
+### Credentials
 
 Homie's three credentials are environment variables (`$HA_EDIT_KEY`, `$HOMIE_PASSWORD`,
 `$HOMIE_TOKEN`), not files under `/Users/pde/tmp`; that move happened on 2026-08-20 and any
