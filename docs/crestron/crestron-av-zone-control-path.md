@@ -1,10 +1,12 @@
 # Room-by-room audio on the AADS, mapped from the same TSW-752 panel project
 
-**Mapped and partly verified live on 2026-09-17.** The six-zone audio system the touch panels
-already drive is reachable over CIP by the same panel-impersonation route that gave Home Assistant
-every lighting load, and it needs no Cresnet tap and no change to either Crestron program. No
-bridge has been built. This document is the map and the live evidence behind it, which is step 1
-through step 3 of [issue #20](https://github.com/pdehlke/homeassistant/issues/20).
+**Mapped 2026-09-17, built and verified live 2026-09-22.** The six-zone audio system the touch
+panels already drive is reachable over CIP by the same panel-impersonation route that gave Home
+Assistant every lighting load, and it needs no Cresnet tap and no change to either Crestron
+program. All four steps of [issue #20](https://github.com/pdehlke/homeassistant/issues/20) are
+done: the `crestron_cip` integration time-slices one panel slot between Lights and A/V, it exposes
+six audio services, and two Homie Dashboard buttons drive the six zones through them. This document
+is the map, the live evidence behind it, and a record of what building it corrected.
 
 Read [crestron-tsw-panel-control-path.md](crestron-tsw-panel-control-path.md) first. This document
 assumes its method, its `IP-ID` inventory, and its account of how the panel project was retrieved.
@@ -344,7 +346,7 @@ the cursor across all six zones on a cycle, accepting a few seconds of staleness
 blank window on each hop. Whether walking the cursor continuously is acceptable depends on whether
 it disturbs the physical panels, which is unknown and testable.
 
-## The next step: an all-rooms AirPlay button
+## The all-rooms AirPlay button
 
 Source identity beyond AirPlay is unresolved. Per pde, the wiring and input switching across the
 AADS and the Integra has been customised at some point, to the point where the Integra's own input
@@ -352,18 +354,21 @@ selection button labels do not match the sources they actually select, and untan
 with both consumer manuals. That work is not blocking, because one path is known to work today:
 **AirPlay can be selected per room and the volume set per room.**
 
-So the first thing built is a Homie Dashboard button that sets every room to AirPlay at 90% volume.
+So the first thing built was a Homie Dashboard button that sets every room to AirPlay at 90%
+volume.
 
-The dashboard button itself is trivial. Nearly all the work is underneath it, because Home
-Assistant currently has no AV entities at all. The order is:
+The dashboard button itself was trivial. Nearly all the work was underneath it, because Home
+Assistant had no AV entities at all. The order was:
 
 1. ~~Subsystem switching plus a write lock in the `crestron_cip` integration.~~ **Done 2026-09-22**,
    and it moved the bridge from slot `0x13` to `0x12` along the way. See
    [crestron-subsystem-time-slicing.md](crestron-subsystem-time-slicing.md).
 2. ~~Zone and volume services in the same integration.~~ **Done and verified live 2026-09-22.** See
    [The services](#the-services) above.
-3. An HA script that walks the six zones.
-4. A Homie chip or button that calls the script.
+3. ~~An HA script that walks the six zones.~~ **Done and verified live 2026-09-22**, as
+   `script.all_rooms_airplay`. See below.
+4. ~~A Homie chip or button that calls the script.~~ **Done 2026-09-22**, as two bubbles on the
+   Scenes chip. See [The dashboard buttons](#the-dashboard-buttons) below.
 
 The walk, per zone, is: press the zone-select join, wait out the blank window, press `d52` for
 AirPlay, re-read `a11` because the source change resets it to that source's preset, then ramp to
@@ -395,6 +400,52 @@ Five constraints this design has to respect, all of them established above:
 Because the slot is shared, the walk moves the cursor six times in a minute while also leaving and
 re-entering the Lights subsystem. On an unplugged slot that disturbs nobody. It is another reason
 not to run this on a live panel slot.
+
+## The script
+
+`script.all_rooms_airplay` walks the six zones, selecting AirPlay and then setting 90% in each. It
+lives in Home Assistant's own storage rather than in this repo, which takes no deployable
+configuration; this section records what it does and why it is shaped that way.
+
+It is a `repeat` with `for_each` over the six zone keys, calling `crestron_cip.av_select_source`
+and then `crestron_cip.av_set_volume`. The ordering constraint lives inside the services rather
+than the script, so the only thing the script has to get right is that volume comes second.
+
+`mode: single`, because a second run would fight the first for the slot. Each step carries
+`continue_on_error`, so one unreachable zone costs that zone and not the other five, and a `note:`
+recording why the step is where it is.
+
+**Measured end to end at 8.1 seconds** on 2026-09-22, from six zones sitting on iPod at levels
+between 89% and 100%. Every zone landed between 89.0% and 90.1%. Kitchen was left at 89.0% rather
+than moved the last 651 units, which is correct: the convergence tolerance is a little over one
+minimum press, and a tighter one would oscillate around the target instead of settling.
+
+The 45-to-60-second estimate elsewhere in this document still applies to the cold case, where a
+processor reboot has zeroed every zone and each one needs a full nine-second ramp. That is why the
+dashboard button should call it with `script.turn_on` rather than blocking on it.
+
+## The dashboard buttons
+
+Two bubbles on the Homie Dashboard's Scenes chip, added 2026-09-22, which closes step 4 and with it
+issue #20's original plan. `All AirPlay` calls `script.all_rooms_airplay`. `AV Off` calls
+`script.all_av_off`, a one-step script wrapping `crestron_cip.av_power_off_all`.
+
+They are separate buttons rather than one toggle, which is pde's call and which suits the asymmetry
+underneath: turning every room on is the six-zone walk above, while turning everything off is a
+single press of `d40`.
+
+Both carry `entities: []` in the fork's `config.js`, deliberately rather than by omission. Homie's
+`sceneIsOn()` reads an empty affected list as off, so `togglePopupScene()` always takes its
+activate branch and every tap runs the script. Neither bubble ever glows and neither ever calls
+`homeassistant.turn_off`. That is the honest state today, because Home Assistant has no entity
+representing an audio zone at all, for the reasons in [What an honest Home Assistant entity model
+looks like](#what-an-honest-home-assistant-entity-model-looks-like) above. If that entity model
+ever lands, these two gain a real on-state by filling in `entities`, and nothing else about them
+has to change.
+
+Worth knowing before wondering why a room comes back silent: powering a zone off clears its
+remembered source rather than only muting it, and there is no join path back to off-but-remembering
+what it played. Tapping `All AirPlay` again is the way back.
 
 ## What is still open
 
