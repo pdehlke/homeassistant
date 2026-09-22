@@ -174,86 +174,163 @@ Do not change anything until you have checked the status of every repository the
 confirmed the live release and commit state against `git` and the running instance. The checkpoint
 below records both, and it will be out of date sooner than it looks.
 
-## Next-session checkpoint, 2026-09-17
+## Next-session checkpoint, 2026-09-22
 
-**Home Assistant drives all thirty of the house's lighting loads.** A custom integration
-registering as a physically unplugged TSW-752 touch panel controls every one of them over CIP. Read
+**Home Assistant drives all thirty lighting loads and all six audio zones.** One custom
+integration, registering as a physically unplugged TSW-752 touch panel, does both over CIP from a
+single panel slot that it time-slices between the two subsystems. Read
 [docs/crestron/crestron-ha-bridge.md](./docs/crestron/crestron-ha-bridge.md) before touching
 anything lighting-related, along with
 [ADR 0066](./docs/adr/0066-crestron-bridge-needs-two-cip-connections.md) and
-[ADR 0067](./docs/adr/0067-discrete-on-off-synthesised-in-the-bridge.md).
+[ADR 0067](./docs/adr/0067-discrete-on-off-synthesised-in-the-bridge.md), and
+[crestron-subsystem-time-slicing.md](./docs/crestron/crestron-subsystem-time-slicing.md) before
+touching anything that shares the slot.
 
 The integration lives in the **CresnetMon** repo at `custom_components/crestron_cip/`, not here,
 because this repo takes no deployable code. It is deployed to `/config/custom_components/` by SFTP.
 
-### Two rules not to get wrong
+### Four rules not to get wrong
 
 **The DSC alarm keypad shares AADS joins `d130` through `d148` plus `d93`**, with Fire, Medical and
-Panic on `d146`, `d147` and `d148`. The bridge never writes any of them, enforced both at
-table-import time and immediately before bytes reach the wire. Receiving those joins is expected
-and fine; only writing is refused. Do not remove either check.
+Panic on `d146`, `d147` and `d148`. The bridge never writes any of them, enforced in **two** places:
+`const._validate()` rejects an unsafe load table at import, and `CipClient._press()` refuses with
+the bytes in hand. Only the second covers every write, because entry presses and A/V presses never
+come from the load table at all. Receiving those joins is expected and fine; only writing is
+refused. Do not remove either check.
+
+There used to be a third, `CrestronBridge._guard()`, and this checkpoint used to say there were
+three. It applied `_validate()`'s own predicate to `_validate()`'s own data one call later, so any
+table that would have tripped it failed at import and the module never loaded: it was called on
+every write and could never fire. Deleted 2026-09-22 after mutation testing proved it dead, because
+a check that reads like defence in depth and is not is worse than no check at all. See
+[issue #26](https://github.com/pdehlke/homeassistant/issues/26). The `mac/` proof-of-concept scripts
+now share one guard on `cip_xpanel.py` for the same reason: four hand-copied versions is how two of
+them ended up with none.
 
 **A panel slot holds exactly one subsystem at a time**, entered by pressing `d75` for AV, `d80` for
 Climate, `d91` for Lights or `d93` for Alarm. The AADS reuses join numbers across subsystems, so
-`d101` is Dining Room Table inside Lights and the AppleTV menu inside AV. Two consequences. The
-bridge must press `d91` on every new session, because the latch lives in the running AADS program
-and a processor restart clears it, which is what took every AADS-backed load offline on 2026-09-15
-([crestron-lights-subsystem-gating.md](./docs/crestron/crestron-lights-subsystem-gating.md)). And
-any future code that switches a slot into another subsystem must not emit a lighting join while it
-is there.
+`d101` is Dining Room Table inside Lights and the AppleTV menu inside AV. The integration now
+tracks which subsystem the slot is in as ordinary state and enters the right one before every
+write, holding the slot lock across the switch. Nothing outside that lock may emit a join. The
+latch lives in the running AADS program and a processor restart clears it, which is what took every
+AADS-backed load offline for four hours on 2026-09-15
+([crestron-lights-subsystem-gating.md](./docs/crestron/crestron-lights-subsystem-gating.md)). An
+unconfirmed press now forgets the subsystem so the retry re-enters.
+
+**The bridge's slot is `0x12`, the Kitchen panel, and moving it is not free.** Entering the Lights
+subsystem makes the AADS switch on a light in that panel's own room, a courtesy behaviour pde had
+lived with for years on the Guest Suite panel without it being written down anywhere. On `0x13`,
+the Office panel's old slot, the bridge was silently switching North Sink on at every reconnect,
+restart and return from A/V. `0x12` turns nothing on. Any future slot change has to be tested for
+this before it ships.
+
+**Entry dumps are partial and nondeterministic, so the bridge merges rather than rebuilds.** One
+logged entry omitted seven joins that were high. Rebuilding state from a single dump published a
+lit load as dark, which is how this was found. Bring-up also re-polls the AADS with a second
+`UPDATE_REQUEST`; the MC2E does not answer one, so that path is gated on the link having
+subsystems. Do not simplify the merge back into a rebuild.
 
 ### Scenes
 
-Two real, script-backed scenes on the Homie Scenes chip: `script.scene_dinner` and
-`script.scene_visitors`. Neither is a native HA `scene.*` snapshot, because a snapshot cannot
-express the TV-off conditional or the music service-call chain. Design and verification in
-[homie-scenes-chip.md](./docs/homie-dashboard/homie-scenes-chip.md).
+Four script-backed buttons on the Homie Scenes chip: `script.scene_dinner`, `script.scene_visitors`,
+`script.all_rooms_airplay` and `script.all_av_off`. None is a native HA `scene.*` snapshot, because
+a snapshot cannot express the TV-off conditional, the music service-call chain, or a six-zone walk.
+Design and verification in [homie-scenes-chip.md](./docs/homie-dashboard/homie-scenes-chip.md) for
+the first two and
+[crestron-av-zone-control-path.md](./docs/crestron/crestron-av-zone-control-path.md) for the other
+two.
 
-### A/V is mapped and live-verified, and nothing is built yet
+The two A/V buttons carry `entities: []` in the fork's `config.js` deliberately. Homie reads an
+empty affected list as off, so each tap always runs its script and neither bubble ever glows. That
+is honest while Home Assistant has no entity representing an audio zone.
 
-The same panel project that gave up the lighting joins also covers room-by-room source, volume and
-power for the AADS's six audio zones, and the same CIP route reaches all of it with no Cresnet tap.
-Full map and live evidence in
-[crestron-av-zone-control-path.md](./docs/crestron/crestron-av-zone-control-path.md); the working
-thread is [issue #20](https://github.com/pdehlke/homeassistant/issues/20), whose two comments
-correct two claims still standing in its own body.
+### A/V is built and live
 
-What shapes any future work:
+Six services in `crestron_cip`: `av_status`, `av_select_source`, `av_set_volume`, `av_power_off`,
+`av_power_off_all`, `av_mute`. Every one takes the same slot lock the lighting commands use and
+returns the zone's state afterwards. Verified live on 2026-09-22 against the AADS's own front panel
+display. [Issue #20](https://github.com/pdehlke/homeassistant/issues/20) is closed; read the
+document rather than the issue thread, because the body and first comment both carry claims the
+build corrected.
 
-- The zone cursor is **per slot**, so Home Assistant gets its own and will not move the physical
-  panels. But there is one volume join per slot, so only one zone is readable at a time and six
-  always-live zone entities would be dishonest.
-- **One slot can carry both lighting and audio by taking turns.** A subsystem switch costs about
-  half a second and re-entry re-dumps live state. So this needs a write lock in the integration,
-  not a second sacrificed touch panel.
+What constrains any further A/V work:
+
+- The zone cursor is **per slot**, so Home Assistant has its own and will not move the physical
+  panels. But there is one volume join per slot, so only one zone is readable at a time. This is
+  why the integration exposes services rather than six `media_player` entities that would report
+  cached values for five of them.
 - Volume is hold-to-ramp only, with no working direct analog write, and it resets to zero on a
-  processor reboot. The speakers are inaudible below roughly 80% of full scale, so the useful range
-  is the top fifth of 0-65535.
+  processor reboot. The speakers are inaudible below roughly 80% of full scale. Services take a
+  percentage of full scale, because that is the unit the AADS works in internally.
 - Selecting a source powers the zone on and overwrites the volume with a per-source preset, so
-  volume must always be set after the source.
+  volume must always be set after the source. The services enforce the order; callers do not.
+- Powering a zone off clears its remembered source rather than muting it, and there is no join path
+  back to off-but-remembering.
 
-**The next deliverable pde asked for** is a Homie Dashboard button setting every room to AirPlay at
-90%. The button is a small part of it; Home Assistant has no AV entities at all yet, so the order
-is subsystem switching plus the write lock in `crestron_cip`, then zone and volume services, then
-an HA script walking the six zones, then the button. Design that first step together with
-[issue #25](https://github.com/pdehlke/homeassistant/issues/25), which is the same machinery.
+**Source identity beyond AirPlay and iPod is blocked on pde, not on an agent**: the AADS and
+Integra wiring has been customised and the Integra's input labels do not match what they select.
+Until that is untangled the source list cannot be trusted further.
 
-Source identity beyond AirPlay is blocked on pde, not on an agent: the AADS and Integra wiring has
-been customised and the Integra's input labels do not match what they select.
+### Deploying the Homie fork
+
+Three rules, all of which were broken on 2026-09-22 and cost a round trip. They are documented in
+the middle of
+[homie-dashboard-install-plan.md](./docs/homie-dashboard/homie-dashboard-install-plan.md), which is
+long enough that reading the top few checkpoints does not surface them.
+
+- **Never overwrite `config.js` whole.** Its `HA_TOKEN` line is live-spliced on the Home Assistant
+  host; the repo carries a short placeholder. Read the live token line back out of the file on the
+  host and splice it there, so the secret never leaves the host.
+- **Upload under a temp name and rename**, rather than writing over a file a client may be fetching.
+- **Bump the `homie-dash` iframe's own `?v=`** with a Lovelace save, not only `HOMIE_ASSET_VERSION`
+  inside the HTML. Miss it and the tablet serves cached HTML pointing at the old asset URLs, so
+  nothing you deployed appears.
+
+The SSH add-on `a0d7b954_ssh` is manual-boot. Start it before an SFTP deploy and stop it after.
 
 ### Live release and commit state
 
-This goes stale fast, so confirm with `git` and the live instance rather than trusting the line. At
-the time of writing, all three repositories were clean and in sync with their remotes: this repo at
-`48e8743`, the fork at `82d923f` with `HOMIE_ASSET_VERSION` `20260910.1` matching the live file,
-and CresnetMon at `4434da2` on `macos-port-python`.
+This goes stale fast, so confirm with `git` and the live instance rather than trusting the line. No
+SHA is given for this repo, because the commit carrying this checkpoint is by definition the one
+you are reading; use `git log -1`. Verified 2026-09-22: the fork clean at `8663e1c` with
+`HOMIE_ASSET_VERSION` `20260922.1` matching both the live file and the dashboard iframe's `?v=`,
+and CresnetMon clean at `93f9baa` on `macos-port-python`.
+
+**The live integration is ahead of `macos-port-python`.** `/config/custom_components/crestron_cip/`
+runs `eb7a545`, the head of `review/quality-fixes-20260922`, pushed but not merged. That branch is
+a code-quality review of the whole integration and it changed runtime behaviour, so the live
+instance and the default branch genuinely disagree until it merges. Deploying anything from
+`macos-port-python` before then would silently roll the fixes back. A tarball of the pre-review
+files is on the host at `/config/crestron_cip-before-review-fixes.tar.gz`, and the pre-deploy state
+was byte-identical to `93f9baa` on all eight files, so rollback is exact.
+
+What that branch changed, in one line each: serialised the one entry-collection buffer inside
+`CipClient` (a bring-up racing a command retry after a mid-command reconnect could take the lighting
+link offline for five seconds); merged a timed-out re-poll instead of discarding up to five seconds
+of live feedback; captured the writer before a press so a cancelled press still releases the join;
+awaited the idle watch on shutdown; stopped caching an unconfirmed A/V cursor, which could ramp the
+wrong room for eleven seconds. Then four behaviour-preserving refactors: an `_slot()` context
+manager for the six A/V operations, one registration table for all ten services, a `Link` object
+replacing four per-link dicts, and the `_guard()` deletion above.
+
+Verified live on 2026-09-22 against real hardware, not just tests: discrete on and off on
+`office_pool_bath` with a second `turn_on` correctly pressing nothing, `av_status` on Kitchen and
+Studio with the cursor confirmed by `s11`, the idle return from A/V to Lights, and a lighting write
+issued straight out of an A/V excursion re-entering Lights on demand in about one second. No
+crestron error or warning in the log afterwards.
+
+Note for the next SFTP deploy: the SSH example in the Home Assistant skill's
+`references/api-access.md` uses `root@hass.ehlke.net`, which gets `Connection refused` on port 2222.
+Only `192.168.4.141` works. The prose above that example already says so; the code block is stale.
 
 ### Open threads
 
-`ready-for-agent`: [#25](https://github.com/pdehlke/homeassistant/issues/25) (re-enter Lights when
-a press goes unconfirmed), [#24](https://github.com/pdehlke/homeassistant/issues/24) (Alarmo PRD),
-[#20](https://github.com/pdehlke/homeassistant/issues/20) (A/V),
-[#11](https://github.com/pdehlke/homeassistant/issues/11) and
+`ready-for-agent`: [#24](https://github.com/pdehlke/homeassistant/issues/24) (Alarmo PRD),
+[#27](https://github.com/pdehlke/homeassistant/issues/27) (four `crestron_cip` test-coverage gaps
+the fakes cannot currently catch, chiefly that nothing reproduces the 60ms cursor blank),
+[#28](https://github.com/pdehlke/homeassistant/issues/28) (retire the five superseded Cresnet
+injection scripts in `mac/`, but confirm Path B is dead rather than parked first, since #1 is still
+open), [#11](https://github.com/pdehlke/homeassistant/issues/11) and
 [#10](https://github.com/pdehlke/homeassistant/issues/10) (Homie cosmetics),
 [#1](https://github.com/pdehlke/homeassistant/issues/1) (Cresnet Path B spike, effectively
 superseded by CIP working but never formally closed).
@@ -270,7 +347,27 @@ connection where the join map allows).
 
 `needs-triage`: [#9](https://github.com/pdehlke/homeassistant/issues/9) (Energy panel scope) and
 [#8](https://github.com/pdehlke/homeassistant/issues/8) (A/V speaker selection dropdown broken).
-#8 may overlap with the A/V findings above; read them before starting it from scratch.
+#8 predates all of the A/V work above and should be re-read against it rather than started from
+scratch.
+
+Fixed and deployed but still open, because its fix is on an unmerged branch and the `Fixes #26`
+trailer only fires when `review/quality-fixes-20260922` reaches the default branch:
+[#26](https://github.com/pdehlke/homeassistant/issues/26), the alarm check that could never fire.
+Do not re-do the work; merge the branch and it closes itself.
+
+Closed on 2026-09-22 and worth knowing about rather than re-deriving:
+[#20](https://github.com/pdehlke/homeassistant/issues/20) (A/V mapped and built) and
+[#25](https://github.com/pdehlke/homeassistant/issues/25) (re-enter Lights when a press goes
+unconfirmed).
+
+### One loose end with no issue yet
+
+[crestron-strategy.md](./docs/crestron/crestron-strategy.md) still says the AADS is being replaced
+outright, and its "Rejected: keeping the AADS as a dumb amp only" section reasons from the premise
+that there is no front door into the AADS's own matrix and amp functions. The A/V work disproved
+that premise, exactly as the lighting work disproved it for lighting: every zone's source, volume,
+mute and power is drivable today over CIP with no new hardware. That document has not been
+rewritten and no issue tracks it.
 
 ### Credentials
 
