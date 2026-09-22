@@ -113,8 +113,25 @@ Notes, planning, and specs for my Home Assistant buildout.
   showed about source-select powering a zone on, per-source volume presets, volume as a ramp that
   resets to zero on a processor reboot, and a useful range confined to the top fifth of the scale.
   The FM tuner found on source 5, with eight configured presets and no display page on any panel.
-  Why the lighting bridge's slot cannot be shared, the entity models this leaves open, why Living
-  Room can never be one of the six, and the all-rooms AirPlay button that is the next thing built.
+  Why one slot can carry both lighting and audio by taking turns rather than needing a second
+  sacrificed panel, the entity models this leaves open, why Living Room can never be one of the
+  six, and the all-rooms AirPlay button that is the next thing built.
+
+- [crestron-subsystem-time-slicing.md](docs/crestron/crestron-subsystem-time-slicing.md)
+
+  The design for sharing the lighting bridge's single AADS panel slot between the Lights and A/V
+  subsystems, which is the load-bearing first step of the all-rooms audio work. Why the receive
+  side rather than the write side is where a shared slot corrupts state, why a re-entry dump has to
+  rebuild rather than merge because absence means off, the bounded lock hold that removes the need
+  for any interrupt machinery, and the frame-level timing run that settled how an entry dump is
+  detected: no end-of-query marker follows a subsystem entry, and the A/V dump has a reproducible
+  internal pause twice as long as the Lights dump's. Then what the live deploy corrected within
+  four minutes: an entry dump is partial and nondeterministic, so absence carries no information
+  and a lit load got published as dark, which is why entry merges rather than rebuilds and why
+  bring-up re-polls. What the design gives the unconfirmed-press recovery for free, the seven
+  alternatives rejected along the way, and the finding that came out of chasing a light that kept
+  switching itself on: entering the Lights subsystem turns one load on, per panel slot, which the
+  house has done for years and which the bridge now triggers on every restart.
 
 - [crestron-load-room-worksheet.md](docs/crestron/crestron-load-room-worksheet.md)
 

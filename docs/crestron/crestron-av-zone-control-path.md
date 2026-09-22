@@ -206,7 +206,12 @@ The 65 serials in the first entry are the lighting load names. They arrive once 
 than once per entry, which is why every later switch takes about half as long.
 
 **Re-entry re-dumps live state rather than replaying a cache.** This was settled by an accident
-that could not have been arranged on purpose. Between the two Lights entries, East Hall turned off
+that could not have been arranged on purpose. Note the limit of what it settles: the dump is live
+rather than cached, but it is **not complete**. On 2026-09-22 a Lights entry omitted a join that was
+high, so absence in an entry dump means nothing at all. The reading below, that a second entry
+"reported `d243` gone" and therefore that absence reports an off, was an over-read of a single
+observation; see
+[crestron-subsystem-time-slicing.md](crestron-subsystem-time-slicing.md#what-the-live-deploy-corrected). Between the two Lights entries, East Hall turned off
 somewhere in the house. The first entry reported `d243` high; the second reported it gone and
 `d225`/`d227`, Goodbye and Good Night, newly high, which is the known all-off tell. Home
 Assistant's own bridge on `0x13` recorded the same transition at 17:47:07Z on
@@ -342,3 +347,9 @@ tap's dependencies installed** even though its own docstring says it needs no ta
 `poc_joinpress`, which imports `poc_witness`, which imports `serial`. The probe used for this
 document inlined the press encoding and receive loop instead. Fixing that import chain would make
 the documented tap-free path actually work.
+
+`mac/poc_subsystem_timing.py` does the same inlining deliberately and is stdlib-only. It presses
+subsystem-entry joins and nothing else, and reports the per-frame arrival timing of each entry dump.
+It exists to settle the one measurement
+[crestron-subsystem-time-slicing.md](crestron-subsystem-time-slicing.md) needs before that design
+can be coded.

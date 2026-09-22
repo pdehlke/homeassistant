@@ -380,8 +380,11 @@ Then add one line to `configuration.yaml`:
 crestron_cip:
 ```
 
-Hosts and IP-IDs default to the AADS at `192.168.4.61` on `0x13` and the MC2E at `192.168.4.59` on
-`0x03`, and can be overridden per link. Restart Home Assistant; the integration is YAML-configured
+Hosts and IP-IDs default to the AADS at `192.168.4.61` on `0x12` and the MC2E at `192.168.4.59` on
+`0x03`, and can be overridden per link. The AADS slot was `0x13`, the Office panel, until
+2026-09-22; it moved to `0x12`, the Kitchen panel, because entering the Lights subsystem on a slot
+makes the AADS turn on a light in that panel's own room, and `0x13`'s is North Sink. See
+[crestron-subsystem-time-slicing.md](crestron-subsystem-time-slicing.md#entering-the-lights-subsystem-turns-a-light-on). Restart Home Assistant; the integration is YAML-configured
 and has no config flow, because its addressing is fixed by physical hardware and there is exactly
 one house.
 
@@ -391,6 +394,7 @@ Home Assistant caches the `custom_components` listing at startup, so a `check_co
 the restart reports `Integration 'crestron_cip' not found` as a warning. That is expected and not a
 sign the manifest is wrong.
 
-**`IP-ID 0x13` holds one client at a time.** While the bridge is running, the proof-of-concept
-tools in `mac/` cannot register on the same slot, and plugging panel 13 back in takes the slot
-away from Home Assistant.
+**The bridge's AADS slot holds one client at a time.** While the bridge is running, the
+proof-of-concept tools in `mac/` cannot register on the same slot, and plugging that panel back in
+takes the slot away from Home Assistant. That slot is `0x12`, the Kitchen panel, since 2026-09-22.
+Panel 13, the Office one, is free again and could be plugged back in.

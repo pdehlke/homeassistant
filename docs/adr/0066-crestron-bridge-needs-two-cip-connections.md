@@ -1,7 +1,8 @@
 # The Crestron bridge holds two CIP connections, split by alarm safety
 
 Home Assistant reaches the lighting system through two simultaneous CIP sessions, not one: the
-freed TSW-752 panel slot on the AADS at `IP-ID 0x13` for twenty-six loads, and the unoccupied
+freed TSW-752 panel slot on the AADS (`IP-ID 0x13` when this was decided, `0x12` since
+2026-09-22) for twenty-six loads, and the unoccupied
 XPanel on the MC2E at `IP-ID 0x03` for four Kitchen loads.
 
 The split is forced rather than chosen. The DSC alarm keypad page reuses AADS joins `d130`-`d148`,
