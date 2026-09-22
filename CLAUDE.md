@@ -294,17 +294,17 @@ This goes stale fast, so confirm with `git` and the live instance rather than tr
 SHA is given for this repo, because the commit carrying this checkpoint is by definition the one
 you are reading; use `git log -1`. Verified 2026-09-22: the fork clean at `8663e1c` with
 `HOMIE_ASSET_VERSION` `20260922.1` matching both the live file and the dashboard iframe's `?v=`,
-and CresnetMon clean at `93f9baa` on `macos-port-python`.
+and CresnetMon clean at `eb7a545` on `macos-port-python`.
 
-**The live integration is ahead of `macos-port-python`.** `/config/custom_components/crestron_cip/`
-runs `eb7a545`, the head of `review/quality-fixes-20260922`, pushed but not merged. That branch is
-a code-quality review of the whole integration and it changed runtime behaviour, so the live
-instance and the default branch genuinely disagree until it merges. Deploying anything from
-`macos-port-python` before then would silently roll the fixes back. A tarball of the pre-review
-files is on the host at `/config/crestron_cip-before-review-fixes.tar.gz`, and the pre-deploy state
-was byte-identical to `93f9baa` on all eight files, so rollback is exact.
+**The default branch, the live instance and the deployed files all agree at `eb7a545`.**
+`/config/custom_components/crestron_cip/` was verified byte-identical to that commit on 2026-09-22.
+It arrived as `review/quality-fixes-20260922`, a code-quality review of the whole integration,
+fast-forwarded onto `macos-port-python` and then deleted; the repo's history stays linear, so those
+seven commits are just the last seven. A tarball of the pre-review files is on the host at
+`/config/crestron_cip-before-review-fixes.tar.gz`, and the pre-deploy state was byte-identical to
+`93f9baa` on all eight files, so a rollback target is exact if one is ever wanted.
 
-What that branch changed, in one line each: serialised the one entry-collection buffer inside
+What that review changed, in one line each: serialised the one entry-collection buffer inside
 `CipClient` (a bring-up racing a command retry after a mid-command reconnect could take the lighting
 link offline for five seconds); merged a timed-out re-poll instead of discarding up to five seconds
 of live feedback; captured the writer before a press so a cancelled press still releases the join;
@@ -350,15 +350,18 @@ connection where the join map allows).
 #8 predates all of the A/V work above and should be re-read against it rather than started from
 scratch.
 
-Fixed and deployed but still open, because its fix is on an unmerged branch and the `Fixes #26`
-trailer only fires when `review/quality-fixes-20260922` reaches the default branch:
-[#26](https://github.com/pdehlke/homeassistant/issues/26), the alarm check that could never fire.
-Do not re-do the work; merge the branch and it closes itself.
-
 Closed on 2026-09-22 and worth knowing about rather than re-deriving:
-[#20](https://github.com/pdehlke/homeassistant/issues/20) (A/V mapped and built) and
+[#20](https://github.com/pdehlke/homeassistant/issues/20) (A/V mapped and built),
 [#25](https://github.com/pdehlke/homeassistant/issues/25) (re-enter Lights when a press goes
-unconfirmed).
+unconfirmed) and [#26](https://github.com/pdehlke/homeassistant/issues/26) (the alarm check that
+could never fire).
+
+**A `Fixes #NN` trailer in a CresnetMon commit will not close an issue here.** GitHub's closing
+keywords only act within one repository, and this project deliberately keeps every issue in
+`pdehlke/homeassistant` while most of the code lives in `pdehlke/CresnetMon` or the Homie fork. #26
+was written with such a trailer, merged to the default branch, and stayed open until it was closed
+by hand. Close cross-repo issues with `gh issue close` and say in the comment which commit did the
+work, because nothing else links them.
 
 ### One loose end with no issue yet
 
