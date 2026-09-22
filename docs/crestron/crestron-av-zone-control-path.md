@@ -59,9 +59,9 @@ without pressing anything.
 | `s11` | Name of the zone the slot's cursor is on |
 | `s16` | Name of the selected source, in AV context |
 | `a11` | Volume of the cursor's zone, 0 to 65535 |
-| `d51`-`d56` | Selected-source feedback, same joins that take the presses |
-| `d1001` | No source selected, the zero member of the `d10N1` family |
-| `d10N1` | Source N is selected and the zone is playing it |
+| `d51`-`d56` | Selected-source feedback, same joins that take the presses. **This is the per-zone truth** |
+| `d1001` | The no-source display page |
+| `d10N1` | The display page for source N. Slot state, not zone state; see below |
 | `d42` | Latches high on a zone that was explicitly powered off |
 | `d46` | Mute feedback, carried by a second stacked button in the bottom banner |
 | `a21`-`a41` | Present only with a tuner source selected; see below |
@@ -112,14 +112,26 @@ All of this was done over CIP from a laptop, with no Cresnet tap connected and n
 `d1001` cleared it, raised `d1011`, and brought the zone up. Source select and zone power are one
 action, so there is no separate power-on join to look for. Only power-off is separate.
 
-**The AADS applies a per-source volume preset on every source change.** Selecting Tuner 1 ramped
-Studio from about 52000 down to 26214, which is 40.000% of 65535 exactly. The roundness of that
-figure says the AADS works internally in percent with 65535 as 100. A bridge must re-read `a11`
-after any source change rather than assuming its own last value survived.
+**Some sources apply a volume preset on a source change, and some do not.** Selecting Tuner 1
+ramped Studio from about 52000 down to 26214, which is 40.000% of 65535 exactly. The roundness of
+that figure says the AADS works internally in percent with 65535 as 100.
+
+That was originally written up here as happening on *every* source change, generalised from the one
+source that had been tried. It does not. On 2026-09-22 selecting AirPlay in Studio left the level
+at 60365 untouched, and setting all six zones to iPod left every one of their levels exactly where
+it was. Only Tuner 1 has ever been seen doing it.
+
+The operational rule is unchanged, because it only takes one source that resets to make ordering
+matter: set the volume after the source, never before, and re-read `a11` rather than assuming the
+last value survived.
 
 **Volume is a ramp, not a step, and it is linear at about 6570 units per second of hold.** A 0.12 s
 tap moves roughly 800. A 4.0 s hold moved 26214 to 52493. Measured on the way up; the way down was
 consistent.
+
+Confirmed independently on 2026-09-22 by the ramp the `crestron_cip` service now runs: a 1.00 s
+hold moved 6488 units down and 6714 up, so 6570 is good to about 2% in both directions. Open-loop
+estimates from that figure landed within 7, 17, 73 and 117 units of four different targets.
 
 **`a11` does not accept a direct write.** Two writes, to 40000 and back, produced no response of
 any kind. This is not proof on its own, because the project contains no analog touch join anywhere
@@ -174,6 +186,79 @@ playing AirPlay left `a11` at 57141 across a 25 second watch. A later `d42` on t
 Tuner 1 dropped `a11` from 59046 to 0 within 18 seconds. Source-dependent behaviour is the obvious
 guess and it has not been tested. The operational consequence is the same either way: read `a11`,
 never assume it.
+
+## What building the services corrected
+
+Steps 1 and 2 of the plan below are done, and driving the joins for real corrected three readings
+that static analysis and read-only probing had left wrong.
+
+### `d10N1` is slot state, not zone state
+
+This is the one that would have made a whole entity model lie. Selecting AirPlay in Studio raised
+`d1021`, and that join **stayed high as the cursor moved to every other zone**, so all five off
+zones read back as playing AirPlay. The `d10N1` family selects the per-source display page, which
+belongs to the panel slot and not to the zone under the cursor.
+
+The per-zone truth is `d51`-`d56`, the same joins that take the presses, which is why they appear
+in the list of joins a cursor move blanks and repopulates and the `d10N1` family does not. Reading
+a zone's source from anything else reports whatever page the slot happens to be showing.
+
+### `s11` is live, unlike `s16`
+
+`s16` was found stale in the round-trip test, still reading `Lights` after the slot had returned to
+A/V, and that cast doubt on the serials generally. `s11` is not stale: across two full passes over
+all six zones it named each zone correctly the moment the cursor landed, so it is a usable
+confirmation that a cursor move took rather than a value to be treated with suspicion.
+
+### `a11` is not blanked by a cursor move, and is not resent when it does not change
+
+Two findings that only show up when something reads the zone immediately after moving to it.
+
+`a11` and `s11` do not arrive together. On the first read of a session the zone name landed first
+and the level had not been sent yet, which reported a live zone with no level at all.
+
+Clearing `a11` locally before the cursor press, to guarantee that whatever came back was fresh, is
+wrong and made it worse. The 60 ms blank covers the digital joins, `d41`/`d43`/`d47` and
+`d51`-`d56`, not the analog, so clearing `a11` discards a value the processor has no reason to
+resend. Master Bed and Master Bath both sat at 61018, and moving between them produced no analog
+frame at all.
+
+What works is waiting for the processor to say something about the analogs since the press, with a
+grace period for the equal-level case, where the value already in hand is the right one because it
+is the same number either way.
+
+### Two sources are now named
+
+`s101` reads `iPod` and `s102` reads `AirPlay`, confirmed by setting each live. That is two of the
+six identified without having to untangle the Integra wiring, because the processor names them even
+where the Integra's own labels do not match.
+
+## The services
+
+Six of them, in the `crestron_cip` integration, all of them taking the same slot lock the lighting
+commands use and giving it back between operations.
+
+| Service | What it does |
+|---|---|
+| `av_status` | Read one zone's source, level and mute state |
+| `av_select_source` | Select a source, which also powers the zone on |
+| `av_set_volume` | Ramp to a percentage of full scale and converge |
+| `av_power_off` | Power one zone off, clearing its remembered source |
+| `av_power_off_all` | Power every zone off with one press |
+| `av_mute` | Set mute state, consulting the feedback because the button is a toggle |
+
+Volume is a percentage of full scale rather than a raw join value or a rescaling onto the audible
+span, because the AADS works in percent internally and that is the unit its own presets land on.
+Below about 80% is accepted, acted on, and warned about.
+
+Each service returns the zone's state afterwards rather than only succeeding, because only the
+cursor's zone is readable at all and the caller that just moved the cursor is the one caller
+guaranteed to be able to see the result.
+
+Measured live on 2026-09-22: a zone read costs about 0.55 s once the slot is already in A/V, and
+1.9 s on the first call of a session because that one pays the subsystem entry. Setting all six
+zones to one source took **6.5 s end to end**, against the 45 to 60 s this document originally
+estimated, because that estimate assumed every zone would also need a full ramp from cold.
 
 ## The subsystem gate applies to audio too
 
@@ -272,10 +357,11 @@ So the first thing built is a Homie Dashboard button that sets every room to Air
 The dashboard button itself is trivial. Nearly all the work is underneath it, because Home
 Assistant currently has no AV entities at all. The order is:
 
-1. Subsystem switching plus a write lock in the `crestron_cip` integration, so the existing `0x13`
-   slot can carry both. No hardware cost. This is the load-bearing piece.
-2. Zone and volume services in the same integration, alongside the lighting bridge rather than
-   replacing it.
+1. ~~Subsystem switching plus a write lock in the `crestron_cip` integration.~~ **Done 2026-09-22**,
+   and it moved the bridge from slot `0x13` to `0x12` along the way. See
+   [crestron-subsystem-time-slicing.md](crestron-subsystem-time-slicing.md).
+2. ~~Zone and volume services in the same integration.~~ **Done and verified live 2026-09-22.** See
+   [The services](#the-services) above.
 3. An HA script that walks the six zones.
 4. A Homie chip or button that calls the script.
 
@@ -295,10 +381,12 @@ Five constraints this design has to respect, all of them established above:
   dead.
 - **Ramp, then verify.** At roughly 6570 units per second of hold, going from a cold zero to 90%
   is about a nine second hold. Open-loop and then correct against `a11`.
-- **This is slow.** Six zones, each needing a cursor move, a source press and a multi-second ramp,
-  lands somewhere around 45 to 60 seconds end to end. The button has to be fire-and-forget with
-  progress feedback, not something that blocks the dashboard while it runs. `script.turn_on` rather
-  than a blocking `script` call, the same pattern the scenes chip already uses.
+- **This is slow when the zones start cold.** Six zones, each needing a cursor move, a source press
+  and a multi-second ramp from zero, lands somewhere around 45 to 60 seconds end to end. Measured
+  on 2026-09-22 with the zones already near the target it took 6.5 seconds, so the pessimistic case
+  is a processor reboot having zeroed every level, not the ordinary one. The button has to be
+  fire-and-forget with progress feedback, not something that blocks the dashboard while it runs.
+  `script.turn_on` rather than a blocking `script` call, the same pattern the scenes chip uses.
 - **The walk must yield to lighting.** A minute-long AV window would mean a minute of lighting
   latency on a shared slot. Since a subsystem round trip costs about a second, the walk should
   interrupt itself when a lighting write arrives: switch to Lights, do it, switch back, resume.

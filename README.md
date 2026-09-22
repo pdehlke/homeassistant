@@ -114,8 +114,10 @@ Notes, planning, and specs for my Home Assistant buildout.
   resets to zero on a processor reboot, and a useful range confined to the top fifth of the scale.
   The FM tuner found on source 5, with eight configured presets and no display page on any panel.
   Why one slot can carry both lighting and audio by taking turns rather than needing a second
-  sacrificed panel, the entity models this leaves open, why Living Room can never be one of the
-  six, and the all-rooms AirPlay button that is the next thing built.
+  sacrificed panel, the entity models this leaves open, and why Living Room can never be one of the
+  six. Then what building the control services corrected: the display-page joins are slot state
+  rather than zone state, only some sources apply a volume preset, and the analog level is neither
+  blanked by a cursor move nor resent when it has not changed.
 
 - [crestron-subsystem-time-slicing.md](docs/crestron/crestron-subsystem-time-slicing.md)
 
