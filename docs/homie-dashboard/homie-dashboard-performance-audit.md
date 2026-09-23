@@ -3,8 +3,15 @@
 A deep code-quality audit of the fork, run with a specific question: what makes the dashboard slow
 on the low-power wall-mounted Fire HD tablet, and what structural change fixes it?
 
-Two fixes shipped and are live. Several larger findings are written up here and deliberately not
-shipped, because they need someone looking at the screen to approve them and nobody was.
+Five fixes shipped and are live, across two passes on the same day. The first pass took only what
+could fail safely unattended; pde then asked for the two large remaining items to go out the same
+night, accepting morning triage if they broke. The CSS consolidation findings are written up here
+and still not shipped, because they are pure refactors with visual-regression risk and no
+proportional performance win.
+
+**Nothing here has been looked at on the tablet.** Playwright is not installed on this machine, so
+every claim below is verified by test, checksum, parse, or live WebSocket measurement, and none of
+it by eye.
 
 ## What was reviewed
 
@@ -156,49 +163,102 @@ The other nine `backdrop-filter` uses were checked and kept: `.ov3-sidebar` and 
 sit over 25% and 55% black respectively, where the blur is the actual effect, and the rest are small
 pill-sized chips where the area is negligible.
 
-## Measured but deliberately not shipped
+## Shipped in the second pass, 2026-09-22 evening
 
-### `subscribe_entities` would cut the wire traffic by 99.3%
+pde asked for the remaining two large items to go out the same night, accepting that they might need
+triage in the morning. Both are live.
+
+### `subscribe_entities` replaced `subscribe_events`, unfiltered
 
 Home Assistant's WebSocket API has a better primitive than the `subscribe_events` this dashboard
-uses. `subscribe_entities` takes an `entity_ids` filter, applies it **server-side**, and pushes a
-compressed delta format (`a` for added, `c` for changed with `+`/`-` attribute deltas) instead of
-full state objects.
+used. `subscribe_entities` pushes a compressed delta format (`a` added, `c` changed with `+`/`-`
+attribute deltas, `r` removed) instead of full state objects, and its **first message is a full
+snapshot of every entity**, so the separate `get_states` round trip is gone.
 
-It was confirmed working on this instance and measured head-to-head over the same 90-second window:
+Measured on the live instance over one 90-second window:
 
 | Subscription | Messages | Bytes |
 | --- | --- | --- |
-| `subscribe_events(state_changed)` (current) | 90 | 142,192 |
-| `subscribe_entities(101 displayed ids)` | 7 | 1,062 |
-| **Reduction** | **92.2%** | **99.3%** |
+| `subscribe_events(state_changed)` (before) | 88 | 133,690 |
+| `subscribe_entities`, no filter (now) | 88 | 18,303 |
+| **Reduction** | 0% | **86.3%** |
 
-It also pays a one-time ~29 KB seed snapshot at connect that **replaces the current `get_states`
-call entirely**, so it is not extra work.
+**It is deliberately unfiltered, and this is the important decision.** `subscribe_entities` accepts
+an `entity_ids` list, and filtering to the 101 entities `CONFIG` names cuts bytes by 99.3% instead
+of 86.3%. That was the number quoted in the first pass. It was not taken, because any entity the UI
+resolves at runtime rather than by literal id - a light group's members, for one - would then be
+absent from the cache entirely, and the failure mode is a silently wrong dashboard rather than an
+error. Render-skipping is already handled by `entityAffectsUI()`, so the filter would buy bytes that
+are not needed at a risk that does not have to be taken. The remaining 13% is available later if it
+ever matters.
 
-This is the better long-term answer: it moves the filter to the server, so the tablet never
-receives, parses, or allocates for the 97% at all, rather than filtering after the parse. It was not
-shipped because it rewrites the handshake and the cache-population path, the delta-merge logic is
-fiddly, and getting it subtly wrong shows up as a silently stale dashboard rather than an error.
-That needs someone watching the screen. The relevance filter that *was* shipped captures most of the
-CPU win at a fraction of the risk, and the two compose: the filter stays correct and simply stops
-rejecting anything once the server is doing the filtering.
+Two helpers expand the wire format back into the full state object shape every other call site
+already expects, so nothing downstream changed. Two details in them are load-bearing:
 
-### Overlays that are always laid out
+- **`last_changed` is converted from the wire's float unix seconds to an ISO string.**
+  `_camMotionPoll()` feeds it straight into `new Date()`, and a raw seconds value is read as
+  milliseconds, which would have dated every "last motion" label to 1970.
+- **Attribute deltas are merged onto the cached state, never replace it.** The wire carries only
+  what changed, so rebuilding from the delta alone would silently drop every attribute that stayed
+  the same.
 
-Sixteen full-viewport overlays are alive at all times and none is ever removed from the render tree;
-`.open` only flips `opacity` and `pointer-events`. Roughly **1,100 elements that are never seen but
-are always measured**, including ~480 in `#settings-overlay` alone. Every style recalculation walks
-all of them.
+Three things the switch forced, each of which would have been a real bug:
 
-The fix is one shared base class plus `content-visibility: hidden; contain: strict` on the
-not-`.open` state, which skips layout and paint of descendants. It is probably the single largest
-paint-performance win available here, and it would also neutralise whole categories of the
-always-running-animation problem above without touching any JS.
+- `StateCache` grew a `peek()` that reads **without** recording a UI read. The merge path has to read
+  the previous state, and going through `get()` there would file every changed entity as "something
+  the UI reads" - the admissible set would grow to cover everything and **the relevance filter would
+  quietly stop filtering**.
+- The `if (!_wsReady) break` guard at the top of the event case had to go. The seed snapshot now
+  arrives *as an event* and is what *sets* `_wsReady`, so the guard would have blocked the very
+  message it was waiting for and the dashboard would never have loaded.
+- The doorbell edge check reads the previous `last_triggered` off the cache before the write,
+  because the compressed format carries no `old_state`.
 
-Not shipped: it touches the main popup system used on every interaction, and the failure mode is a
-broken or janky fade on every overlay in the app. That is a change to watch happen, not one to
-deploy overnight.
+Verified against the live instance, using the bytes actually being served: **764 snapshot entities
+expanded with zero mismatches** against `/api/states` on state, attribute keys and timestamps, and
+37 real delta merges with no dropped attributes and no invalid dates.
+
+### `content-visibility` on closed overlays
+
+Fourteen overlays now carry `content-visibility: hidden` in their `:not(.open)` state, taking
+roughly 1,100 permanently-laid-out elements (about 480 of them the settings panel) out of every
+style recalculation and layout pass. It also stops animations inside a closed overlay from producing
+rendering work, which is the same class of problem the weather-particle and solar-flow-dot fixes
+addressed directly.
+
+`#overview2` and `#overview3` are excluded on purpose. They are not `.open`-gated (they switch on a
+body class), and they are pre-built at startup precisely so the first swipe is instant, so skipping
+their layout is the one case here that would trade a real cost for a visible one.
+
+### The loader no longer uses `document.write`
+
+`config.js` and `homie-custom.js` still have to load and run before the main script, so their tags
+are still blocking. What changed is *discovery*: the preload scanner reads ahead through the raw
+bytes and can start fetching a literal `src` immediately, but it cannot see inside a
+`document.write()` string. Written the old way those two requests could not begin until the parser
+had chewed through ~9,000 lines including a 7,900-line stylesheet, and then ran serially.
+
+The tags stay where they were rather than moving to `<head>`, because `config.js` references
+`ICONS`, which the inline block just above it defines. That dependency is the reason the obvious
+"just move them up" version does not work.
+
+## Review of `config.js` and `homie-custom.js`
+
+Both were reviewed in the second pass. Neither needed restructuring.
+
+`homie-custom.js` is the healthiest code in this repository. It is a UMD module of 32 pure
+functions with **zero DOM access, zero global reads, and dependency injection where it needs
+platform state** (`installDefaults(storage, defaults, version)` takes `localStorage` as a
+parameter rather than reaching for it). 31 of the 32 functions are exported and the suite tests
+them directly. No changes made.
+
+`config.js` is data, as it should be. The only logic in it is a `welcomeText` getter with a loop
+over greeting slots, and that is upstream, not something the fork added. The `HA_TOKEN` placeholder
+discipline is sound: the checked-in copy carries the placeholder and the real value is spliced on
+the host. No changes made.
+
+The one real finding in this area was the `document.write` loader above, which is a property of how
+the HTML loads them rather than of either file.
 
 ### Structural findings in the CSS
 
@@ -244,18 +304,25 @@ the last few.
 
 ## Deployment
 
-Deployed 2026-09-22 following the documented procedure: SSH add-on started, live directory backed
-up, file uploaded under a temp name and checksum-verified *before* the atomic rename, `homie-dash`
+Two deploys, both following the documented procedure: SSH add-on started, live directory backed up,
+file uploaded under a temp name and checksum-verified *before* the atomic rename, `homie-dash`
 iframe `?v=` bumped to match `HOMIE_ASSET_VERSION`, SSH add-on stopped.
 
-- Asset version `20260922.1` -> `20260922.2`
-- Deployed sha256 `ef3ec9cf45594c47636105617a46cf1b9feb17677d34e15175df5df670d9e728`, verified
-  byte-identical to the local build and to the file actually served over HTTPS
-- Rollback target: `/config/www/community/homie-dashboard/homie-dashboard.html.bak-20260922-perf`,
-  byte-identical to commit `8663e1c`
+| Pass | Version | Deployed sha256 | Rollback target |
+| --- | --- | --- | --- |
+| First | `20260922.2` | `ef3ec9cf…f670d9e728` | `homie-dashboard.html.bak-20260922-perf` (= `8663e1c`) |
+| Second | `20260922.3` | `51d143db…4d49be0f5ee` | `homie-dashboard.html.bak-20260922-se` (= `05703aa`) |
 
-Only `homie-dashboard.html` changed. `config.js` and `homie-custom.js` were untouched, so the
-token-splicing step was not needed - which also removed the riskiest part of the deploy.
+Both were verified byte-identical to the local build and to the file actually served over HTTPS,
+and after the second the two nested assets were confirmed to resolve at the new version (`config.js`
+and `homie-custom.js`, both HTTP 200).
+
+Only `homie-dashboard.html` changed in either pass. `config.js` and `homie-custom.js` were untouched,
+so the token-splicing step was never needed - which also removed the riskiest part of the deploy.
+
+Five commits on the fork's `main`, **not pushed**, each independently revertable:
+`ea7ac99` render scheduling, `05703aa` always-running animations, `b969b8b` `subscribe_entities`,
+`786c668` `content-visibility`, `ee75b7a` the loader.
 
 ## Note on the test suite
 
@@ -265,9 +332,16 @@ version, the test failed on *every* deploy by construction, which trains everyon
 suite. It now asserts the `YYYYMMDD.N` format and that both nested assets are versioned off the one
 token, which is what the test was actually named for.
 
-The eight tests added for this work are split by kind: five **execute the real render-scheduling
-block** extracted from the HTML in a `vm` with a fake frame clock, rather than asserting on its
-source text, because the thing worth protecting is the behaviour. Three pin the animation fixes at
-source level, including the assumption the solar gate rests on.
+The fifteen tests added across both passes are split by kind. Five **execute the real
+render-scheduling block** extracted from the HTML in a `vm` with a fake frame clock, and six
+**execute the real wire-format helpers** against fixtures reproducing live payloads, rather than
+asserting on source text, because the thing worth protecting is the behaviour. Four pin things at
+source level that are easy to regress by accident: the animation gates, the `content-visibility`
+rule and its two deliberate exclusions, the static script tags, and the absence of a `_wsReady`
+guard that would deadlock the seed snapshot.
 
-Suite is 145/145 green.
+One recurring trap worth knowing before adding more: these blocks run in their own `vm` realm, so
+`instanceof` and `deepStrictEqual` fail on prototype identity alone even when the values match.
+Compare keys and fields, not objects.
+
+Suite is 152/152 green.

@@ -179,9 +179,10 @@ below records both, and it will be out of date sooner than it looks.
 ### Homie fork: performance work shipped, and what was left on the table
 
 A deep code-quality audit of the Homie fork ran on 2026-09-22 against the low-power wall tablet.
-Two fixes are live and committed on the fork's `main` (`ea7ac99`, `05703aa`, **not pushed**);
-`HOMIE_ASSET_VERSION` is now `20260922.2` and the `homie-dash` iframe `?v=` matches. Full write-up,
-including everything measured and deliberately not shipped, is in
+**Five fixes are live**, committed on the fork's `main` (`ea7ac99`, `05703aa`, `b969b8b`, `786c668`,
+`ee75b7a`, **not pushed**, each independently revertable); `HOMIE_ASSET_VERSION` is now `20260922.3`
+and the `homie-dash` iframe `?v=` matches. Full write-up, including what is still deliberately not
+shipped, is in
 [homie-dashboard-performance-audit.md](./docs/homie-dashboard/homie-dashboard-performance-audit.md).
 
 The one number to carry forward: **`refreshAllUI()` used to fire on every `state_changed` event, and
@@ -196,26 +197,47 @@ read set is captured by subclassing the cache `Map`, not by instrumenting `haGet
 16 call sites read `stateCache.get()` directly and a filter that missed them would freeze parts of
 the UI with no error.
 
-Three things are worth not re-deriving:
+The dashboard now takes **`subscribe_entities`, deliberately unfiltered** (86.3% fewer bytes to
+parse; its first message is a full snapshot, so there is no `get_states` call any more). Filtering to
+the 101 entities `CONFIG` names would reach 99.3%, and was **rejected**: any entity the UI resolves at
+runtime rather than by literal id would then be missing from the cache entirely, and that reads as a
+silently wrong dashboard rather than an error. The remaining 13% is not worth it.
 
-- **`subscribe_entities` is measurably better than the `subscribe_events` the dashboard uses** (92.2%
-  fewer messages, 99.3% fewer bytes, confirmed working on this instance) and its seed snapshot
-  replaces `get_states` outright. Not shipped because it rewrites the handshake and a subtle bug
-  shows up as a silently stale dashboard. It composes with the shipped filter rather than replacing it.
-- **Sixteen full-viewport overlays are never removed from the render tree**, ~1,100 elements always
-  laid out. `content-visibility: hidden` on the not-`.open` state is probably the largest single
-  paint win available. Not shipped: it touches the popup system used on every interaction and needs
-  eyes on the screen.
-- **Every overlay hides with `opacity: 0`, not `display: none`, and CSS animations keep running on an
-  opacity:0 element.** That is the class of bug behind both animation fixes that did ship. Assume any
-  new infinite animation has this problem until gated.
+Three things about that switch are worth not re-deriving:
+
+- **`StateCache.peek()` exists for a reason.** The delta-merge path must read previous state without
+  recording a UI read. Route it through `get()` and every changed entity gets filed as "something the
+  UI reads", the admissible set grows to cover everything, and the relevance filter quietly stops
+  filtering.
+- **There must be no `_wsReady` guard at the top of the `case "event"` block.** The seed snapshot
+  arrives as an event and is what *sets* `_wsReady`, so that guard blocks the message it waits for and
+  the dashboard never loads. A test pins this.
+- **`last_changed` must stay an ISO string.** The wire sends float unix seconds and `_camMotionPoll()`
+  feeds the value straight to `new Date()`.
+
+**Every overlay hides with `opacity: 0`, not `display: none`, and CSS animations keep running on an
+opacity:0 element.** That is the class of bug behind the animation fixes, and the reason fourteen
+overlays now carry `content-visibility: hidden` when closed (~1,100 elements out of every layout
+pass). `#overview2`/`#overview3` are excluded on purpose: not `.open`-gated, and pre-built so the
+first swipe is instant. Assume any new infinite animation has this problem until gated.
+
+`config.js` and `homie-custom.js` were reviewed and **needed no changes**. `homie-custom.js` is the
+healthiest code here: a UMD module of 32 pure functions, zero DOM access, dependency-injected. Do not
+"improve" it. The one finding in that area was the loader, which used `document.write` and so hid both
+fetches from the browser's preload scanner; it is now static tags, which must stay where they are
+because `config.js` references `ICONS` from the inline block just above.
 
 The suite was **already red before this work** (it asserted a literal asset version, so it failed on
-every deploy by construction) and is now 145/145 green. Eight tests were added; five of them execute
-the real render-scheduling block rather than asserting on source text.
+every deploy by construction) and is now 152/152 green. Fifteen tests were added; eleven of them
+execute real extracted blocks rather than asserting on source text. Note these run in their own `vm`
+realm, so `instanceof` and `deepStrictEqual` fail on prototype identity alone - compare fields.
 
-Still pending: **nobody has looked at the tablet since the deploy.** The change is verified by test,
-by checksum, by parse, and against the live event stream, but not visually.
+Still pending, and the first thing to do in the morning: **nobody has looked at the tablet.**
+Playwright is not installed on this machine. Everything is verified by test, checksum, parse, and
+live WebSocket measurement against the served bytes (764 entities expanded with zero mismatches
+against `/api/states`), but **not one pixel has been looked at**. The two second-pass changes in
+particular - `content-visibility` on overlays, and the whole state-transport swap - are exactly the
+kind that pass every offline check and still look wrong. pde accepted that risk explicitly.
 
 Also noticed: `/config/www/community/homie-dashboard/` holds **100+ `.bak` files**, ~90 MB, going
 back to 2026-08-08. The deploy procedure creates one each time and nothing prunes them.
