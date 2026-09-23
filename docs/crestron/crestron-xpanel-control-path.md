@@ -324,6 +324,6 @@ which point this document becomes history rather than reference.
 
 One thing worth confirming and currently only inferred: which host the 752
 impersonation registers against. The MC2E's `.dsc` lists only `IP-ID-03` and
-`IP-ID-05`, which suggests the AADS at `192.168.4.61` rather than the MC2E. If
+`IP-ID-05`, which suggests the AADS at `192.168.4.65` rather than the MC2E. If
 so, the Kitchen path and the whole-house path run against two different systems,
 and that distinction should be made explicit wherever it matters.

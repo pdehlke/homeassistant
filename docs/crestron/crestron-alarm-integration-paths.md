@@ -72,7 +72,7 @@ already laid out:
    for the Home Perimeter investigation. **Attempted this session and blocked by the harness's
    permission classifier before it could run** — this specific action (a live diagnostic session
    against the AADS's console) needs pde's explicit go-ahead, either to grant it directly or to run
-   `uv run python sdebug.py --host 192.168.4.61 --seconds 20` himself from `CresnetMon/mac/`. It's
+   `uv run python sdebug.py --host 192.168.4.65 --seconds 20` himself from `CresnetMon/mac/`. It's
    read-only with respect to the house (SDEBUG only toggles console print flags, never sends bus or
    serial commands) and self-tears-down in a `finally` block even on failure.
 

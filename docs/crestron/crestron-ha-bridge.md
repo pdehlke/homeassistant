@@ -380,7 +380,7 @@ Then add one line to `configuration.yaml`:
 crestron_cip:
 ```
 
-Hosts and IP-IDs default to the AADS at `192.168.4.61` on `0x12` and the MC2E at `192.168.4.59` on
+Hosts and IP-IDs default to the AADS at `192.168.4.65` on `0x12` and the MC2E at `192.168.4.59` on
 `0x03`, and can be overridden per link. The AADS slot was `0x13`, the Office panel, until
 2026-09-22; it moved to `0x12`, the Kitchen panel, because entering the Lights subsystem on a slot
 makes the AADS turn on a light in that panel's own room, and `0x13`'s is North Sink. See

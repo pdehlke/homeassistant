@@ -188,7 +188,7 @@ for the one panel that is actually in this house, is exactly what a live integra
 
 **Update, same day: reading 3 is refuted, not just unlikely.** The SDEBUG capture named above ran
 after all — pde added a scoped Bash permission rule for `sdebug.py`/`crestron_console.py`, which is
-all the earlier block needed. `SDEBUG -DON S02` against the AADS (`192.168.4.61`) for 25 seconds
+all the earlier block needed. `SDEBUG -DON S02` against the AADS (`192.168.4.65`) for 25 seconds
 caught 436 bytes of live traffic on `Slot-02`, decoding to a DSC IT-100-style `901` (LCD Update)
 message whose payload is plainly readable: `Date     Time SEP 08/26 10:29a`, a DSC keypad's ordinary
 idle-screen clock display, timestamped 10:26:28 the same day. The AADS's serial link to the panel is

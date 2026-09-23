@@ -119,6 +119,17 @@ Notes, planning, and specs for my Home Assistant buildout.
   rather than zone state, only some sources apply a volume preset, and the analog level is neither
   blanked by a cursor move nor resent when it has not changed.
 
+- [crestron-aads-dhcp-outage.md](docs/crestron/crestron-aads-dhcp-outage.md)
+
+  Post-mortem on the 2026-09-23 outage where an unreserved DHCP lease moved the AADS from
+  `192.168.4.61` to `192.168.4.65` overnight, killing every AADS-backed lighting load and all six
+  audio zones while the three MC2E Kitchen loads kept working. Why that split immediately rules out
+  the panel slot and points at the link, how the replacement processor was identified from its
+  telnet console banner rather than assumed from being the only other Crestron OUI on the segment,
+  and the latent problem it exposed: the `mac/` alarm-keypad guard is keyed on the host, so a stale
+  address silently disarmed it, while the integration's own guard keys on the link name and was
+  never affected.
+
 - [crestron-subsystem-time-slicing.md](docs/crestron/crestron-subsystem-time-slicing.md)
 
   The design for sharing the lighting bridge's single AADS panel slot between the Lights and A/V

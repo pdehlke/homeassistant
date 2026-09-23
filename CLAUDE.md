@@ -174,13 +174,39 @@ Do not change anything until you have checked the status of every repository the
 confirmed the live release and commit state against `git` and the running instance. The checkpoint
 below records both, and it will be out of date sooner than it looks.
 
+## Next-session checkpoint, 2026-09-23
+
+### The AADS is at 192.168.4.65 now, not .61
+
+An unreserved DHCP lease moved it overnight on 2026-09-23 and took every AADS-backed lighting load
+and all six audio zones down for ~85 minutes; the three MC2E Kitchen loads kept working throughout.
+pde has since reserved `.65` to its MAC, so the address is fixed. Fixed in CresnetMon `49bc181`
+(`macos-port-python`, **not pushed**), deployed and verified live. Post-mortem in
+[crestron-aads-dhcp-outage.md](./docs/crestron/crestron-aads-dhcp-outage.md).
+
+Three things from it worth not re-deriving:
+
+- **"All AADS loads dead, MC2E fine" is a statement about the link, not the slot.** Lighting and A/V
+  share the AADS connection and the MC2E is a separate connection to a separate processor, so that
+  split rules out the panel slot before anything is opened. The slot was the first suspect and was
+  never involved; the bridge is still `0x12`.
+- **The `mac/` alarm-keypad guard is keyed on the host** (`if host != AADS_HOST: return`), so the
+  stale address silently disarmed it for `poc_joinpress.py` and `poc_joinscan.py`. The integration's
+  own guard keys on the *link name* and was unaffected. Identity by logical role survives a network
+  change; identity by address does not. Both now proven by test in either direction.
+- **`.59`, the MC2E, is still unreserved** and named by literal address in the same `DEFAULTS` table.
+  It is exactly as exposed and simply has not renewed yet.
+
+The bridge retried a dead address every 33 seconds for 85 minutes and surfaced nothing a person would
+see. A repair issue or a link-health binary sensor is the obvious follow-up and has no issue yet.
+
 ## Next-session checkpoint, 2026-09-22
 
 ### Homie fork: performance work shipped, and what was left on the table
 
 A deep code-quality audit of the Homie fork ran on 2026-09-22 against the low-power wall tablet.
-**Five fixes are live**, committed on the fork's `main` (`ea7ac99`, `05703aa`, `b969b8b`, `786c668`,
-`ee75b7a`, **not pushed**, each independently revertable); `HOMIE_ASSET_VERSION` is now `20260922.3`
+**Five fixes are live**, committed and pushed on the fork's `main` (`ea7ac99`, `05703aa`, `b969b8b`,
+`786c668`, `ee75b7a`, each independently revertable); `HOMIE_ASSET_VERSION` is now `20260922.3`
 and the `homie-dash` iframe `?v=` matches. Full write-up, including what is still deliberately not
 shipped, is in
 [homie-dashboard-performance-audit.md](./docs/homie-dashboard/homie-dashboard-performance-audit.md).

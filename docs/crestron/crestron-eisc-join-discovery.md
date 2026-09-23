@@ -45,7 +45,7 @@ do not license join probing on the panel side.
 Established by read-only `VER`, `IPTABLE`, `WHO`, and `TYPE` on each processor's console.
 
 ```text
-TSW-752 panels  ->  AADS (192.168.4.61)  ->  MC2E (192.168.4.59)  ->  Cresnet  ->  CLX modules
+TSW-752 panels  ->  AADS (192.168.4.65)  ->  MC2E (192.168.4.59)  ->  Cresnet  ->  CLX modules
    IP-ID 11-14        as IP-ID 05, "Exports"          lighting bus
 ```
 

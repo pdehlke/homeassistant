@@ -479,7 +479,7 @@ integrates as `remote.harmony_hub`. Recorded in issue #20 as a likely requiremen
 
 `mac/cip_xpanel.py` in the CresnetMon repo does read-only registration and decodes digital, analog
 and serial joins. It defaults to the MC2E at `192.168.4.59`, so AV work needs
-`--host 192.168.4.61`.
+`--host 192.168.4.65`.
 
 `mac/poc_panelpress.py`, the obvious tool for the press tests, **cannot run without the Cresnet
 tap's dependencies installed** even though its own docstring says it needs no tap. It imports
