@@ -176,6 +176,50 @@ below records both, and it will be out of date sooner than it looks.
 
 ## Next-session checkpoint, 2026-09-22
 
+### Homie fork: performance work shipped, and what was left on the table
+
+A deep code-quality audit of the Homie fork ran on 2026-09-22 against the low-power wall tablet.
+Two fixes are live and committed on the fork's `main` (`ea7ac99`, `05703aa`, **not pushed**);
+`HOMIE_ASSET_VERSION` is now `20260922.2` and the `homie-dash` iframe `?v=` matches. Full write-up,
+including everything measured and deliberately not shipped, is in
+[homie-dashboard-performance-audit.md](./docs/homie-dashboard/homie-dashboard-performance-audit.md).
+
+The one number to carry forward: **`refreshAllUI()` used to fire on every `state_changed` event, and
+96.9% of those events came from entities the dashboard never displays** (Lennox integration
+internals, Zigbee plug voltage sensors). A relevance filter plus rAF coalescing cut full re-renders
+by a measured 98.3% against the live stream. `stateCache` still updates on every event, so nothing
+goes stale; only the render is skipped.
+
+**The relevance set is a union of a static `CONFIG` sweep and the entities read during the last
+render pass, and both halves are load-bearing.** Drop either and renders start going missing. The
+read set is captured by subclassing the cache `Map`, not by instrumenting `haGetCached()`, because
+16 call sites read `stateCache.get()` directly and a filter that missed them would freeze parts of
+the UI with no error.
+
+Three things are worth not re-deriving:
+
+- **`subscribe_entities` is measurably better than the `subscribe_events` the dashboard uses** (92.2%
+  fewer messages, 99.3% fewer bytes, confirmed working on this instance) and its seed snapshot
+  replaces `get_states` outright. Not shipped because it rewrites the handshake and a subtle bug
+  shows up as a silently stale dashboard. It composes with the shipped filter rather than replacing it.
+- **Sixteen full-viewport overlays are never removed from the render tree**, ~1,100 elements always
+  laid out. `content-visibility: hidden` on the not-`.open` state is probably the largest single
+  paint win available. Not shipped: it touches the popup system used on every interaction and needs
+  eyes on the screen.
+- **Every overlay hides with `opacity: 0`, not `display: none`, and CSS animations keep running on an
+  opacity:0 element.** That is the class of bug behind both animation fixes that did ship. Assume any
+  new infinite animation has this problem until gated.
+
+The suite was **already red before this work** (it asserted a literal asset version, so it failed on
+every deploy by construction) and is now 145/145 green. Eight tests were added; five of them execute
+the real render-scheduling block rather than asserting on source text.
+
+Still pending: **nobody has looked at the tablet since the deploy.** The change is verified by test,
+by checksum, by parse, and against the live event stream, but not visually.
+
+Also noticed: `/config/www/community/homie-dashboard/` holds **100+ `.bak` files**, ~90 MB, going
+back to 2026-08-08. The deploy procedure creates one each time and nothing prunes them.
+
 **Home Assistant drives all thirty lighting loads and all six audio zones.** One custom
 integration, registering as a physically unplugged TSW-752 touch panel, does both over CIP from a
 single panel slot that it time-slices between the two subsystems. Read

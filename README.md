@@ -404,6 +404,16 @@ Notes, planning, and specs for my Home Assistant buildout.
   The installed Homie Dashboard architecture, security model, fork location, deployment workflow,
   accepted Overview customizations, cache-busting strategy, and checkpoint for continuing work.
 
+- [homie-dashboard-performance-audit.md](docs/homie-dashboard/homie-dashboard-performance-audit.md)
+
+  A deep code-quality audit of the fork aimed at the low-power wall tablet, and the two fixes that
+  shipped from it. Why a full re-render fired on every Home Assistant state change even though 96.9%
+  of them were for entities nothing displays, the relevance-plus-coalescing guard that cut renders
+  by a measured 98.3%, and the weather particles and solar flow dots that animated forever behind
+  invisible overlays. Also records what was measured and deliberately not shipped: `subscribe_entities`
+  (92.2% fewer messages, 99.3% fewer bytes), `content-visibility` on the sixteen always-laid-out
+  overlays, and the CSS consolidation worth ~1,200 lines.
+
 - [climate-chip-activity-count.md](docs/homie-dashboard/climate-chip-activity-count.md)
 
   Fixing the Climate chip's "N on" count on Overview A/B, which counted both thermostats as on
