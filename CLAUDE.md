@@ -174,6 +174,91 @@ Do not change anything until you have checked the status of every repository the
 confirmed the live release and commit state against `git` and the running instance. The checkpoint
 below records both, and it will be out of date sooner than it looks.
 
+## Next-session checkpoint, 2026-09-24
+
+### The reconnect backoff could never step back down
+
+`CipClient._run()` set `attempt = 0` after a session that returned without raising, which reads as
+"a session that worked clears the escalation". It could never fire. `_session()` has exactly one
+exit that is not its own `while self._running` test going false, and that exit raises, so a clean
+return meant shutdown and the statement immediately after the reset returned on it. Same class as
+the `_guard()` deleted in [issue #26](https://github.com/pdehlke/homeassistant/issues/26): reads
+like correct behaviour, cannot fire.
+
+The consequence was real. The escalation was monotonic for the life of the process, so five drops
+pinned it at 30s and it stayed there however long the sessions in between lasted. **The 2026-09-23
+AADS outage is what that looks like in the log: reconnects at a flat 33.1s**, the 30s last step
+plus connect timeout. Fixed in CresnetMon `53257bf`, keyed on whether the session reached `synced`.
+
+Two things about the fix not to undo:
+
+- **`reached_sync` is captured in the `finally` before `await self._close()`, because `_close()`
+  clears `synced`.** Reading it after is the obvious way to write this and is silently wrong. A
+  test pins the ordering.
+- **`synced` is the bar rather than "the session returned", and it is a high bar on purpose.**
+  Reaching it takes a registration dump, a quiet window, an entry press and that subsystem's own
+  dump, so a flapping link cannot clear it and win itself a reset on every cycle.
+
+Measured against the module driven through sync, drop and reconnect by a local CIP server: before,
+across three sessions that each synced, 1s/2s/5s; after, 1s/1s/1s. A link that never syncs still
+escalates 1s/2s/5s/10s.
+
+### The bridge holds two slots, and four `mac/` scripts point at the second one
+
+`DEFAULTS` in `const.py` gives the bridge `0x12` on the AADS **and `0x03` on the MC2E**. Four
+scripts default to `0x03` on `192.168.4.59`, which is that live slot: `cip_xpanel.py:15`,
+`poc_joinwatch.py:40`, `poc_joinpress.py:44`, and `poc_joinscan.py:98`, where it is hardcoded
+rather than named so a grep for the constant misses it. Running any of them with default arguments
+collides with production and would take the three MC2E-backed Kitchen loads offline;
+`poc_joinpress.py` presses rather than only listening.
+
+The `--allow-bridge-slot` guard on `poc_panelpress.py` and `poc_subsystem_timing.py` is the right
+pattern and knows about `0x12` only. `cip_xpanel.py`'s `refuse_forbidden()` does not help either:
+it keys on `if host != AADS_HOST: return`, a deliberate no-op for everything pointed at the MC2E.
+[Issue #29](https://github.com/pdehlke/homeassistant/issues/29) has the suggested consolidation.
+Key any guard on `(host, ipid)`, not the IP-ID alone: `0x03` on the AADS is not the bridge.
+
+**This is why the backoff fix was not verified by dropping the production bridge.** There was no
+free slot to register a throwaway client on. Forcing a real drop means deliberately colliding with
+`0x12` so the AADS kicks the session, which should recover in seconds and presses nothing on entry,
+but is not an agent's call to make.
+
+### `crestron_cip` test coverage, and what the fakes now model
+
+99 tests, up from 90. [Issue #27](https://github.com/pdehlke/homeassistant/issues/27) is closed.
+Two things worth not re-deriving:
+
+- **`FakeAvClient` now models the 60ms cursor blank**, via `blank_seconds`, defaulting to 0 so
+  older tests are unaffected. Only the digitals blank. `a11` keeps describing the zone it already
+  described, which is exactly why `async_set_volume` may not clear it, so the analog side stays on
+  the separate `volume_arrives_after` hook. The live blank also covers `d41`, `d43` and `d47`,
+  which nothing reads.
+- **A fake that hooks the wrong method stops testing and does not fail.**
+  `UnconfirmedCursorClient` overrode `_publish()`, which no longer runs on a zone select once the
+  blank was modelled, so it quietly stopped corrupting `s11` and its test passed for the wrong
+  reason. It hooks the cursor move itself now.
+
+Every behaviour was checked by mutation rather than by the suite going green. Do that here: this
+suite's failure mode is passing tests that assert nothing about the path they name.
+
+### Path B is parked, not dead
+
+[Issue #28](https://github.com/pdehlke/homeassistant/issues/28) proposed retiring five `mac/`
+Cresnet-injection scripts and was closed `wontfix` on 2026-09-24 on pde's call, because
+[#1](https://github.com/pdehlke/homeassistant/issues/1) is still open. Nothing was deleted.
+
+Two findings from that review are in its closing comment and matter more than the decision:
+
+- **`cresnet_replay.py` supersedes all five, not the three the issue named**, and answers their
+  question better. Its `selftest` settles "does this adapter transmit" through the bus rather than
+  through our own deaf receive path, which is why five earlier attempts failed structurally.
+- **`mac/captures/` is gitignored**, so the `FRAMES` tables in `living_pathway.py` and
+  `poc_inject.py` are the only git-tracked copies of two captured frame sets. Both are transcribed
+  into the closing comment. The Living Room Pathway keypad press (`0x70` ch4 and `0x71` ch3, both
+  to `0xC3`) is **not** in
+  [cresnet-frame-decode.md](./docs/crestron/cresnet-frame-decode.md), which records only the touch
+  panel action for that load. Transcribe them before deleting anything, if this is ever revisited.
+
 ## Next-session checkpoint, 2026-09-23
 
 ### The AADS is at 192.168.4.65 now, not .61
@@ -384,15 +469,22 @@ The SSH add-on `a0d7b954_ssh` is manual-boot. Start it before an SFTP deploy and
 
 This goes stale fast, so confirm with `git` and the live instance rather than trusting the line. No
 SHA is given for this repo, because the commit carrying this checkpoint is by definition the one
-you are reading; use `git log -1`. Verified 2026-09-22: the fork clean at `8663e1c` with
-`HOMIE_ASSET_VERSION` `20260922.1` matching both the live file and the dashboard iframe's `?v=`,
-and CresnetMon clean at `eb7a545` on `macos-port-python`.
+you are reading; use `git log -1`. Verified 2026-09-24: CresnetMon clean and pushed at `53257bf`
+on `macos-port-python`. The fork was last verified 2026-09-22, clean at `8663e1c` with
+`HOMIE_ASSET_VERSION` `20260922.1` matching both the live file and the dashboard iframe's `?v=`.
 
-**The default branch, the live instance and the deployed files all agree at `eb7a545`.**
-`/config/custom_components/crestron_cip/` was verified byte-identical to that commit on 2026-09-22.
-It arrived as `review/quality-fixes-20260922`, a code-quality review of the whole integration,
-fast-forwarded onto `macos-port-python` and then deleted; the repo's history stays linear, so those
-seven commits are just the last seven. A tarball of the pre-review files is on the host at
+**The default branch, the live instance and the deployed files all agree at `53257bf`.**
+`/config/custom_components/crestron_cip/` was verified byte-identical to it on all seven `.py`
+files on 2026-09-24, `cip.py` at `dae59e7c`. Exactly two files have moved since `eb7a545`:
+`const.py` for the AADS address (`49bc181`) and `cip.py` for the reconnect backoff (`53257bf`).
+Loading either needed a full Home Assistant restart, because `manifest.json` sets
+`config_flow: false` and there is no config entry to reload. Backups of each pre-deploy file are on
+the host beside it as `<name>.py.bak-<timestamp>`.
+
+Before those, seven commits arrived as `review/quality-fixes-20260922`, a code-quality review of
+the whole integration, fast-forwarded onto `macos-port-python` and then deleted; the repo's history
+stays linear, so they run contiguously from `93f9baa` to `eb7a545`. A tarball of the pre-review
+files is on the host at
 `/config/crestron_cip-before-review-fixes.tar.gz`, and the pre-deploy state was byte-identical to
 `93f9baa` on all eight files, so a rollback target is exact if one is ever wanted.
 
@@ -418,14 +510,12 @@ Only `192.168.4.141` works. The prose above that example already says so; the co
 ### Open threads
 
 `ready-for-agent`: [#24](https://github.com/pdehlke/homeassistant/issues/24) (Alarmo PRD),
-[#27](https://github.com/pdehlke/homeassistant/issues/27) (four `crestron_cip` test-coverage gaps
-the fakes cannot currently catch, chiefly that nothing reproduces the 60ms cursor blank),
-[#28](https://github.com/pdehlke/homeassistant/issues/28) (retire the five superseded Cresnet
-injection scripts in `mac/`, but confirm Path B is dead rather than parked first, since #1 is still
-open), [#11](https://github.com/pdehlke/homeassistant/issues/11) and
+[#29](https://github.com/pdehlke/homeassistant/issues/29) (four `mac/` scripts default to `0x03`,
+the bridge's live MC2E slot), [#11](https://github.com/pdehlke/homeassistant/issues/11) and
 [#10](https://github.com/pdehlke/homeassistant/issues/10) (Homie cosmetics),
-[#1](https://github.com/pdehlke/homeassistant/issues/1) (Cresnet Path B spike, effectively
-superseded by CIP working but never formally closed).
+[#1](https://github.com/pdehlke/homeassistant/issues/1) (Cresnet Path B spike, superseded in
+practice by CIP working but deliberately left open: pde confirmed on 2026-09-24 that Path B is
+parked rather than dead, which is what closed #28).
 
 `ready-for-human`: [#23](https://github.com/pdehlke/homeassistant/issues/23) (the real Home
 Perimeter join is outside both CIP connections),
@@ -441,6 +531,11 @@ connection where the join map allows).
 [#8](https://github.com/pdehlke/homeassistant/issues/8) (A/V speaker selection dropdown broken).
 #8 predates all of the A/V work above and should be re-read against it rather than started from
 scratch.
+
+Closed on 2026-09-24, both written up in the checkpoint above:
+[#27](https://github.com/pdehlke/homeassistant/issues/27) (the four `crestron_cip` coverage gaps,
+plus the backoff defect gap 3 turned up) and
+[#28](https://github.com/pdehlke/homeassistant/issues/28) (`wontfix`, Path B parked).
 
 Closed on 2026-09-22 and worth knowing about rather than re-deriving:
 [#20](https://github.com/pdehlke/homeassistant/issues/20) (A/V mapped and built),
