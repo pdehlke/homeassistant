@@ -174,6 +174,122 @@ Do not change anything until you have checked the status of every repository the
 confirmed the live release and commit state against `git` and the running instance. The checkpoint
 below records both, and it will be out of date sooner than it looks.
 
+## Next-session checkpoint, 2026-09-29
+
+### The six audio zones have entities now, and a Speakers dashboard
+
+`crestron_cip` gained four platforms: `switch` (power and mute), `select` (source), `number`
+(volume) and `button` (refresh). Twenty-four zone entities plus `button.crestron_audio_refresh`.
+[Issue #30](https://github.com/pdehlke/homeassistant/issues/30) tracked it; the reasoning is in
+[crestron-audio-entity-model.md](./docs/crestron/crestron-audio-entity-model.md) and the "Not
+decided" section of
+[crestron-av-zone-control-path.md](./docs/crestron/crestron-av-zone-control-path.md) now points at
+it rather than contradicting it.
+
+Four things not to undo:
+
+- **`media_player` was rejected on one concrete ground.** `volume_level` is normalised 0.0-1.0 with
+  no min, max or step, and the frontend renders that full-range. The speakers are inaudible below
+  about 80%, so the only way to a usable slider is mapping 0-1 across 70-100 internally, which makes
+  the card read 50% while the amp sits at 85%. A `number` carries `min`/`max`/`step` natively.
+- **`Zone.on_volume` is why "on" means the same thing everywhere.** Kitchen 80, the rest 90. There
+  is no power-on join, so "on" has to pick a source and a level; holding the level on the zone is
+  what lets `switch.turn_on`, the dashboard, `script.all_rooms_airplay` and the Homie bubble agree.
+  **`script.all_rooms_airplay` was rewritten onto `switch.turn_on`** for exactly this reason and no
+  longer carries its own hardcoded 90. Re-measured live at **10.1s**, replacing the 8.1s figure the
+  A/V doc records for the old version.
+- **A source change re-applies the level.** Tuner 1's preset is exactly 40%, which is silence here,
+  so a source change without the restore reads as broken hardware. Verified live: Studio at 90 went
+  to Tuner 1 and stayed at 90.0.
+- **Nothing polls, deliberately.** A/V joins never reach a listener (`bridge._on_digital` drops any
+  join from a non-default subsystem, because the A/V pages reuse lighting join numbers), so state
+  moves only when something reads a zone. A six-zone walk costs ~4.7s of A/V occupancy on a slot
+  lighting shares. There is a delayed startup seed, `async_update` per zone, and a walk-all button.
+  A 5-minute poll is a one-line change if refreshing by hand annoys.
+
+Note the cursor-walk question the A/V doc filed as "unknown and testable" was **already answered by
+its own four-slot registration table**: four slots held four independent cursors and pressing `d956`
+on `0x12` moved only `0x12`. Walking our cursor does not disturb the physical panels. The only cost
+is slot contention.
+
+### `s16` names the subsystem, not the source, and it shipped wrong for one deploy
+
+The `select` entity's `processor_source_name` attribute was first wired to `s16`
+(`selected_source_name` in the snapshot). Selecting Tuner 1 in Studio made it read **`'Lights'`** —
+the lighting subsystem's own name — so the attribute presented a subsystem as a room's source. It
+now reads `s(100+N)`, the per-source name serial, which is where `s101`/`s102` were read from when
+iPod and AirPlay were identified. A test pins it and the mutation was checked.
+
+This was caught by driving real hardware, not by the suite. The A/V doc already recorded `s16`
+misbehaving this way and the code still got it wrong, which is the argument for live verification
+over re-reading one's own documentation.
+
+### Homie: `activateOnly`, and the trap it exists for
+
+The two A/V Scenes bubbles now have real entities. **Filling in `entities: []` does not just add a
+glow**: `togglePopupScene()` picks its direction from `sceneIsOn()` at tap time, so a non-empty
+affected list makes the off branch live, which is `homeassistant.turn_off` on those entities **plus
+`stopPopupMusic()`'s `media_player.media_stop` and `remote.turn_off` on `remote.harmony_hub`**. That
+would have converted "All AirPlay" into a toggle with a Harmony side effect and made the "AV Off"
+bubble redundant, undoing a deliberate design decision by accident.
+
+`togglePopupScene()` gained an `activateOnly` flag: glow from real state, never take the off branch.
+"All AirPlay" carries `entities` (the six switches), `allMustBeOn: true` and `activateOnly: true`.
+**"AV Off" deliberately keeps `entities: []`** — `sceneIsOn()` answers "is any/all of this on", and
+neither is the question an off button wants, so listing the switches there would light it whenever
+the house was making noise.
+
+Verified live on the tablet viewport: the Scenes chip read `1 on`, All AirPlay was lit and the other
+three dark, and **tapping the lit bubble re-ran the script and left all six rooms on with Harmony
+untouched**, `last_triggered` confirming the activate branch fired.
+
+`HOMIE_ASSET_VERSION` is `20260929.1`, both `?v=` script tags match it, and the `homie-dash` iframe's
+own `?v=` was bumped by Lovelace save. Fork suite 157/157 (was 152; five added).
+
+### Areas, and Studio
+
+Studio is an alias for the Gym area, per pde. All 24 entities are assigned: Kitchen, Outdoor Kitchen
+and Courtyard map directly, Master Bed and Master Bath both to Primary Suite, Studio to Gym. "Studio"
+was added as an alias on the Gym area registry entry.
+
+**The dashboard shows Crestron names, not area names**, because the wall panels are the competing
+interface for these six rooms. `Zone.name` is a protocol assertion, not a label: `av.py:180` compares
+it against `s11` to prove the cursor landed.
+
+### Live release and commit state
+
+**Nothing is committed in any of the three repos.** Everything below is deployed and verified live
+but sits as a working-tree diff, because pde has not asked for a commit.
+
+- **CresnetMon** (`macos-port-python`, last commit `53257bf`): modified `__init__.py`, `av.py`,
+  `const.py`, `tests_ha/test_crestron_cip.py`; new `entity.py`, `switch.py`, `select.py`,
+  `number.py`, `button.py`. Suite **117 passing** (was 99). Deployed to
+  `/config/custom_components/crestron_cip/` and verified byte-identical by md5 on all 14 files.
+  Pre-deploy backups are on the host beside each file as `<name>.py.bak-20260929-104014`, plus
+  `select.py.bak-20260929-105027` from the `s16` fix.
+- **homie-dashboard** (`main`, last commit `ee75b7a`): modified `dist/config.js`,
+  `dist/homie-dashboard.html`, `test/screen-a.test.cjs`. Deployed; host backups are
+  `.bak-20260929-105027`. `config.js` was spliced on the host, not overwritten, and verified: zero
+  placeholder lines, exactly one `HA_TOKEN` line, 713 lines local and remote.
+- **This repo**: new `docs/crestron/crestron-audio-entity-model.md`, README entry, the pointer added
+  to `crestron-av-zone-control-path.md`, this checkpoint, and a fix to the stale `root@hass.ehlke.net`
+  SSH example in the Home Assistant skill's `references/api-access.md` (the loose end the 2026-09-24
+  checkpoint recorded).
+
+Two full Home Assistant restarts were taken, which `config_flow: false` requires. The SSH add-on was
+started for the deploys and stopped afterwards.
+
+### Two things noticed and not acted on
+
+- **`rss-news-card` is registered twice** in the Lovelace resources, once at
+  `/hacsfiles/rss-news-card/rss-news-card.js` and once at `/local/community/rss-news-card/rss-news-card.js`.
+  Every page load throws `Failed to execute 'define' ... the name "rss-news-card" has already been
+  used with this registry`. Harmless, pre-existing, and not this work's to fix. No issue yet.
+- **Playwright is installed** at `/opt/homebrew/bin/playwright-cli` (Homebrew, 0.1.17, reports an
+  update to 0.1.22 available). The note claiming it was absent came from checking
+  `~/.cache/ms-playwright`, `node_modules` and the Python package, none of which is where the
+  Homebrew CLI lives. Visual verification is available and was used here.
+
 ## Next-session checkpoint, 2026-09-24
 
 ### The reconnect backoff could never step back down

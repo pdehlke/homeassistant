@@ -330,6 +330,23 @@ The AV pages never use `d130`-`d148`, so none of this touches the DSC alarm guar
 
 ## What an honest Home Assistant entity model looks like
 
+**Decided and built on 2026-09-29. See
+[crestron-audio-entity-model.md](crestron-audio-entity-model.md) for what shipped and why.** The
+answer was the second candidate below, generalised to one set of controls per zone rather than one
+set for the cursor: a `switch`, a `select`, a `number` and a mute `switch` for each of the six,
+plus a refresh `button`. The deciding argument was not in this section's reasoning at all. It was
+that `media_player.volume_level` is normalised 0.0 to 1.0 with no min, max or step, so it cannot
+express the top-fifth range this document establishes without displaying a number that is not the
+one the amp is at.
+
+The polling question raised at the end of this section is also settled, and settled against
+polling: nothing walks the cursor on a timer, because the slot is shared with lighting. The
+sub-question of whether walking the cursor disturbs the physical panels was already answered by
+[The cursor is per slot](#the-cursor-is-per-slot-which-is-the-finding-that-matters) above and did
+not need testing.
+
+The original reasoning is kept below because it is what the decision was made against.
+
 Not decided. The cursor model rules out the obvious shape and leaves two candidates.
 
 A `media_player` per zone reads best and matches how people expect audio to appear, but it would be

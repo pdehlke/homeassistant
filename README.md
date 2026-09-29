@@ -119,6 +119,20 @@ Notes, planning, and specs for my Home Assistant buildout.
   rather than zone state, only some sources apply a volume preset, and the analog level is neither
   blanked by a cursor move nor resent when it has not changed.
 
+- [crestron-audio-entity-model.md](docs/crestron/crestron-audio-entity-model.md)
+
+  How the six audio zones became Home Assistant entities, and the Speakers dashboard built on them.
+  Why four entities per zone (`switch`, `select`, `number`, `switch`) rather than six `media_player`
+  entities: `volume_level` is normalised 0-1 with no min, max or step, so a `media_player` slider
+  cannot express a useful range confined to the top fifth of the scale without displaying a number
+  that is not the one the amp is at. What "on" had to be given as a meaning, since there is no
+  power-on join and selecting a source overwrites the level with that source's preset. Why a source
+  change puts the level back, why volume and mute go unavailable on a room that is off while source
+  does not, and why nothing polls: the joins carrying A/V state are deliberately dropped before they
+  reach a listener, so freshness costs slot time that lighting is sharing. Includes the `s16` defect
+  live testing caught, where the attribute meant to carry the processor's own name for a source
+  reported the lighting subsystem instead.
+
 - [crestron-aads-dhcp-outage.md](docs/crestron/crestron-aads-dhcp-outage.md)
 
   Post-mortem on the 2026-09-23 outage where an unreserved DHCP lease moved the AADS from
