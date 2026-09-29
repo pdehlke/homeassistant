@@ -435,7 +435,11 @@ try:
     keyfile.chmod(0o600)
     subprocess.run(["ssh", "-i", str(keyfile), "-p", "2222",
                      "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null",
-                     "root@hass.ehlke.net", "ls -ld /config/www/community/homie-dashboard"],
+                     # 192.168.4.141, not hass.ehlke.net: that name resolves to the
+                     # Caddy proxy, which speaks only HTTP, so port 2222 there gets
+                     # a plain Connection refused. The prose above says so; this
+                     # block used to contradict it.
+                     "root@192.168.4.141", "ls -ld /config/www/community/homie-dashboard"],
                    check=True, timeout=20)
 finally:
     keyfile.unlink(missing_ok=True)
