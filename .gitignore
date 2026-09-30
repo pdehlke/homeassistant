@@ -12,3 +12,8 @@ docs/crestron/dumps/*.strings.txt
 # The TSW-752 panel project, same reasoning: it is the previous owner's compiled
 # interface for this house. crestron-tsw-panel-control-path.md has the re-fetch command.
 docs/crestron/dumps/*.xml
+
+# The session handoff note at the repo root. Its own header says it is deliberately
+# untracked: a point-in-time statement of where things stand, not an archive document.
+# Everything durable in it belongs in the committed docs it cites.
+HANDOFF.md
