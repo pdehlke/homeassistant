@@ -258,26 +258,33 @@ it against `s11` to prove the cursor landed.
 
 ### Live release and commit state
 
-**Nothing is committed in any of the three repos.** Everything below is deployed and verified live
-but sits as a working-tree diff, because pde has not asked for a commit.
+All three repos are committed and pushed, and the deployed files match. Confirm with `git` rather
+than trusting this line.
 
-- **CresnetMon** (`macos-port-python`, last commit `53257bf`): modified `__init__.py`, `av.py`,
-  `const.py`, `tests_ha/test_crestron_cip.py`; new `entity.py`, `switch.py`, `select.py`,
-  `number.py`, `button.py`. Suite **117 passing** (was 99). Deployed to
-  `/config/custom_components/crestron_cip/` and verified byte-identical by md5 on all 14 files.
-  Pre-deploy backups are on the host beside each file as `<name>.py.bak-20260929-104014`, plus
-  `select.py.bak-20260929-105027` from the `s16` fix.
-- **homie-dashboard** (`main`, last commit `ee75b7a`): modified `dist/config.js`,
-  `dist/homie-dashboard.html`, `test/screen-a.test.cjs`. Deployed; host backups are
-  `.bak-20260929-105027`. `config.js` was spliced on the host, not overwritten, and verified: zero
-  placeholder lines, exactly one `HA_TOKEN` line, 713 lines local and remote.
-- **This repo**: new `docs/crestron/crestron-audio-entity-model.md`, README entry, the pointer added
-  to `crestron-av-zone-control-path.md`, this checkpoint, and a fix to the stale `root@hass.ehlke.net`
-  SSH example in the Home Assistant skill's `references/api-access.md` (the loose end the 2026-09-24
-  checkpoint recorded).
+- **CresnetMon** `6e14dca` on `macos-port-python`, pushed. New `entity.py`, `switch.py`, `select.py`,
+  `number.py`, `button.py`; modified `__init__.py`, `av.py`, `const.py`, `tests_ha/test_crestron_cip.py`.
+  Suite **117 passing**, up from 99. Deployed to `/config/custom_components/crestron_cip/` and
+  verified byte-identical by md5 on all 14 files. Pre-deploy backups sit on the host beside each
+  file as `<name>.py.bak-20260929-104014`, plus `select.py.bak-20260929-105027` from the `s16` fix.
+- **homie-dashboard** `508e819` on `main`, pushed. Deployed; host backups `.bak-20260929-105027`.
+  `config.js` was spliced on the host rather than overwritten, and verified: zero placeholder lines,
+  exactly one `HA_TOKEN` line, 713 lines local and remote. Suite **157 passing**, up from 152.
+- **This repo** `ea4b945` (the doc, README entry, A/V pointer, this checkpoint) and `505d429` (the
+  stale `root@hass.ehlke.net` SFTP example in the skill's `references/api-access.md`, the loose end
+  the 2026-09-24 checkpoint recorded). Both pushed.
+
+[Issue #30](https://github.com/pdehlke/homeassistant/issues/30) was closed by hand on 2026-09-29,
+naming all three commits in its closing comment, because a `Fixes` trailer in CresnetMon or the fork
+cannot close an issue here.
 
 Two full Home Assistant restarts were taken, which `config_flow: false` requires. The SSH add-on was
 started for the deploys and stopped afterwards.
+
+**pde had unrelated uncommitted work in this repo throughout and it was left alone**: a
+`wall-clock-card` section in the skill's `references/lovelace.md`, a `clock-weather-widget.md` under
+`docs/native-dashboards/` with its own README entry, `HANDOFF.md`, and a
+`.claude/skills/thermo-nuclear-code-quality-review/` directory. The README carried one hunk of his
+and one of mine, so only mine was staged. None of it is in either commit above.
 
 ### Two things noticed and not acted on
 
