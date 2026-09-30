@@ -714,3 +714,11 @@ Notes, planning, and specs for my Home Assistant buildout.
   covers verification specifically, not general access. The equivalent skill for Homie
   Dashboard's own tablet UI, `verify-homie-dashboard`, lives in the sibling
   `pdehlke/homie-dashboard` repo instead, since it is that repo's own code being verified.
+
+- [.claude/skills/thermo-nuclear-code-quality-review/](.claude/skills/thermo-nuclear-code-quality-review/SKILL.md)
+
+  A deliberately harsh maintainability review: abstraction quality, files sprawling past a
+  thousand lines, and spaghetti-condition growth, with a bias toward restructurings that delete
+  complexity rather than rearrange it. `disable-model-invocation: true`, so it runs only when
+  asked for by name. Unlike the two skills above it is not specific to this instance, and the
+  code it reviews lives in the `homie-dashboard` and `CresnetMon` repos rather than here.
