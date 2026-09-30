@@ -386,6 +386,19 @@ Notes, planning, and specs for my Home Assistant buildout.
   the first attempt scoped this to `Pete` instead, which would have cost him his own header/sidebar
   entry points on the one account he uses for everything else on this instance.
 
+- [clock-weather-widget.md](docs/native-dashboards/clock-weather-widget.md)
+
+  Two fixes to the weather widget on `dashboard-clock`'s `custom:wall-clock-card`: text too small to
+  read from across the office, and a forecast row labelled a day early. Neither was reachable from
+  the widget's documented configuration. The size fields are capped by `min()`/`clamp()` in the
+  card's horizontal layout, so the fonts come from a UIX rule piercing five shadow roots into
+  `ha-weather`; the forecast dates were wrong because the card's direct OpenWeatherMap provider
+  buckets by UTC date and then renders the key as local midnight, which is always wrong west of UTC
+  and never wrong at the author's own coordinates, so the widget moved to the card's Home Assistant
+  provider instead. Records what the rejected approaches were, the geometry the font numbers were
+  picked against with no browser available, the API key that left the dashboard config on the way
+  past, and why a card upgrade would make half of this redundant and the other half not.
+
 ### Synology NAS
 
 - [synology-nas-dashboard.md](docs/synology-nas/synology-nas-dashboard.md)

@@ -220,12 +220,16 @@ helper needs an automation instead: two state triggers (`to`/`from` the target s
 on `trigger.id` via `choose`, with `mode: restart` so a value flipping back before the delay elapses
 cancels the pending change cleanly, no extra guard condition needed.
 
-## wall-clock-card (rkotulan/ha-wall-clock-card v3.4.0)
+## wall-clock-card (rkotulan/ha-wall-clock-card v3.10.0)
+
+Installed version confirmed 2026-09-25 from `hacs/repositories/list` and the bundle's own console
+banner. v3.17.1 was available and not installed. This section said v3.4.0 until then, so check the
+installed version rather than trusting this heading.
 
 Docs live in the repo under `docs/`, not just the README. Fetch them at the installed tag:
 
 ```
-https://raw.githubusercontent.com/rkotulan/ha-wall-clock-card/v3.4.0/docs/<name>.md
+https://raw.githubusercontent.com/rkotulan/ha-wall-clock-card/v3.10.0/docs/<name>.md
 ```
 
 `layout.md` is the important one. Others: `configuration`, `weather`, `sensors`, `calendar`, `clock-date`, `action-bar`, `image-sources`, `background-handling`, `separator`, `transportation`.
@@ -248,6 +252,8 @@ In a vertical split, the narrow panel takes the left logical zones and the main 
 - **`showTitle: false`** removes a widget's heading. The docs only show it under the OpenWeatherMap provider but it works for the Home Assistant provider too. Setting `title: ""` does **not** work; it falls back to the localized default.
 - **The action bar clips its labels to roughly icon width in a narrow panel.** In a 145px glass panel the labels truncated to "H..." and "M..." at four columns, two columns, and one column, with one column spilling outside the panel entirely. `style.fontSize` is ignored by built-in widgets. There is no option to hide labels. In a small card, leave the action bar out.
 - **Weather `orientation`** matters. `vertical` stacks forecast days as rows, `horizontal` lays them out as day columns like the reference screenshots. In a side zone, `auto` resolves to vertical.
+- **In horizontal orientation, v3.10.0 caps the weather widget's own font fields and does not say so anywhere in its docs.** `.weather-temp` gets `min(valueSize, clamp(1.8rem, 10cqw, 3rem))` and `.forecast-date`/`.forecast-temp` get `min(labelSize, clamp(0.82rem, 4cqw, 1.4rem))`, so no `valueSize` can exceed 3rem; the condition and title are hardcoded clamps with no field at all. Bigger text needs a UIX rule with `!important`, because these are inline styles. v3.17.1 makes the cap conditional on a custom size being set, which would retire that rule. Worked example, geometry and rejected alternatives in [clock-weather-widget.md](../../../../docs/native-dashboards/clock-weather-widget.md).
+- **Do not use the weather widget's direct `openweathermap` provider.** It buckets the 3-hour forecast by UTC date and re-parses the bucket key as UTC midnight, so every forecast column is labelled a day early in any zone west of UTC, and each day's high and low straddle two local days. Still unfixed at v3.17.1. Use `provider: homeassistant` with a `weather.*` `entityId`: Home Assistant buckets in the local zone and stamps local midday, and the key stays out of the Lovelace config.
 - **Sensors `orientation`** defaults to vertical in side zones. Set `horizontal` explicitly for the side-by-side pair with a divider.
 - `background.source: picsum` needs no API key and is the easy default, but it serves a different random photo on every load. Use `local` with files under `/config/www` (served as `/local/...`) when consistency matters.
 - The calendar widget needs a real calendar entity. With `entities: []` and `hideWhenEmpty: false` it renders a permanently empty box. Local Calendar is the zero-dependency way to give it one.
