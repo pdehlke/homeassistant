@@ -399,6 +399,17 @@ Notes, planning, and specs for my Home Assistant buildout.
   picked against with no browser available, the API key that left the dashboard config on the way
   past, and why a card upgrade would make half of this redundant and the other half not.
 
+- [clock-live-energy-cards.md](docs/native-dashboards/clock-live-energy-cards.md)
+
+  Why `dashboard-clock`'s two energy cards were moved off Home Assistant's built-in `energy-*`
+  cards and onto live sensors: those cards read hourly statistics, so on a wall display they can
+  show an up-to-an-hour-old total with nothing on screen saying so. Separates the three lags that
+  were stacked on the original symptom, proves which statistics resolution the cards use, and
+  checks the Sense trend sensors against an independent integration of the realtime stream before
+  trusting them. Also covers the hourly bad poll that only bites live readers, the rejected
+  alternatives, the sections-grid row arithmetic behind two wrong height guesses, and the Office
+  display resolution that still has never been measured.
+
 ### Synology NAS
 
 - [synology-nas-dashboard.md](docs/synology-nas/synology-nas-dashboard.md)
