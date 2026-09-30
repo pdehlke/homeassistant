@@ -46,10 +46,22 @@ Confirmed against the live instance before agreeing to build anything:
   reset. Every hour in a 24-hour test window had a value, even through the sensors' own transient
   unavailable spells, because the hourly aggregate only needs one valid sample in the hour to
   compute.
-- The Energy Dashboard is configured with the grid import/export sensors above, but has no solar
-  source and no carbon-intensity source wired in, so HA's own built-in low-carbon accounting isn't
-  active. Noted for awareness; this project builds the two new stats directly rather than turning
-  that on, since the ask was specifically for Homie Dashboard badges.
+- The Energy Dashboard is configured with the grid import/export sensors above. When this was
+  written it had no solar source and no carbon-intensity source wired in, so HA's own built-in
+  low-carbon accounting wasn't active. Noted for awareness; this project builds the two new stats
+  directly rather than turning that on, since the ask was specifically for Homie Dashboard badges.
+
+  Corrected 2026-09-30: a solar source had been added at some point after this, but it pointed at
+  `sensor.solar_daily_energy`, which is a Sense *device*-level trend sensor for the auto-detected
+  "Solar" pseudo-device, in the same family as `Always On Daily energy` and `Fridge Daily energy`.
+  Sense never attributes anything to it: it read exactly 0 for every one of the 31 statistics days
+  checked, while flapping `0` -> `unavailable` -> `0` on an hourly cycle. The Energy Dashboard
+  therefore counted real grid export while reporting no production at all, and its home-consumption
+  figure, computed as solar plus import minus export, was wrong for the same reason. The source now
+  points at `sensor.sense_287516_daily_production`, the monitor-level production trend named above,
+  which carried 2,331.6 kWh of cumulative statistics over that same window. Sense's realtime channel
+  was never affected; `sensor.solar_power` read correctly throughout. There is still no
+  carbon-intensity source wired in.
 
 ## Placement
 
