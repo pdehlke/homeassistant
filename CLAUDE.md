@@ -194,12 +194,19 @@ Four things not to undo or misread:
 - **The Now Playing card's browse button still opens the full Music Assistant root.** Only the chip
   was emptied.
 
-Fork `678772a` on `main`, pushed and deployed, `HOMIE_ASSET_VERSION` `20261002.1` matching the
-iframe `?v=`. Suite 162 passing, up from 157. Host backups are `.bak-20261002-133547`.
+**A play from a browse row starts Harmony first**, through `startPopupMusicPlayer()`, the same
+function a bubble tap uses. It also turns shuffle off and clears the Jellyfin on-marker. Only plays
+from the Music chip do this; the Now Playing browser targets players that are mostly not behind
+Harmony. Do not inline that function back into either caller.
+
+The fork is pushed and deployed at `HOMIE_ASSET_VERSION` `20261002.2`, matching the iframe `?v=`;
+use `git log` there for the commit. Suite 166 passing, up from 157. Host backups are
+`.bak-20261002-133547` and `homie-dashboard.html.bak-20261002-134553`.
 
 Left open: the Jellyfin row is empty because `sensor.homie_dynamic_playlists` does not exist, which
 pde is handling himself. Artists, Albums and Tracks stop at Music Assistant's 500-item browse cap.
-Playing from a browse row was not exercised live.
+One of four live plays from a browse row started Harmony and left the player idle; it did not
+reproduce and the cause is unknown.
 
 ## Next-session checkpoint, 2026-09-29
 

@@ -440,9 +440,9 @@ root. Only the chip was asked about, so only the chip changed.
 - Music Assistant returns at most 500 items per category through `browse_media`. Artists, Albums
   and Tracks all hit that cap live, so most of the library is not reachable from the dashboard. The
   A/V chip had the same cap.
-- A browse row's play button calls `media_player.play_media` and nothing else. A bubble tap also
-  starts Harmony's Airplay activity, sets the idle-start volume and sets shuffle. Playing from a
-  browse row was not exercised live, so whether it is audible with Harmony off is unverified.
+- As first shipped, a browse row's play button called `media_player.play_media` and nothing else,
+  while a bubble tap also starts Harmony's Airplay activity, sets the idle-start volume and sets
+  shuffle. That was fixed the same day; see "Browse rows start Harmony" below.
 - The Jellyfin row was empty at deploy time because `sensor.homie_dynamic_playlists` did not exist,
   with no recorder history since at least 2026-09-28. That predates this change and pde is handling
   it separately. See [homie-dynamic-playlists.md](./homie-dynamic-playlists.md).
@@ -465,3 +465,69 @@ seven rows in order above All Off. Each browse row opened on real content with
 and Tracks 500 each. Drilling into the first artist showed Back, and Back returned to Artists with
 Back hidden again. The A/V chip opened the empty frame. `media_player.crestron` stayed `idle`
 throughout, because nothing was played.
+
+## Browse rows start Harmony, 2026-10-02
+
+Same-day follow-up. The browse rows inherited the A/V chip's play path, which sent
+`media_player.play_media` and nothing else. From the Music chip that reaches the player and no
+speaker, because nothing has put Harmony on its Airplay activity. pde asked for the browse rows to
+start Harmony the way the bubbles do.
+
+### Chosen design
+
+The two steps a bubble tap runs before it plays were lifted out of `togglePopupMusic()` into
+`startPopupMusicPlayer()`: `remote.turn_on` with the Airplay activity, then `volume_set` to 40%
+unless the player is already playing. Both the bubble and `_mbPlay()` call it, so there is one
+start sequence and the two paths cannot drift into one that is audible and one that is not.
+
+`_mbPlay()` runs it only when the browser was opened from a Music chip browse row, which
+`openMusicBrowse()` marks with `_mb.musicChip`. The Now Playing card's browser targets whichever
+player is the active source, and most of those are not behind Harmony, so it does none of this. The
+flag is set on every open, so it cannot stick from one session to the next; a test opens from the
+chip and then from Now Playing to pin that.
+
+Three things were added beyond the literal ask, each because leaving it out would have been a bug:
+
+- Shuffle is turned off before the play. Shuffle is a player-level setting that a Jellyfin bubble
+  leaves on, and an album played from a browse row would otherwise inherit it and play out of
+  order. This is a choice: it means a playlist started from the Playlists browse row plays in
+  order, where the same playlist started from a Jellyfin bubble shuffles.
+- The Jellyfin on-marker (`_lastPlaylistStarted`) is cleared, so a Jellyfin bubble does not stay
+  lit while an album plays.
+- Nothing happens when the player is `unavailable` or has no cached state, the same guard
+  `togglePopupMusic()` has. Without it Harmony would start for a play that cannot happen.
+
+The browser now closes at the tap, before the start sequence. Harmony's activity switch takes about
+five seconds, and a list still sitting there for that long invites a second tap.
+
+### Rejected alternatives
+
+| Option | Why not |
+| --- | --- |
+| Call `togglePopupMusic()` from the browser | It is a toggle keyed on a bubble's URI, takes a bubble id for its animation, and plays through `music_assistant.play_media`. A browse item is none of those. |
+| Copy the two Harmony and volume calls into `_mbPlay()` | Two copies of one start sequence is how one of them ends up silent. |
+| Run the start sequence for every media browser play | Starts Harmony when playing to a player that is not behind it. |
+| Leave shuffle alone | Stale shuffle from an earlier Jellyfin tap would shuffle albums. |
+
+### Verification
+
+`node --test test/screen-a.test.cjs`: 162 to 166. The new tests run the real `_mbPlay()` and
+`startPopupMusicPlayer()` and assert the exact call order, the volume being skipped when already
+playing, nothing at all when unavailable, and the Now Playing path staying untouched. Each was
+checked by mutation.
+
+`HOMIE_ASSET_VERSION` `20261002.1` to `20261002.2`. Only `homie-dashboard.html` changed and was
+deployed, confirmed byte-identical by `doctor.py`, with the iframe `?v=` bumped to match.
+
+Driven live from the Albums row four times, each starting from Harmony at `PowerOff` and
+`media_player.crestron` idle, then restored with All Off:
+
+- Three plays worked. `remote.harmony_hub` went to `Airplay` and the player was `playing` the
+  expected album within 6 to 14 seconds. On the instrumented run the calls left in order at 1 ms
+  (`remote/turn_on`), 4971 ms (`volume_set`), 4983 ms (`shuffle_set`) and 4991 ms (`play_media`),
+  and Home Assistant returned success for the play.
+- The first play did not. Harmony went to `Airplay` and the player was still idle 15 seconds later.
+  It did not reproduce: the same album played on two later attempts, and the identical
+  `play_media` call sent directly over the WebSocket API was accepted and played. The cause is
+  unknown. That first run was not instrumented, so whether the play call was sent, or sent and
+  ignored by Music Assistant, is not known either.
