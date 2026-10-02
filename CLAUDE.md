@@ -174,6 +174,33 @@ Do not change anything until you have checked the status of every repository the
 confirmed the live release and commit state against `git` and the running instance. The checkpoint
 below records both, and it will be out of date sooner than it looks.
 
+## Next-session checkpoint, 2026-10-02
+
+### Homie: the Music chip took over the A/V chip's library, and A/V is an empty placeholder
+
+The Music chip now has seven rows: Favorites, Playlists, Radio Stations, Jellyfin, Artists, Albums,
+Tracks. Design, rejected options and verification are in
+[homie-music-chip.md](./docs/homie-dashboard/homie-music-chip.md)'s 2026-10-02 section.
+
+Four things not to undo or misread:
+
+- **Favorites is the old "Stations" and Jellyfin is the old "Playlists".** Every earlier document
+  uses the old names. The row called Playlists today is a Music Assistant browse row, a different
+  thing from the bubble grid that used to have that name.
+- **`syncDynamicPlaylistsFromHA()` finds its group by the `dynamicPlaylists` flag, not by label.**
+  Matching on the label would now hit the browse row and leave Jellyfin empty for good.
+- **The A/V chip is empty on purpose.** `action: "av"` opens a "Nothing here" frame. pde has
+  follow-up plans for it, so do not remove it and do not restore the browser to it.
+- **The Now Playing card's browse button still opens the full Music Assistant root.** Only the chip
+  was emptied.
+
+Fork `678772a` on `main`, pushed and deployed, `HOMIE_ASSET_VERSION` `20261002.1` matching the
+iframe `?v=`. Suite 162 passing, up from 157. Host backups are `.bak-20261002-133547`.
+
+Left open: the Jellyfin row is empty because `sensor.homie_dynamic_playlists` does not exist, which
+pde is handling himself. Artists, Albums and Tracks stop at Music Assistant's 500-item browse cap.
+Playing from a browse row was not exercised live.
+
 ## Next-session checkpoint, 2026-09-29
 
 ### The six audio zones have entities now, and a Speakers dashboard

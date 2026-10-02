@@ -378,3 +378,90 @@ Playwright against real `/api/states` reads: started "Jazz: Hiromi" (confirmed
 `media_player.crestron` `state: "playing"`), tapped the new "All Off" row, confirmed via the real
 entity that it returned to `idle` and `remote.harmony_hub`'s `current_activity` returned to
 `PowerOff`, and the bubble's on-ring cleared in a follow-up screenshot.
+
+## Library rows from the A/V chip, 2026-10-02
+
+### What was asked
+
+Take Albums, Artists, Tracks, Playlists and Radio Stations out of the A/V chip and put them in the
+Music chip. Rename the existing Stations section to Favorites and the existing Playlists section to
+Jellyfin. Order, top to bottom: Favorites, Playlists, Radio Stations, Jellyfin, Artists, Albums,
+Tracks. Remove everything else from the A/V chip but leave the chip in place, because pde has
+follow-up plans for it.
+
+Read every earlier section of this document with the rename in mind. "Stations" there is Favorites
+now, and "Playlists" there is Jellyfin. The row called Playlists today is a different thing.
+
+### What the A/V chip actually was
+
+Those five names were never configuration. The A/V chip was `action: "media_browser"`, which opened
+Music Assistant's `media_player/browse_media` root for the active Now Playing source. Read live on
+2026-10-02 against `media_player.crestron`, that root lists Artists, Albums, Tracks, Playlists,
+Radio stations, Podcasts and Audiobooks from Music Assistant, followed by eight Home Assistant
+media sources (AI generated images, Camera, Image, Image upload, My media, Radio Browser, Synology
+Photos, Text-to-speech). "Everything else" is the last ten of those.
+
+### Chosen design
+
+A Music chip `subGroups` entry now carries either `stations` (a bubble grid, as before) or `browse`
+(the `media_content_id` Music Assistant gives a library category). A browse row looks like any
+other accordion row but does not expand. Tapping it calls `openMusicBrowse()`, which opens the
+existing media browser overlay already inside that category.
+
+- The browser plays through the chip's own `entity`, `media_player.crestron`, the same player the
+  bubbles use. The A/V chip used the active Now Playing source, which defaults to the first entry
+  in `CONFIG.musicPlayers`.
+- The category is the top of the session. Back is hidden there and never climbs to the root, since
+  the root is exactly what was removed.
+- The overlay title is the row's label. Music Assistant titles the radio node "Radio stations";
+  the row says "Radio Stations" and the browser has to agree with the row.
+- `syncDynamicPlaylistsFromHA()` used to find its group with `label === "Playlists"`. After this
+  change that label belongs to a browse row, so the sync would have written a `stations` list onto
+  the wrong group and left Jellyfin empty for good. It now finds its group by a `dynamicPlaylists`
+  flag. A test puts a browse row named Playlists beside the flagged group to pin this.
+
+The A/V chip keeps its place in the row with `action: "av"`. It opens the media browser's frame
+titled "A/V" with "Nothing here" in it and sends no request to Home Assistant. The Now Playing
+card's browse button still calls `openMediaBrowser()` with no arguments and still shows the full
+root. Only the chip was asked about, so only the chip changed.
+
+### Rejected alternatives
+
+| Option | Why not |
+| --- | --- |
+| Bubble grids, like Favorites and Jellyfin | Jellyfin reports 1,659 artists, 2,944 albums and 10,237 tracks. A bubble is one tap to play one thing, which has no meaning for an artist that needs drilling into. |
+| Expanding the list in place inside the accordion panel | Needs a second renderer for browse results, plus in-panel drill and back navigation, on a popup built for a short grid. The overlay already does all of it and is what the A/V chip showed. |
+| Filtering the root in `openMediaBrowser()` so A/V shows nothing | The Now Playing browse button shares that function and would have been emptied too. |
+| Removing the A/V chip | pde asked for it to stay. |
+| Giving A/V an empty `subEntities` list and the generic popup | Changes its sidebar icon and runs it through count and glow logic written for chips that have entities. A dedicated placeholder is easier to replace when the follow-up arrives. |
+
+### Known limits, none new
+
+- Music Assistant returns at most 500 items per category through `browse_media`. Artists, Albums
+  and Tracks all hit that cap live, so most of the library is not reachable from the dashboard. The
+  A/V chip had the same cap.
+- A browse row's play button calls `media_player.play_media` and nothing else. A bubble tap also
+  starts Harmony's Airplay activity, sets the idle-start volume and sets shuffle. Playing from a
+  browse row was not exercised live, so whether it is audible with Harmony off is unverified.
+- The Jellyfin row was empty at deploy time because `sensor.homie_dynamic_playlists` did not exist,
+  with no recorder history since at least 2026-09-28. That predates this change and pde is handling
+  it separately. See [homie-dynamic-playlists.md](./homie-dynamic-playlists.md).
+
+### Verification
+
+`node --test test/screen-a.test.cjs`: 157 to 162. The five new tests run the real media browser
+block against a fake socket and fake DOM, and each was checked by mutation: disabling the
+category-as-top logic, dropping the chip's entity, reverting the sync to a label match, and
+removing the guard that stops a bubble row opening the browser all turn the suite red.
+
+`HOMIE_ASSET_VERSION` `20260929.1` to `20261002.1`, deployed by the usual SSH add-on start, upload
+under temporary names, host-side token splice, backup, rename and add-on stop, with the `homie-dash`
+iframe `?v=` bumped by a Lovelace save. The fork's `doctor.py` confirmed the live HTML and
+`homie-custom.js` byte-identical to `dist/` and a real token in the live `config.js`.
+
+Driven live with `playwright-cli` at 1280x800 against the direct file URL. The popup listed the
+seven rows in order above All Off. Each browse row opened on real content with
+`media_player.crestron` as its target: Playlists 10 items, Radio Stations 42, and Artists, Albums
+and Tracks 500 each. Drilling into the first artist showed Back, and Back returned to Artists with
+Back hidden again. The A/V chip opened the empty frame. `media_player.crestron` stayed `idle`
+throughout, because nothing was played.
