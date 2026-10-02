@@ -107,14 +107,238 @@ anything reading live state is not.
 
 Two consequences worth knowing:
 
-- The `Today So Far` card will show visibly wrong low numbers for about five minutes an hour. This
-  is a known, accepted cost of reading live state, not a defect in the card.
+- The `Today So Far` card used to show visibly wrong low numbers for about five minutes an hour,
+  accepted at the time as the cost of reading live state. It no longer reads these sensors
+  directly, so neither this fault nor the `unavailable` one below reaches it. See the two sections
+  that follow.
 - `automation.low_grid_export_alert` is safe. It calls `recorder.get_statistics` with `period: day`
   and `types: [change]` rather than reading state, so a bad poll cannot trip it.
 
 This also explains a misreport during the investigation itself: a figure of 5.3 kWh quoted for
 `daily_production` was one of these dips, caught by chance. The 10.9 kWh the Energy panel showed at
 the same moment was the statistics value and was correct.
+
+## The dropout that rendered as a measured zero, fixed 2026-10-02
+
+pde reported that before dawn the card read 0 kWh for Produced and Exported, which is correct, and
+0 kWh for Used, Imported and Net export, which is not: the house draws from the grid all night. The
+three wrong figures only appeared once the panels started producing.
+
+The sensors were never at fault. `sensor.sense_287516_daily_energy` and
+`sensor.sense_287516_daily_from_grid` climb through every night, reaching 2 to 3 kWh by dawn, on
+each of the six days the recorder still holds. The template was at fault:
+
+```jinja
+{% set u = states('sensor.sense_287516_daily_energy') | float(0) %}
+```
+
+`float(0)` yields 0 for any state that is not a number, so an `unavailable` sensor rendered as a
+measured zero rather than as an outage. All four Sense daily trend sensors drop to `unavailable`
+together for exactly one five-minute poll, several times a day, usually in a run at the same minute
+past the hour, and on the last three mornings that run sat squarely in the pre-dawn hours:
+
+| Day | episodes | local times |
+| --- | --- | --- |
+| 2026-09-30 | 6 | 00:00 (10 min), 03:45, 04:46, 05:46, 06:46, 07:46 |
+| 2026-10-01 | 5 | 04:46, 05:46, 06:46, 07:46, 08:46 |
+| 2026-10-02 | 2 | 05:46, 06:46 |
+
+Each lasts 301 seconds, one poll interval. On both 10-01 and 10-02 the last dropout before sunrise
+ran 06:46 to 06:51 and the first nonzero production arrived at 06:56, which is exactly the
+coincidence the report describes: all five figures read zero, and then minutes later Produced
+appeared and Used, Imported and Net export came back with it.
+
+### Three explanations ruled out first
+
+**A stale card.** The card carries an `entity_id:` list naming the four sensors, which reads like it
+controls when the card re-renders, so a card frozen at the midnight reset was the first suspect.
+Core ignores it. A `render_template` subscription whose template read only `sensor.solar_power`,
+with `entity_ids` naming only `sensor.sense_287516_daily_production`, reported
+`listeners: {"entities": ["sensor.solar_power"]}` on every render and fired on `solar_power`'s
+changes, not production's. Tracking comes from what the template reads, nothing else. A second
+subscription confirmed a `daily_energy` change does produce a render, so the card updates every ten
+minutes all night. The `entity_id:` key is dead configuration; it was left in place rather than
+mixed into this fix.
+
+**The hourly bad poll** from the section above. It returns a partial-day total rather than nothing,
+and before dawn that partial is only near zero in the first hour or two after midnight. At 05:00 on
+2026-10-02 it read 2.0 kWh against a true 2.4. It cannot produce a zero at 6am.
+
+**A sensor that only populates once solar does.** Hourly statistics for `daily_energy` from
+2026-09-26 through 2026-10-02 show it climbing from 0.4 to 0.5 kWh in the first hour of every day
+and rising steadily from there. There is no day where it waits for sunrise.
+
+### The fix
+
+Every value is now gated on `has_value()`, and a sensor without one renders `n/a` instead of a
+number nobody measured:
+
+```jinja
+{% set dp = (states(P) | float | round(1) ~ ' kWh') if has_value(P) else 'n/a' %}
+```
+
+Net export is gated on both of its inputs. The footer switches too: `as of 7:56 AM` when every
+sensor has a value, `no reading since 6:46 AM` from the `last_changed` of the first one that does
+not, so an outage announces itself rather than hiding behind a plausible number. The markdown
+structure is unchanged, so every UIX selector still matches; the `n/a` cell in the Net export row
+carries no `strong` or `em`, so it is uncoloured, which is correct for a value that is not a sign.
+
+Verified by rendering both branches through `POST /api/template` before saving, the second with the
+four entity ids swapped for a currently unavailable sensor, and by screenshot at 1920x1080 after
+saving. Console showed only the two pre-existing 404s.
+
+### Rejected and deferred
+
+**Holding the last good value in the card.** A markdown card template is stateless, so there is
+nowhere to keep it. There is also no second source to fall back on: every `device_class: energy`
+sensor on the instance with a cumulative state class is either a Sense device-level trend sensor
+from the same coordinator or a per-plug counter. Grid import and export come from Sense alone.
+
+**Four monotonic template sensors.** Deferred at the time, then asked for and built the same day;
+see the next section.
+
+## Four held sensors, built 2026-10-02
+
+Four Template Helpers now sit between the Sense trend sensors and the card. Each holds its last
+good value through a dropout and refuses to decrease within a day, so neither Sense fault reaches
+the display.
+
+| Helper | Source |
+| --- | --- |
+| `sensor.produced_today` | `sensor.sense_287516_daily_production` |
+| `sensor.used_today` | `sensor.sense_287516_daily_energy` |
+| `sensor.exported_today` | `sensor.sense_287516_daily_to_grid` |
+| `sensor.imported_today` | `sensor.sense_287516_daily_from_grid` |
+
+The state template is the same for all four apart from the source. It is shown wrapped here for
+reading; the deployed value is this text on one line, because a line break inside the `if`/`elif`
+chain lands in the rendered state.
+
+```jinja
+{% set src = 'sensor.sense_287516_daily_production' %}
+{% set has = has_value(src) %}
+{% set val = states(src) | float(0) %}
+{% set reset = state_attr(src, 'last_reset') %}
+{% set held = this.state | float(none) %}
+{% if not has %}{{ held }}
+{% elif held is none or reset is none or as_timestamp(reset) > as_timestamp(this.last_reported) %}{{ val | round(1) }}
+{% else %}{{ [held, val] | max | round(1) }}{% endif %}
+```
+
+Availability, which is what makes the hold possible:
+
+```jinja
+{{ has_value('sensor.sense_287516_daily_production') or is_number(this.state) }}
+```
+
+### The day key has to be the source's own `last_reset`
+
+A monotonic clamp needs to know when the day rolls over or it holds yesterday's total forever.
+Three candidates, two of them wrong:
+
+**`now().date()` against the helper's own last render.** Wrong, and wrong in a way that latches for
+a whole day. Referencing `now()` makes a template re-render every minute, so a tick at 00:01 would
+take the reset branch while the Sense sensor still holds yesterday's total: its first poll of the
+new day lands somewhere between 00:00:04 and 00:10. The helper would adopt yesterday's figure, mark
+itself as having rendered today, and then clamp every real value of the new day below it.
+
+**The source's value dropping.** Indistinguishable from the bad poll, which is the thing being
+suppressed.
+
+**`last_reset` on the Sense sensor.** It is set to local midnight and advances daily. Verified
+against four days of recorder history, where it moved 09-28 to 09-29 to 09-30 to 10-01 to 10-02,
+each at 07:00 UTC, which is 00:00 Phoenix. It also reads `None` during the dropouts, which the
+template treats as "do not clamp" rather than "new day".
+
+The comparison is `as_timestamp(reset) > as_timestamp(this.last_reported)`: the source's day began
+after the helper last wrote, so whatever the helper is holding belongs to a previous day.
+`last_reported` rather than `last_changed`, because `last_reported` advances on every render even
+when the value is unchanged, while `last_changed` can sit a day stale on a sensor whose value
+legitimately does not move. `exported_today` on an overcast day ends at 0.0 and starts the next at
+0.0, and keying on `last_changed` would leave the clamp disabled until the value first moved.
+
+### Three things not to change
+
+**Availability is `has_value(src) or is_number(this.state)`, not `has_value(src)`.** The obvious
+availability template takes the helper offline for the whole dropout, which hands the card exactly
+the hole this work is closing. The `or` keeps the helper available while it has a value worth
+holding and lets it go unavailable only when it has none, which is a cold start.
+
+**`float(none)`, not `float(0)`.** The helper has to be able to tell "no value yet" from "measured
+zero"; the `held is none` branch is what adopts the source outright on a cold start. A default of 0
+is the same mistake one layer down that put the zeros on the card in the first place.
+
+**No `state_class`.** The Sense sensors carry `state_class: total` and feed the Energy dashboard's
+long-term statistics. Giving these helpers one would write a second set of statistics for the same
+quantities under new entity ids and offer them in the Energy dashboard's pickers as though they
+were another meter. They exist to be displayed, so they carry `device_class: energy`, a unit, and
+nothing else.
+
+### Built through the config flow, not YAML
+
+The best-practice default is a Template Helper created through the config flow rather than a
+`template:` block: a flow helper is UI-editable and reloads in place. The one thing that would have
+forced YAML is `attributes:`, which has no flow field, and an earlier draft wanted one to store the
+day key. Keying off `last_reset` and `this.last_reported` removed the need. Note that the flow puts
+`availability` inside its `additional_options` section; a flat `availability` at the top of the
+payload fails validation.
+
+No built-in helper covers this. `utility_meter` accumulates a meter across cycles rather than
+passing a value through, and its answer to a decreasing source is a meter-reset path rather than a
+dip-suppression one. `statistics` with a maximum characteristic works over a sliding window rather
+than a calendar day, so it would carry yesterday's peak well into today. `filter`'s outlier
+rejection cannot tell the midnight reset from a bad poll.
+
+### What the card reads now
+
+The four figures come from the helpers. The `as of` stamp still reads the Sense sensors directly,
+because the helpers re-render during a dropout and their own `last_reported` would claim a
+freshness that nothing measured. While any Sense sensor has no value the footer reads
+`held since 6:46 AM`, taken from its `last_changed`, so the card shows real numbers and says
+plainly that they are being held. The `has_value()` gating added earlier stays, now covering only a
+cold start.
+
+The card's `entity_id:` key still lists the four Sense sensors. It is inert either way, as the
+section above establishes, and it was left alone rather than folded into this change.
+
+### Verified against both real faults within an hour of building them
+
+Every branch of the state template was exercised first by rendering it through `POST /api/template`
+with the three source reads replaced by literals and everything from `{% if not has %}` onward left
+byte-identical: normal climb, bad poll, dropout, new-day rollover, a stale pre-rollover source, cold
+start, a dropout with no held value, and a missing `last_reset`. All eight behaved as designed. The
+cold-start case renders the literal string `None`, which is exactly why the availability template
+has to carry the `or is_number(this.state)` clause.
+
+That is a test of the logic, not of the wiring, so the helpers were then watched against the live
+sensors at 20-second resolution from 08:09 to 09:10 on 2026-10-02. Both faults turned up on their
+own:
+
+```
+08:36:54           production   src=         4.4  held=         4.4
+08:46:56  DROPOUT  production   src= unavailable  held=         4.4
+08:46:56  DROPOUT  energy       src= unavailable  held=         5.7
+08:46:56  DROPOUT  to_grid      src= unavailable  held=         2.6
+08:46:56  DROPOUT  from_grid    src= unavailable  held=         3.8
+08:51:58           production   src=         5.3  held=         5.3
+08:56:59           production   src=         6.1  held=         6.1
+09:02:00  DIP      production   src=         2.3  held=         6.1
+09:02:00  DIP      energy       src=         5.3  held=         5.9
+09:02:00  DIP      to_grid      src=         0.9  held=         4.1
+09:07:01           production   src=         7.1  held=         7.1
+```
+
+The :46 dropout and the top-of-hour partial-day poll, one after the other, both absorbed. The last
+line is the one that matters almost as much as the DIP line: the clamp released as soon as the
+source climbed past the held value, so nothing latches.
+
+The card was screenshotted at 1920x1080 during the live dropout, reading 4.4, 2.6, 5.7, 3.8 and
+-1.2 kWh under a footer of `held since 8:46 AM`. The same moment before this work would have shown
+five zeros.
+
+Two further checks. The four helpers do not re-render themselves: `last_reported` on all four was
+unchanged across a 45-second window with no source update, so reading `this` creates no loop. And
+the system log carried no template error from any of them.
 
 ## What replaced what
 
@@ -130,9 +354,10 @@ power leaving the house. The header carries `show_states` and `colorize_states`,
 bottom legend redundant, so it is turned off to reclaim about 35px.
 
 `Today So Far` reads the four Sense daily trend sensors and shows an `as of` stamp derived from
-`last_reported`, so the card states its own freshness instead of leaving a reader to guess. That
-stamp only advances when one of the four values changes, which in practice is every poll during
-daylight and never overnight, when nothing is moving anyway.
+`last_reported`, so the card states its own freshness instead of leaving a reader to guess. An
+earlier version of this paragraph claimed the stamp never advances overnight because nothing is
+moving then. That is wrong, and believing it is part of why the zeros above went unexplained: used
+and imported climb all night, so the card re-renders roughly every ten minutes until dawn.
 
 The remaining `Current Solar Production` gauge on `sensor.solar_power` was already live and was not
 touched. Nor was the `Net Grid Energy: Last 10 Days` apexcharts card, which calls
@@ -150,11 +375,10 @@ moment it is created, so the Energy dashboard would lose every day of history it
 introduces a second source of truth for the same quantity. The trend sensor carried 2,331.6 kWh of
 statistics that would have been abandoned.
 
-**Four monotonic template helpers to suppress the hourly bad poll.** A template sensor can refuse
-to decrease within a day by reading `this.state`, which would clean up the five-minutes-an-hour
-glitch on the live card. Deferred rather than rejected: pde chose the option with no new helper
-entities, on the reasoning that it is better to see how often the glitch actually annoys before
-adding four entities to suppress it.
+**Four monotonic template helpers to suppress the hourly bad poll.** Deferred on 2026-09-30 rather
+than rejected: pde chose the option with no new helper entities, on the reasoning that it is better
+to see how often the glitch actually annoys before adding four entities to suppress it. It annoyed
+on 2026-10-02 and the helpers were built; see "Four held sensors" above.
 
 **Inline HTML with a `style` attribute for the conditional colour.** Rejected without testing.
 Home Assistant's markdown card sanitises rendered HTML through the `xss` library's whitelist, and
