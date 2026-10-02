@@ -176,7 +176,7 @@ below records both, and it will be out of date sooner than it looks.
 
 ## Next-session checkpoint, 2026-10-02
 
-### Homie: the Music chip took over the A/V chip's library, and A/V is an empty placeholder
+### Homie: the Music chip took over the A/V chip's library
 
 The Music chip now has seven rows: Favorites, Playlists, Radio Stations, Jellyfin, Artists, Albums,
 Tracks. Design, rejected options and verification are in
@@ -189,8 +189,8 @@ Four things not to undo or misread:
   thing from the bubble grid that used to have that name.
 - **`syncDynamicPlaylistsFromHA()` finds its group by the `dynamicPlaylists` flag, not by label.**
   Matching on the label would now hit the browse row and leave Jellyfin empty for good.
-- **The A/V chip is empty on purpose.** `action: "av"` opens a "Nothing here" frame. pde has
-  follow-up plans for it, so do not remove it and do not restore the browser to it.
+- **The A/V chip is the audio zone panel now**, the follow-up pde had planned. Do not restore the
+  browser to it. See the next section.
 - **The Now Playing card's browse button still opens the full Music Assistant root.** Only the chip
   was emptied.
 
@@ -199,14 +199,31 @@ function a bubble tap uses. It also turns shuffle off and clears the Jellyfin on
 from the Music chip do this; the Now Playing browser targets players that are mostly not behind
 Harmony. Do not inline that function back into either caller.
 
-The fork is pushed and deployed at `HOMIE_ASSET_VERSION` `20261002.2`, matching the iframe `?v=`;
-use `git log` there for the commit. Suite 166 passing, up from 157. Host backups are
-`.bak-20261002-133547` and `homie-dashboard.html.bak-20261002-134553`.
+### Homie: the A/V chip carries the Speakers dashboard's controls
+
+`action: "av"` opens `#av-overlay`: All AirPlay, All Off, Refresh, a freshness line, and six room
+cards with power, source, volume and mute. Design, rejected layouts and live verification are in
+[homie-av-chip.md](./docs/homie-dashboard/homie-av-chip.md).
+
+Three things not to undo:
+
+- **Nothing on the panel is optimistic.** A card is busy for the life of its REST call, which
+  returns only when the zone command has finished, and then repaints from reported state.
+- **The scripts are called as `script.<name>`, not through `script.turn_on`**, so the call blocks
+  and the button can stay busy for the whole six-room walk.
+- **The panel repaints in place.** Rebuilding the cards on a state change would close an open
+  source picker and move a slider mid-drag.
+
+The fork is pushed and deployed at `HOMIE_ASSET_VERSION` `20261002.3`, matching the iframe `?v=`;
+use `git log` there for the commit. Suite 173 passing, up from 157 at the start of the day. Host
+backups are `.bak-20261002-133547`, `homie-dashboard.html.bak-20261002-134553` and
+`.bak-20261002-140146`.
 
 Left open: the Jellyfin row is empty because `sensor.homie_dynamic_playlists` does not exist, which
 pde is handling himself. Artists, Albums and Tracks stop at Music Assistant's 500-item browse cap.
 One of four live plays from a browse row started Harmony and left the player idle; it did not
-reproduce and the cause is unknown.
+reproduce and the cause is unknown. Nobody has yet looked at how the wall tablet renders the A/V
+panel's native source dropdown.
 
 ## Next-session checkpoint, 2026-09-29
 

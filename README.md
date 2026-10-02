@@ -572,6 +572,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   uses its `library://` URI rather than mixing in the native SiriusXM form for two of them. Includes
   a same-day follow-up round lowering the reset volume and shortening five of six station labels.
 
+- [homie-av-chip.md](docs/homie-dashboard/homie-av-chip.md)
+
+  The A/V chip as a panel for the six Crestron audio zones, carrying the controls of the Speakers
+  dashboard: power, source, volume and mute per room, plus All AirPlay, All Off and Refresh. Why
+  nothing on it is optimistic, why the scripts are called directly so a button can stay busy, the
+  layouts that were rejected, and the live verification.
+
 - [homie-dynamic-playlists.md](docs/homie-dashboard/homie-dynamic-playlists.md)
 
   Replaces the Music chip's hand-maintained Playlists array with a periodically-synced list of

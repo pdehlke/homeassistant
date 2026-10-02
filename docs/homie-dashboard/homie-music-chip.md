@@ -425,6 +425,9 @@ titled "A/V" with "Nothing here" in it and sends no request to Home Assistant. T
 card's browse button still calls `openMediaBrowser()` with no arguments and still shows the full
 root. Only the chip was asked about, so only the chip changed.
 
+The placeholder lasted a few hours. The chip became the audio zone panel later the same day; see
+[homie-av-chip.md](./homie-av-chip.md).
+
 ### Rejected alternatives
 
 | Option | Why not |
