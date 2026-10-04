@@ -579,6 +579,13 @@ Notes, planning, and specs for my Home Assistant buildout.
   nothing on it is optimistic, why the scripts are called directly so a button can stay busy, the
   layouts that were rejected, and the live verification.
 
+- [homie-tv-chip-samsung.md](docs/homie-dashboard/homie-tv-chip-samsung.md)
+
+  The Samsung section of the TV chip: the screen's real power state, power for the screen alone,
+  and a remote pad, alongside the Harmony Activity buttons. What the set was measured to do, why the
+  pad never waits on the previous press, the chip's glow rule, the options rejected, and the
+  shortcut list that is still empty.
+
 - [homie-dynamic-playlists.md](docs/homie-dashboard/homie-dynamic-playlists.md)
 
   Replaces the Music chip's hand-maintained Playlists array with a periodically-synced list of

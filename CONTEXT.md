@@ -409,8 +409,17 @@ Harmony's mode-switch concept (e.g. "Watch TV") — the only level of control `r
 supports. HA has no direct per-device command layer configured.
 
 **TV chip**:
-Homie Dashboard's control for the Harmony-driven living room A/V, including a volume/mute row
-added on top of the existing activity switcher.
+Homie Dashboard's control for the living room television and the A/V around it. Harmony Activity
+buttons and an Integra volume/mute row drive the room through `remote.harmony_hub`; a Samsung
+section below them shows the screen's real power state, powers the screen alone and carries a remote
+pad, through `media_player.living_room_tv` and `remote.living_room_tv`. The chip glows when the
+screen is on or an Activity is running. See
+[docs/homie-dashboard/homie-tv-chip-samsung.md](docs/homie-dashboard/homie-tv-chip-samsung.md).
+
+**Living Room TV**:
+The Samsung Smart TV integration's device for the living room QN90B: the screen, with power and
+remote keys. Not the same device as "Samsung QN90BA 85", which is the same television as a Music
+Assistant speaker and has no power, source or key control.
 
 ### EV Charger
 

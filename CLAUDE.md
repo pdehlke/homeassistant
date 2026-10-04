@@ -174,6 +174,37 @@ Do not change anything until you have checked the status of every repository the
 confirmed the live release and commit state against `git` and the running instance. The checkpoint
 below records both, and it will be out of date sooner than it looks.
 
+## Next-session checkpoint, 2026-10-04
+
+### Homie: the TV chip has a Samsung section
+
+Below the Harmony rows, the TV overlay now shows the screen's real power state, powers the screen
+alone and carries a remote pad, through `media_player.living_room_tv` and `remote.living_room_tv`.
+[Issue #31](https://github.com/pdehlke/homeassistant/issues/31) was the PRD; design, measurements
+and rejected options are in
+[homie-tv-chip-samsung.md](./docs/homie-dashboard/homie-tv-chip-samsung.md).
+
+Four things not to undo or misread:
+
+- **`remote.send_command` returns success for a key that does not exist.** A clean API response says
+  nothing about the screen. pde confirmed every pad key by eye on 2026-10-04; any new key or
+  shortcut needs the same.
+- **The pad never waits on the previous press.** The call takes a fixed second to return and
+  concurrent presses do not queue, so the audio zone panel's busy-until-returned rule would only
+  slow it down.
+- **The chip glows for the Samsung entity or a running Harmony Activity.** Either alone was
+  rejected; the doc says why.
+- **Do not query the set's own API at port 8001 under `/api/v2/applications/`.** It hung and made
+  Home Assistant report the set as off.
+
+`haService()` in the fork now returns whether the call succeeded. `HOMIE_ASSET_VERSION` is
+`20261004.1`, matching the iframe `?v=`; suite 192 passing, up from 173. Host backups are
+`*.bak-20261004-082430`.
+
+Left open: `tv.shortcuts` is empty, so the shortcut row is hidden. pde has not chosen the inputs and
+apps, the integration lists neither (its source list is only `TV` and `HDMI`), and per-input keys
+and app ids have to be tested with someone watching the set.
+
 ## Next-session checkpoint, 2026-10-02
 
 ### Homie: the Music chip took over the A/V chip's library
