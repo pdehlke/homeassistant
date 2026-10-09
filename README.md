@@ -665,6 +665,14 @@ Notes, planning, and specs for my Home Assistant buildout.
   own storage and SSD research is preserved, annotated with which parts turned out to matter and
   which didn't.
 
+- [office-display-pi-kiosk.md](docs/hardware/office-display-pi-kiosk.md)
+
+  Rebuilding the Office wall display's Raspberry Pi after it crashed with no backup: desktop
+  auto-login, the labwc autostart line that opens Chromium full screen on `dashboard-office`, and
+  the `192.168.4.136` address the login-free sign-in depends on, and the Chromium scale factor that
+  makes the dashboard readable at the display's 3840x2160. Reconstructed from vendor docs; the
+  autostart line is confirmed at the display, the other steps are not.
+
 ### EV Charger
 
 - [ev-charger-integration.md](docs/ev-charger/ev-charger-integration.md)
