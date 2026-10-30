@@ -840,3 +840,34 @@ has been exactly that phrase. Visitors' `entities` count stays at 29; the Lights
 count goes to 34. The two counts no longer describe the same set, on purpose, and the tests were
 updated to assert the exclusion by name rather than just leaving the count alone and hoping a
 reader notices.
+
+## Thirteenth pass: Pathway replaces Perimeter in Dinner (2026-10-30)
+
+pde asked to swap the Living Room Ambient lights in the Dinner scene for Living Room Pathway. The
+live configuration did not match that premise: `light.dinner_lights`, which both
+`script.scene_dinner` and the bubble's `entities` target, had never contained
+`light.living_room_ambient`. Its Living Room overhead load was `light.living_room_perimeter`, and
+the 2026-10-29 script trace confirms that load was the one commanded. The only Dinner configuration
+holding Ambient is `scene.dinner_lights`, a separate native scene that Homie does not use.
+
+Asked which light Pathway should replace, pde chose Perimeter. The group's `options.entities` now
+has `light.living_room_pathway` in that position, and its other eleven members and its `all`
+setting are unchanged. No fork change or deploy was needed, because the seventh pass made the group
+the single place this list lives.
+
+Options rejected:
+
+| Option | Why rejected |
+|---|---|
+| Keep Perimeter and add Pathway | Dinner would light both, and the request was a swap. |
+| Change only `scene.dinner_lights` | That would leave the Dinner bubble's behaviour as it was. |
+| Change the group and `scene.dinner_lights` | pde chose not to change the unused scene, so it still lists Ambient. |
+
+Verified live by calling `light.turn_on` on the group: Pathway and the other eleven members
+reported on, while Perimeter and Ambient stayed off. The eight lights that test turned on were then
+turned back off. The script itself was not run, so its Harmony and music steps were not exercised;
+none of them changed.
+
+The same day pde added the Powder Room light, `light.dining_room_powder`, to the group, which now
+has thirteen members. That is the only powder load on the instance. The change was confirmed by
+reading the group's members back, without switching any lights.
