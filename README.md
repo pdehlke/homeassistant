@@ -667,11 +667,12 @@ Notes, planning, and specs for my Home Assistant buildout.
 
 - [office-display-pi-kiosk.md](docs/hardware/office-display-pi-kiosk.md)
 
-  Rebuilding the Office wall display's Raspberry Pi after it crashed with no backup: desktop
-  auto-login, the labwc autostart line that opens Chromium full screen on `dashboard-office`, and
-  the `192.168.4.136` address the login-free sign-in depends on, and the Chromium scale factor that
-  makes the dashboard readable at the display's 3840x2160. Reconstructed from vendor docs; the
-  autostart line is confirmed at the display, the other steps are not.
+  Rebuilding the Office wall display's Raspberry Pi from a ready-to-flash image: the cloud-init
+  user-data that sets up desktop auto-login, the Chromium kiosk autostart on `dashboard-clock`, a
+  read-only root on a RAM overlay so the SD card stops wearing out, and a cron schedule that turns
+  the panel off from 18:00 to 05:00. Also covers the `192.168.4.136` address the login-free
+  sign-in depends on, the Chromium scale factor for the 3840x2160 panel, and the original manual
+  procedure as a fallback. Built and checked offline; not yet booted.
 
 ### EV Charger
 
