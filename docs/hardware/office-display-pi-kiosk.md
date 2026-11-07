@@ -32,9 +32,11 @@ on any other address shows a login screen on a panel with no keyboard.
 
 ## The image
 
-The build lives outside this repo, in `~/src/office-display-image/` on pde's laptop, because this
-repo takes no deployable configuration and the finished image contains the Wi-Fi password. That
-directory holds:
+The build lives outside this repo, in the private
+[pdehlke/office-display-image](https://github.com/pdehlke/office-display-image) repository, cloned
+at `~/src/office-display-image/` on pde's laptop. It is kept separate because this repo takes no
+deployable configuration and the finished image contains the Wi-Fi password. That repository
+holds:
 
 | File | What it is |
 | --- | --- |
@@ -42,9 +44,9 @@ directory holds:
 | `build.sh` | Downloads and verifies a stock image, then writes the configuration onto its boot partition. macOS only. |
 | `docs/build/image-build.md` | How the build works, including how it picks the stock image. |
 
-The directory has been a local git repository since 2026-11-07, with no remote, so it is still not
-backed up. If it is lost, the user-data below and the build steps described here are enough to
-recreate it. Disk images are ignored by its `.gitignore`.
+It has been under git since 2026-11-07 and on GitHub since the same day. Disk images are ignored
+by its `.gitignore`, so the stock image and the built image exist only on the laptop. `build.sh`
+can download the stock image again and rebuild the output from it.
 
 ### Building it
 
